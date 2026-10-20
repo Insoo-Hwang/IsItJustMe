@@ -1,0 +1,56 @@
+package com.isitjustme.guest;
+
+import java.time.Duration;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.isitjustme.guest.GuestService.GuestSession;
+
+@RestController
+@RequestMapping("/api/v1/guests")
+public class GuestController {
+
+	static final String COOKIE_NAME = "guest_token";
+
+	private static final Duration COOKIE_MAX_AGE = Duration.ofDays(365);
+
+	private final GuestService guestService;
+
+	private final boolean secureCookie;
+
+	public GuestController(GuestService guestService, @Value("${app.guest.cookie-secure:true}") boolean secureCookie) {
+		this.guestService = guestService;
+		this.secureCookie = secureCookie;
+	}
+
+	/**
+	 * Issues a guest token cookie on first visit, or validates the existing one.
+	 * The cookie is re-sent every time so its expiry slides forward on each visit.
+	 */
+	@PostMapping("/session")
+	public ResponseEntity<SessionResponse> session(@CookieValue(name = COOKIE_NAME, required = false) String token) {
+		GuestSession session = guestService.resolveOrIssue(token);
+		ResponseCookie cookie = ResponseCookie.from(COOKIE_NAME, session.token())
+			.httpOnly(true)
+			.secure(secureCookie)
+			.sameSite("Lax")
+			.path("/")
+			.maxAge(COOKIE_MAX_AGE)
+			.build();
+		return ResponseEntity.status(session.issued() ? HttpStatus.CREATED : HttpStatus.OK)
+			.header(HttpHeaders.SET_COOKIE, cookie.toString())
+			.body(new SessionResponse(session.issued()));
+	}
+
+	public record SessionResponse(boolean issued) {
+	}
+
+}

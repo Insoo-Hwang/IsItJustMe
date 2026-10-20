@@ -1,0 +1,6 @@
+CREATE TABLE guest (
+    id           BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    token_hash   VARCHAR(64) NOT NULL UNIQUE,
+    created_at   TIMESTAMPTZ NOT NULL,
+    last_seen_at TIMESTAMPTZ NOT NULL
+);
