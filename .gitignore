@@ -1,0 +1,39 @@
+### OS / Editor ###
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.vscode/*
+!.vscode/extensions.json
+*.sw?
+
+### Env ###
+.env
+.env.*
+!.env.example
+*.local
+
+### Backend (Gradle / Spring) ###
+backend/.gradle/
+backend/build/
+!backend/gradle/wrapper/gradle-wrapper.jar
+backend/bin/
+backend/.apt_generated
+backend/.classpath
+backend/.factorypath
+backend/.project
+backend/.settings
+backend/.springBeans
+backend/.sts4-cache
+
+### Frontend (Vite / npm) ###
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+
+### Logs ###
+logs/
+*.log
