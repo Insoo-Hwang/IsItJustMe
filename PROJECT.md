@@ -22,5 +22,43 @@
 ## 작업 규칙
 
 - 커밋에 Claude 관련 흔적을 남기지 않는다 (Co-Authored-By, "Generated with Claude" 등 문구 금지).
-- 커밋 메시지는 담백하게, 변경 내용만 짧게 적는다.
+- 커밋 메시지는 한국어로, 담백하게 변경 내용만 짧게 적는다.
 - 작업 후 정리를 할 땐 어떤 작업을 진행했는지 이해하기 쉽게 작성한다.
+- API가 추가되면 아래 API 명세에 역할 · Request · Response를 표로 정리한다.
+
+## API 명세
+
+### `POST /api/v1/guests/session` — 게스트 세션 발급 / 확인
+
+| 항목 | 내용 |
+|---|---|
+| 역할 | 접속한 사용자에게 guest token을 발급하거나, 이미 가진 토큰을 확인한다 |
+| 호출 시점 | `/main` 페이지 접속 시 |
+| Request | Body 없음. 쿠키 `guest_token`이 있으면 함께 전송 (없어도 됨) |
+| Response Body | `{ "issued": boolean }` — 이번 요청에서 새로 발급했는지 여부 |
+| Response Cookie | `guest_token` (HttpOnly · Secure · SameSite=Lax · 만료 1년, 요청마다 연장) |
+
+| 상황 | 상태 코드 | 동작 |
+|---|---|---|
+| 쿠키 없음 / DB에 없는 토큰 | 201 Created | 새 토큰 발급, DB에 해시 저장, `issued: true` |
+| 유효한 토큰 | 200 OK | 마지막 방문 시각 갱신, 쿠키 만료일 연장, `issued: false` |
+
+## 작업 기록
+
+### 1. 프로젝트 초기 설정
+- Spring Boot(backend) + React(frontend) 프로젝트 골격 생성, GitHub 저장소 연결
+
+### 2. 게스트 토큰 발급
+로그인 없이 사용자를 구분하기 위해, 접속하면 guest token을 발급한다.
+
+- **저장 방식**: 쿠키에는 토큰만 두고, 응답 · 결과 등 실제 데이터는 DB에 저장한다.
+  - 통계 · 공유 · 친구 비교가 모두 서버 데이터 기준이라 DB 저장이 필요하다.
+  - 쿠키는 사용자가 조작할 수 있고 용량(약 4KB)도 작다.
+- **보안**
+  - 토큰은 추측할 수 없는 랜덤 값(32바이트)이다.
+  - DB에는 토큰의 SHA-256 해시만 저장한다. DB가 유출돼도 저장된 값으로 쿠키를 만들 수 없다.
+  - 쿠키는 HttpOnly라 JS로 읽을 수 없다.
+- **구현**
+  - Backend: `guest` 테이블(Flyway), `Guest` 엔티티 · `GuestService` · `GuestController`
+  - Frontend: `/main` 빈 페이지, 접속 시 세션 API 호출 (`/`는 `/main`으로 이동)
+  - 테스트: 첫 방문 발급 · 재방문 유지 · 쿠키 속성 확인 (`GuestControllerTests`)
