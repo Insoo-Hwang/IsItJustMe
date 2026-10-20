@@ -1,6 +1,7 @@
 services:
   postgres:
     image: 'postgres:18'
+    command: ['postgres', '-c', 'timezone=Asia/Seoul']
     environment:
       - 'POSTGRES_DB=isitjustme'
       - 'POSTGRES_PASSWORD=secret'
