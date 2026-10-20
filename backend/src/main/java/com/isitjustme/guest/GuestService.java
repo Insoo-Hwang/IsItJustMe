@@ -1,5 +1,6 @@
 package com.isitjustme.guest;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -12,6 +13,12 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class GuestService {
+
+	/**
+	 * Guests who haven't visited for this long are deleted, and the cookie expires
+	 * after the same period.
+	 */
+	static final Duration RETENTION = Duration.ofDays(180);
 
 	private final GuestRepository guestRepository;
 
@@ -32,6 +39,15 @@ public class GuestService {
 		String token = GuestTokens.generate();
 		guestRepository.save(new Guest(GuestTokens.hash(token), now));
 		return new GuestSession(token, true);
+	}
+
+	/**
+	 * Deletes guests whose last visit is older than {@link #RETENTION}. Data owned by a
+	 * guest is removed with it through {@code ON DELETE CASCADE} foreign keys.
+	 */
+	@Transactional
+	public int deleteInactive() {
+		return guestRepository.deleteByLastSeenAtBefore(Instant.now().minus(RETENTION));
 	}
 
 	public record GuestSession(String token, boolean issued) {

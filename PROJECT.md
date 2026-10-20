@@ -25,6 +25,7 @@
 - 커밋 메시지는 한국어로, 담백하게 변경 내용만 짧게 적는다.
 - 작업 후 정리를 할 땐 어떤 작업을 진행했는지 이해하기 쉽게 작성한다.
 - API가 추가되면 아래 API 명세에 역할 · Request · Response를 표로 정리한다.
+- 게스트에 속한 데이터 테이블은 `guest_id` 외래키에 `ON DELETE CASCADE`를 건다. (미접속 게스트 삭제 시 함께 지워지도록)
 
 ## API 명세
 
@@ -36,7 +37,7 @@
 | 호출 시점 | `/main` 페이지 접속 시 |
 | Request | Body 없음. 쿠키 `guest_token`이 있으면 함께 전송 (없어도 됨) |
 | Response Body | `{ "issued": boolean }` — 이번 요청에서 새로 발급했는지 여부 |
-| Response Cookie | `guest_token` (HttpOnly · Secure · SameSite=Lax · 만료 1년, 요청마다 연장) |
+| Response Cookie | `guest_token` (HttpOnly · Secure · SameSite=Lax · 만료 180일, 요청마다 연장) |
 
 | 상황 | 상태 코드 | 동작 |
 |---|---|---|
@@ -62,3 +63,13 @@
   - Backend: `guest` 테이블(Flyway), `Guest` 엔티티 · `GuestService` · `GuestController`
   - Frontend: `/main` 빈 페이지, 접속 시 세션 API 호출 (`/`는 `/main`으로 이동)
   - 테스트: 첫 방문 발급 · 재방문 유지 · 쿠키 속성 확인 (`GuestControllerTests`)
+
+### 3. 장기 미접속 게스트 정리
+180일 동안 방문하지 않은 게스트는 서버에서 삭제한다.
+
+- **기준**: 마지막 방문(`last_seen_at`) 후 180일. 쿠키 만료도 같은 180일이다. (`GuestService.RETENTION`)
+- **정리 작업**: 매일 새벽 4시(한국 시간)에 180일이 지난 게스트를 한 번의 쿼리로 삭제하고, 삭제 건수를 로그로 남긴다. (`GuestCleanupJob`)
+- **연관 데이터**: 앞으로 생길 응답 · 결과 테이블은 `guest_id`에 `ON DELETE CASCADE`를 걸어, 게스트가 지워지면 함께 지워지게 한다.
+- **구현**
+  - Backend: 스케줄링 활성화(`SchedulingConfig`), 삭제 쿼리(`GuestRepository.deleteByLastSeenAtBefore`), `last_seen_at` 인덱스(Flyway V2)
+  - 테스트: 쿠키 Max-Age 180일 확인, 181일 지난 게스트만 삭제되는지 실제 Postgres로 확인 (`GuestRepositoryTests`)

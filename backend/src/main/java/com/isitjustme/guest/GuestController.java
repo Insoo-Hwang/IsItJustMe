@@ -1,7 +1,5 @@
 package com.isitjustme.guest;
 
-import java.time.Duration;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -19,8 +17,6 @@ import com.isitjustme.guest.GuestService.GuestSession;
 public class GuestController {
 
 	static final String COOKIE_NAME = "guest_token";
-
-	private static final Duration COOKIE_MAX_AGE = Duration.ofDays(365);
 
 	private final GuestService guestService;
 
@@ -43,7 +39,7 @@ public class GuestController {
 			.secure(secureCookie)
 			.sameSite("Lax")
 			.path("/")
-			.maxAge(COOKIE_MAX_AGE)
+			.maxAge(GuestService.RETENTION)
 			.build();
 		return ResponseEntity.status(session.issued() ? HttpStatus.CREATED : HttpStatus.OK)
 			.header(HttpHeaders.SET_COOKIE, cookie.toString())

@@ -6,6 +6,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Duration;
+
 import jakarta.servlet.http.Cookie;
 
 import org.junit.jupiter.api.Test;
@@ -35,7 +37,8 @@ class GuestControllerTests {
 			.andExpect(cookie().value("guest_token", "new-token"))
 			.andExpect(cookie().httpOnly("guest_token", true))
 			.andExpect(cookie().secure("guest_token", true))
-			.andExpect(cookie().sameSite("guest_token", "Lax"));
+			.andExpect(cookie().sameSite("guest_token", "Lax"))
+			.andExpect(cookie().maxAge("guest_token", (int) Duration.ofDays(180).toSeconds()));
 	}
 
 	@Test
