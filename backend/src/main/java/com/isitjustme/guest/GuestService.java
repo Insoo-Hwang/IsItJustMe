@@ -33,12 +33,25 @@ public class GuestService {
 			Optional<Guest> found = guestRepository.findByTokenHash(GuestTokens.hash(rawToken));
 			if (found.isPresent()) {
 				found.get().touch(now);
-				return new GuestSession(rawToken, false);
+				return new GuestSession(rawToken, false, found.get().profile());
 			}
 		}
 		String token = GuestTokens.generate();
 		guestRepository.save(new Guest(GuestTokens.hash(token), now));
-		return new GuestSession(token, true);
+		return new GuestSession(token, true, null);
+	}
+
+	/**
+	 * Saves the profile for the guest owning the token. Returns false for an unknown token.
+	 */
+	@Transactional
+	public boolean updateProfile(@Nullable String rawToken, GuestProfile profile) {
+		if (rawToken == null || rawToken.isBlank()) {
+			return false;
+		}
+		Optional<Guest> found = guestRepository.findByTokenHash(GuestTokens.hash(rawToken));
+		found.ifPresent((guest) -> guest.updateProfile(profile));
+		return found.isPresent();
 	}
 
 	/**
@@ -50,7 +63,7 @@ public class GuestService {
 		return guestRepository.deleteByLastSeenAtBefore(Instant.now().minus(RETENTION));
 	}
 
-	public record GuestSession(String token, boolean issued) {
+	public record GuestSession(String token, boolean issued, @Nullable GuestProfile profile) {
 	}
 
 }

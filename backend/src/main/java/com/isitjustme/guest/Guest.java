@@ -4,10 +4,15 @@ import java.time.Instant;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+
+import org.jspecify.annotations.Nullable;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,6 +36,14 @@ public class Guest {
 	@Column(nullable = false)
 	private Instant lastSeenAt;
 
+	@Enumerated(EnumType.STRING)
+	@Column(length = 10)
+	private @Nullable Gender gender;
+
+	@Enumerated(EnumType.STRING)
+	@Column(length = 20)
+	private @Nullable AgeGroup ageGroup;
+
 	public Guest(String tokenHash, Instant now) {
 		this.tokenHash = tokenHash;
 		this.createdAt = now;
@@ -39,6 +52,15 @@ public class Guest {
 
 	public void touch(Instant now) {
 		this.lastSeenAt = now;
+	}
+
+	public void updateProfile(GuestProfile profile) {
+		this.gender = profile.gender();
+		this.ageGroup = profile.ageGroup();
+	}
+
+	public @Nullable GuestProfile profile() {
+		return (gender == null || ageGroup == null) ? null : new GuestProfile(gender, ageGroup);
 	}
 
 }

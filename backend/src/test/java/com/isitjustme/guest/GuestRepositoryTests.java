@@ -40,4 +40,15 @@ class GuestRepositoryTests {
 		assertThat(guestRepository.findByTokenHash("active")).isPresent();
 	}
 
+	@Test
+	void storesProfile() {
+		Guest guest = new Guest("with-profile", Instant.now());
+		guest.updateProfile(new GuestProfile(Gender.FEMALE, AgeGroup.FIFTIES_PLUS));
+		guestRepository.saveAndFlush(guest);
+
+		assertThat(guestRepository.findByTokenHash("with-profile")).get()
+			.extracting(Guest::profile)
+			.isEqualTo(new GuestProfile(Gender.FEMALE, AgeGroup.FIFTIES_PLUS));
+	}
+
 }
