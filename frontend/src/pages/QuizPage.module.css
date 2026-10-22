@@ -1,0 +1,232 @@
+.quiz {
+  min-height: 100dvh;
+}
+
+.counter {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 4px;
+}
+.count {
+  font-size: 14px;
+  font-weight: 700;
+}
+.countNow {
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: var(--coral);
+}
+.remain {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mute);
+}
+
+.bar {
+  margin-top: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+.barFill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--coral);
+  transition: width 0.45s cubic-bezier(0.34, 1.3, 0.5, 1);
+}
+
+.dots {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+  justify-content: center;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: oklch(0.88 0.01 290);
+  transition: all 0.3s;
+}
+.dot:disabled {
+  cursor: default;
+}
+.dotDone {
+  background: var(--coral);
+}
+.dotCurrent {
+  width: 22px;
+  background: var(--ink);
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-top: 22px;
+}
+.qLabel {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--coral);
+}
+.prompt {
+  margin-top: 6px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.3;
+}
+
+.choices {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.choice {
+  --tint: var(--coral);
+  --tint-soft: var(--coral-soft);
+  position: relative;
+  flex: 1;
+  min-height: 170px;
+  border-radius: 28px;
+  padding: 20px;
+  background: white;
+  color: var(--ink);
+  box-shadow: 0 0 0 2px var(--ink);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  transition:
+    transform 0.42s cubic-bezier(0.34, 1.9, 0.5, 1),
+    background 0.25s,
+    opacity 0.25s,
+    box-shadow 0.3s,
+    color 0.25s;
+}
+.choice[data-side='b'] {
+  --tint: var(--blue);
+  --tint-soft: var(--blue-soft);
+}
+.choice[data-state='selected'] {
+  background: var(--tint);
+  color: white;
+  transform: scale(1.04);
+  box-shadow: 0 16px 30px -12px var(--tint);
+}
+.choice[data-state='dimmed'] {
+  opacity: 0.38;
+  box-shadow: 0 0 0 1.5px oklch(0.88 0.01 290);
+}
+
+.choiceBadge {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--tint-soft);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 16px;
+}
+.choice[data-state='selected'] .choiceBadge {
+  background: white;
+  color: var(--tint);
+}
+
+.choiceLabel {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  line-height: 1.3;
+}
+
+.choiceCheck {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  animation: popIn 0.4s cubic-bezier(0.34, 1.6, 0.5, 1);
+}
+
+.vs {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: white;
+  box-shadow: 0 0 0 5px var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 21px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.hint {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--mute);
+}
+
+.nav {
+  background: var(--paper);
+  padding-top: 16px;
+}
+.navPrev {
+  width: 96px;
+}
+.navNextEmpty {
+  background: var(--disabled);
+  color: var(--disabled-text);
+}
+
+/* loading */
+.loading {
+  flex: 1;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  padding: 20px;
+  text-align: center;
+}
+.balls {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  height: 60px;
+}
+.ball {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  animation: hop 0.9s ease-in-out infinite;
+}
+.loadingTitle {
+  font-family: var(--font-display);
+  font-size: 28px;
+}
+.loadingSub {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--mute);
+}

@@ -1,0 +1,285 @@
+.landing {
+  --y: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.hero {
+  position: relative;
+  padding: 20px 22px 150px;
+  opacity: max(0.15, calc(1 - var(--y) / 520));
+  transform: translateY(calc(var(--y) * 0.35px));
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 18px;
+}
+
+.logoMark {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--coral);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.logoMark::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--paper);
+}
+
+.restoreButton {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 0 0 1.5px var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge {
+  margin-top: 34px;
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--butter);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.headline {
+  margin-top: 14px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 38px;
+  line-height: 1.22;
+  letter-spacing: -0.5px;
+  text-wrap: pretty;
+}
+
+.bubbles {
+  position: relative;
+  height: 350px;
+  margin-top: 22px;
+  transform: translateY(calc(var(--y) * -0.12px));
+}
+
+.bubble {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: var(--font-display);
+  line-height: 1.25;
+  border-radius: 50%;
+}
+.bubbleCoral {
+  left: 0;
+  top: 18px;
+  width: 172px;
+  height: 172px;
+  background: var(--coral);
+  color: white;
+  font-size: 27px;
+  animation: floatA 4.2s ease-in-out infinite alternate;
+}
+.bubbleBlue {
+  right: 4px;
+  top: 0;
+  width: 146px;
+  height: 146px;
+  background: var(--blue);
+  color: white;
+  font-size: 24px;
+  animation: floatA 5s ease-in-out -1.5s infinite alternate;
+}
+.bubbleButter {
+  right: 30px;
+  top: 162px;
+  width: 78px;
+  height: 78px;
+  background: var(--butter);
+  font-size: 19px;
+  animation: floatB 3.4s ease-in-out infinite alternate;
+}
+.bubblePill {
+  left: 150px;
+  top: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: oklch(0.94 0.045 0);
+  font-size: 16px;
+  animation: floatB 3.8s ease-in-out -1s infinite alternate;
+}
+.speech {
+  position: absolute;
+  left: 26px;
+  top: 226px;
+  max-width: 250px;
+  padding: 16px 20px;
+  border-radius: 28px 28px 28px 6px;
+  background: white;
+  box-shadow: 0 0 0 2px var(--ink);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.45;
+  animation: floatB 4.6s ease-in-out -2s infinite alternate;
+}
+.dot {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.participants {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  color: var(--mute);
+  font-size: 13px;
+  font-weight: 600;
+}
+.participants b {
+  color: var(--ink);
+}
+.scrollHint {
+  color: var(--ink);
+  animation: nudge 1.6s ease-in-out infinite;
+}
+
+.sheet {
+  position: relative;
+  margin-top: -130px;
+  background: white;
+  border: 2px solid var(--ink);
+  border-bottom: none;
+  --rx: max(32px, calc(220px - var(--y) * 0.55px));
+  --ry: max(32px, calc(130px - var(--y) * 0.3px));
+  border-top-left-radius: var(--rx) var(--ry);
+  border-top-right-radius: var(--rx) var(--ry);
+  padding: 44px 18px 24px;
+  /* fill down to the tab bar on tall screens */
+  flex: 1;
+  min-height: 720px;
+}
+
+.sheetHead {
+  text-align: center;
+}
+.sheetTitle {
+  font-family: var(--font-display);
+  font-size: 26px;
+}
+.sheetSub {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--mute);
+}
+
+.resume {
+  margin-top: 20px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: var(--ink);
+  color: white;
+  text-align: left;
+}
+.resumeText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.resumeTitle {
+  font-size: 15px;
+  font-weight: 700;
+}
+.resumeSub {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.catCard {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 28px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  text-align: left;
+  color: var(--ink);
+  transition: transform 0.25s var(--spring);
+}
+.catCard:active {
+  transform: scale(0.95);
+}
+.catIcon {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.catDone {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+}
+.catText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.catName {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+.catDesc {
+  font-size: 13px;
+  color: var(--ink-sub);
+  line-height: 1.35;
+}

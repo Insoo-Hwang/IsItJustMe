@@ -1,0 +1,313 @@
+.resultCard {
+  position: relative;
+  margin-top: 8px;
+  border-radius: 32px;
+  background: var(--coral);
+  color: white;
+  padding: 26px 24px 24px;
+  overflow: hidden;
+  animation: popIn 0.6s cubic-bezier(0.34, 1.5, 0.5, 1);
+}
+.resultCard > * {
+  position: relative;
+}
+.resultCard > .deco {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.brand {
+  font-family: var(--font-display);
+  font-size: 15px;
+}
+.ratio {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: white;
+  color: var(--coral-deep);
+  font-size: 12px;
+  font-weight: 800;
+}
+.lead {
+  margin-top: 26px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.tier {
+  margin-top: 2px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 76px;
+  line-height: 1.05;
+}
+.headline {
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.rareBox {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: white;
+  color: var(--ink);
+}
+.rareLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--coral-deep);
+}
+.rareRow {
+  margin-top: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.rareChoice {
+  font-size: 16px;
+  font-weight: 800;
+}
+.rareRate {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mute);
+  white-space: nowrap;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 14px;
+}
+.stat {
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.statLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mute);
+}
+.statNote {
+  font-size: 12px;
+  color: var(--mute);
+  line-height: 1.4;
+}
+.donut {
+  position: relative;
+  width: 84px;
+  height: 84px;
+}
+.donut svg {
+  transform: rotate(-90deg);
+}
+.donutValue {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 19px;
+}
+.exact {
+  height: 84px;
+  display: flex;
+  align-items: center;
+}
+.exactValue {
+  font-family: var(--font-display);
+  font-size: 44px;
+  line-height: 1;
+}
+.exactUnit {
+  font-size: 18px;
+  font-weight: 800;
+  margin-left: 2px;
+  align-self: flex-end;
+  padding-bottom: 12px;
+}
+
+.top3 {
+  margin-top: 12px;
+}
+.top3List {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.top3Item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.rank {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 50%;
+  background: oklch(0.95 0.01 290);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 17px;
+}
+.rankFirst {
+  background: var(--coral);
+  color: white;
+}
+.top3Body {
+  flex: 1;
+  min-width: 0;
+}
+.top3Row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+.top3Choice {
+  font-size: 15px;
+  font-weight: 700;
+}
+.top3Rate {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--coral-text);
+}
+.top3Prompt {
+  font-size: 12px;
+  color: var(--mute);
+  margin-top: 2px;
+}
+.track {
+  margin-top: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--track);
+}
+.trackFill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--coral);
+}
+
+.compareCta {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 24px;
+  background: var(--ink);
+  color: white;
+  text-align: left;
+}
+.circles {
+  position: relative;
+  width: 52px;
+  height: 36px;
+  flex: none;
+}
+.circles::before,
+.circles::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+.circles::before {
+  left: 0;
+  background: var(--coral);
+}
+.circles::after {
+  right: 0;
+  background: var(--blue);
+  opacity: 0.9;
+}
+.ctaText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ctaTitle {
+  font-size: 16px;
+  font-weight: 800;
+}
+.ctaSub {
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.subActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.subAction {
+  height: 52px;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 0 0 1px var(--line-strong);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.peer {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.peerHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.peerLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mute);
+}
+.peerTier {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--butter);
+  font-size: 12px;
+  font-weight: 800;
+}
+.peerValue {
+  font-size: 18px;
+  font-weight: 800;
+}
+.peerValue b {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 34px;
+  color: var(--coral);
+}

@@ -1,0 +1,138 @@
+.icon {
+  font-family: var(--font-icon);
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  white-space: nowrap;
+  direction: ltr;
+  user-select: none;
+  -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
+}
+
+.page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 20px;
+}
+
+.topBar {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.topBarTitle {
+  flex: 1;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.iconButton {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.iconButton:first-child {
+  margin-left: -10px;
+}
+.iconButton:last-child {
+  margin-right: -10px;
+}
+.iconButtonPlaceholder {
+  width: 34px;
+  flex: none;
+}
+
+.card {
+  padding: 20px;
+  border-radius: 24px;
+  background: white;
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.spacer {
+  flex: 1;
+  min-height: 16px;
+}
+
+.stickyBottom {
+  position: sticky;
+  bottom: 0;
+  padding: 14px 0 22px;
+  background: linear-gradient(to bottom, oklch(0.978 0.008 80 / 0), var(--paper) 30%);
+  display: flex;
+  gap: 10px;
+}
+
+.primary,
+.secondary,
+.dark {
+  height: 56px;
+  border-radius: 18px;
+  font-size: 16px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.2s, background 0.25s;
+}
+.primary:active,
+.dark:active {
+  transform: scale(0.97);
+}
+.primary {
+  flex: 1;
+  background: var(--coral);
+  color: white;
+}
+.dark {
+  flex: 1;
+  background: var(--ink);
+  color: white;
+}
+.secondary {
+  width: 110px;
+  background: var(--soft);
+  color: var(--ink);
+  font-weight: 700;
+}
+.large {
+  height: 58px;
+  border-radius: 20px;
+  font-size: 17px;
+}
+
+.empty {
+  margin: auto;
+  padding: 40px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  font-size: 15px;
+  color: var(--mute);
+}
+
+.inline {
+  flex: none;
+  padding: 0 24px;
+}

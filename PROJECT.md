@@ -34,15 +34,30 @@
 | 항목 | 내용 |
 |---|---|
 | 역할 | 접속한 사용자에게 guest token을 발급하거나, 이미 가진 토큰을 확인한다 |
-| 호출 시점 | `/main` 페이지 접속 시 |
+| 호출 시점 | 앱 첫 진입 시 (어느 페이지로 들어오든 `AppShell`에서 1회) |
 | Request | Body 없음. 쿠키 `guest_token`이 있으면 함께 전송 (없어도 됨) |
-| Response Body | `{ "issued": boolean }` — 이번 요청에서 새로 발급했는지 여부 |
+| Response Body | `{ "issued": boolean, "profile": { "gender", "ageGroup" } \| null }` — 새로 발급했는지 여부, 저장된 성별 · 나이대 (없으면 `null`) |
 | Response Cookie | `guest_token` (HttpOnly · Secure · SameSite=Lax · 만료 180일, 요청마다 연장) |
 
 | 상황 | 상태 코드 | 동작 |
 |---|---|---|
 | 쿠키 없음 / DB에 없는 토큰 | 201 Created | 새 토큰 발급, DB에 해시 저장, `issued: true` |
 | 유효한 토큰 | 200 OK | 마지막 방문 시각 갱신, 쿠키 만료일 연장, `issued: false` |
+
+### `PUT /api/v1/guests/profile` — 성별 · 나이대 저장
+
+| 항목 | 내용 |
+|---|---|
+| 역할 | 게스트의 성별 · 나이대를 저장한다 (게스트당 한 번 입력) |
+| 호출 시점 | 첫 테스트의 마지막 문항을 답한 뒤, 결과를 보기 전 |
+| Request | 쿠키 `guest_token` 필수. Body `{ "gender": "FEMALE" \| "MALE", "ageGroup": "TEENS" \| "TWENTIES" \| "THIRTIES" \| "FORTIES" \| "FIFTIES_PLUS" }` |
+| Response | Body 없음 |
+
+| 상황 | 상태 코드 | 동작 |
+|---|---|---|
+| 유효한 토큰 | 204 No Content | 성별 · 나이대 저장 (이미 있으면 덮어씀) |
+| 쿠키 없음 / DB에 없는 토큰 | 401 Unauthorized | 저장하지 않음. 프론트는 세션을 다시 받고 한 번 재시도 |
+| 값 누락 / 허용되지 않은 값 | 400 Bad Request | 저장하지 않음 |
 
 ## 작업 기록
 
@@ -73,3 +88,27 @@
 - **구현**
   - Backend: 스케줄링 활성화(`SchedulingConfig`), 삭제 쿼리(`GuestRepository.deleteByLastSeenAtBefore`), `last_seen_at` 인덱스(Flyway V2)
   - 테스트: 쿠키 Max-Age 180일 확인, 181일 지난 게스트만 삭제되는지 실제 Postgres로 확인 (`GuestRepositoryTests`)
+
+### 4. 화면 구현
+Claude Design 시안을 React 화면으로 옮겼다. 테스트 · 결과 API가 아직 없어서 답변과 결과는 localStorage에 저장하고, 참여자 수 · 선택 비율은 임시 값을 쓴다.
+
+- **화면**: 랜딩(`/main`), 테스트 소개(`/test/:catId`), 질문(`/test/:catId/q/:n`), 결과(`/result/:catId`), 친구 비교(`/compare/:shareId`), 취향 도감(`/dex`), 취향 통계(`/stats/:catId?`), 바텀시트(`?sheet=share|restore|menu`)
+- **희귀도 계산** (`lib/rarity.ts`, 문항별 선택 비율로 추정)
+  - 희귀도: 내 답변 조합보다 드물거나 같은 조합을 가진 사람의 비율 ("100명 중 n명")
+  - 유사 인구 비율: 10문항 중 8개 이상 일치할 확률
+  - 완전 일치 인원: (참여자 수 − 1) × 내 조합 확률
+  - 희귀 TOP 3: 내가 고른 쪽의 선택 비율이 낮은 순
+- **친구 비교**: 공유 링크에 답변을 담는다 (`/compare/food-9h`). 친구가 테스트를 마치면 결과 화면에서 비교로 이어진다.
+- **구현**: `AppShell`(모바일 프레임 · 하단 탭 · 게스트 세션 호출), `data/categories.ts`(문항), `store/testStore.ts`(localStorage 저장), CSS Modules
+
+### 5. 성별 · 나이대 입력
+첫 테스트의 10번 문항 뒤, 결과를 보기 전에 성별 · 나이대를 필수로 입력받는다. 게스트에 저장되므로 다음 테스트부터는 묻지 않는다.
+
+- **저장**: `guest` 테이블에 `gender` · `age_group` 컬럼 추가 (Flyway V3, 허용 값과 "둘 다 있거나 둘 다 없음"을 CHECK 제약으로 보장)
+- **API**: 세션 응답에 `profile` 추가, `PUT /api/v1/guests/profile` 추가
+- **화면**
+  - 입력 단계(`ProfileStep`): 성별 2개 · 나이대 5개(10대 ~ 50대 이상) 중 선택
+  - 결과: "20대 여성 중에서는 100명 중 n명" 카드
+  - 통계: 전체 / 나이대별 / 성별 보기, 내 그룹 강조
+  - 그룹별 수치는 결과 API 전까지 임시 값 (`lib/demographics.ts`)
+- **테스트**: 프로필 저장 · 401 · 400, 세션 응답의 프로필 (`GuestControllerTests`), 실제 Postgres에 저장 · 조회 (`GuestRepositoryTests`)
