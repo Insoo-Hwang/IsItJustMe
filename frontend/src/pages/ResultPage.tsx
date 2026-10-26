@@ -1,35 +1,63 @@
+import { useQuery } from '@tanstack/react-query'
 import { Navigate, useNavigate, useParams } from 'react-router'
+import { fetchResult, HttpError, type ResultDto } from '../api/categories.ts'
 import Icon from '../components/Icon.tsx'
-import ShareSheet from '../components/sheets/ShareSheet.tsx'
 import TopBar from '../components/TopBar.tsx'
 import ui from '../components/ui.module.css'
-import { findCategory } from '../data/categories.ts'
-import { useSheet } from '../hooks/useSheet.ts'
-import { peerCategory } from '../lib/demographics.ts'
+import { findCategory, fromAnswerBits, toQuestion, type Category } from '../data/categories.ts'
 import { withTopic } from '../lib/korean.ts'
 import { ageGroupLabel, genderLabel } from '../lib/profile.ts'
-import { analyze } from '../lib/rarity.ts'
-import { toShareId } from '../lib/share.ts'
-import { clearAnswers, useTestState } from '../store/testStore.ts'
+import { fromSummary } from '../lib/rarity.ts'
+import { showToast } from '../lib/toast.ts'
+import { clearAnswers } from '../store/testStore.ts'
 import styles from './ResultPage.module.css'
 
 const DONUT_LENGTH = 2 * Math.PI * 34
 
 function ResultPage() {
   const { catId } = useParams()
-  const navigate = useNavigate()
-  const share = useSheet('share')
-  const { results, pendingCompare, profile } = useTestState()
   const category = findCategory(catId)
+  const query = useQuery({
+    queryKey: ['result', category?.id],
+    queryFn: () => fetchResult(category!.id),
+    enabled: category != null,
+    retry: (count, err) => !(err instanceof HttpError && err.status === 404) && count < 2,
+  })
   if (!category) return <Navigate to="/main" replace />
-  const saved = results[category.id]
-  if (!saved) return <Navigate to={`/test/${category.id}`} replace />
+  if (query.error instanceof HttpError && query.error.status === 404) {
+    return <Navigate to={`/test/${category.id}`} replace />
+  }
+  if (query.isError) {
+    return (
+      <div className={`${ui.page} ${styles.status}`} role="alert">
+        결과를 불러오지 못했어요
+        <button type="button" className={ui.secondary} onClick={() => void query.refetch()}>
+          다시 시도
+        </button>
+      </div>
+    )
+  }
+  if (!query.data) {
+    return (
+      <div className={`${ui.page} ${styles.status}`} role="status">
+        결과를 불러오는 중…
+      </div>
+    )
+  }
+  return <ResultView category={category} data={query.data} />
+}
+
+function ResultView({ category, data }: { category: Category; data: ResultDto }) {
+  const navigate = useNavigate()
 
   const id = category.id
-  const result = analyze(category, saved.answers)
+  // the version the guest answered, which may differ from the category's current one
+  const questions = data.questions.map(toQuestion)
+  const answers = fromAnswerBits(data.answerBits)
+  const result = fromSummary(questions, answers, data.overall)
   const rare = result.rareTop3[0]
-  const friendShareId = pendingCompare[id]
-  const peer = profile ? analyze(peerCategory(category, profile), saved.answers) : null
+  const profile = data.peer.profile
+  const peer = fromSummary(questions, answers, data.peer.summary)
   const fmt = (v: number) => v.toLocaleString('ko-KR')
 
   const retry = () => {
@@ -102,31 +130,29 @@ function ResultPage() {
             <span className={styles.exactUnit}>명</span>
           </div>
           <div className={styles.statNote}>
-            {result.exact === 0 ? '세상에 하나뿐인 조합이에요' : `${fmt(category.participants)}명 중 ${fmt(result.exact)}명`}
+            {result.exact === 0 ? '세상에 하나뿐인 조합이에요' : `${fmt(data.overall.participants)}명 중 ${fmt(result.exact)}명`}
           </div>
         </div>
       </div>
 
-      {profile && peer && (
-        <div className={`${ui.card} ${styles.peer}`}>
-          <div className={styles.peerHead}>
-            <span className={styles.peerLabel}>
-              {ageGroupLabel(profile.ageGroup)} {genderLabel(profile.gender)} 중에서는
-            </span>
-            <span className={styles.peerTier}>{peer.tier}</span>
-          </div>
-          <div className={styles.peerValue}>
-            100명 중 <b>{peer.top}</b>명
-          </div>
-          <div className={styles.statNote}>
-            {peer.top < result.top
-              ? '전체보다 또래 사이에서 더 희귀해요'
-              : peer.top > result.top
-                ? '또래 사이에서는 덜 희귀한 편이에요'
-                : '전체와 또래 사이에서 희귀한 정도가 같아요'}
-          </div>
+      <div className={`${ui.card} ${styles.peer}`}>
+        <div className={styles.peerHead}>
+          <span className={styles.peerLabel}>
+            {ageGroupLabel(profile.ageGroup)} {genderLabel(profile.gender)} 중에서는
+          </span>
+          <span className={styles.peerTier}>{peer.tier}</span>
         </div>
-      )}
+        <div className={styles.peerValue}>
+          100명 중 <b>{peer.top}</b>명
+        </div>
+        <div className={styles.statNote}>
+          {peer.top < result.top
+            ? '전체보다 또래 사이에서 더 희귀해요'
+            : peer.top > result.top
+              ? '또래 사이에서는 덜 희귀한 편이에요'
+              : '전체와 또래 사이에서 희귀한 정도가 같아요'}
+        </div>
+      </div>
 
       <div className={`${ui.card} ${styles.top3}`}>
         <h2 className={ui.cardTitle}>가장 희귀한 내 선택 TOP 3</h2>
@@ -152,13 +178,13 @@ function ResultPage() {
       <button
         type="button"
         className={styles.compareCta}
-        onClick={() => (friendShareId ? navigate(`/compare/${friendShareId}`) : share.open())}
+        onClick={() => showToast('준비 중이에요')}
       >
         <span className={styles.circles} aria-hidden />
         <span className={styles.ctaText}>
-          <span className={styles.ctaTitle}>{friendShareId ? '친구 결과와 비교하기' : '친구는 나랑 얼마나 같을까?'}</span>
+          <span className={styles.ctaTitle}>친구는 나랑 얼마나 같을까?</span>
           <span className={styles.ctaSub}>
-            {friendShareId ? '받은 링크의 친구와 한 문항씩 비교해보기' : '링크를 보내면 한 문항씩 비교할 수 있어요'}
+            링크를 보내면 한 문항씩 비교할 수 있어요
           </span>
         </span>
         <Icon name="chevron_right" />
@@ -177,13 +203,11 @@ function ResultPage() {
 
       <div className={ui.spacer} />
       <div className={ui.stickyBottom}>
-        <button type="button" className={`${ui.primary} ${ui.large}`} onClick={share.open}>
+        <button type="button" className={`${ui.primary} ${ui.large}`} onClick={() => showToast('준비 중이에요')}>
           <Icon name="ios_share" size={22} />
           친구에게 공유하기
         </button>
       </div>
-
-      <ShareSheet category={category} result={result} shareId={toShareId(id, saved.answers)} />
     </div>
   )
 }

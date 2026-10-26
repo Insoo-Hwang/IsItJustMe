@@ -14,14 +14,12 @@ export type TestState = {
   answers: Record<string, Answers>
   // last completed result per category
   results: Record<string, SavedResult>
-  // friend share id to compare with once this category is done
-  pendingCompare: Record<string, string>
   // copy of the profile saved on the guest, for showing it without a round trip
   profile: GuestProfile | null
 }
 
 const KEY = 'rarity-test-v1'
-const EMPTY: TestState = { answers: {}, results: {}, pendingCompare: {}, profile: null }
+const EMPTY: TestState = { answers: {}, results: {}, profile: null }
 
 function load(): TestState {
   try {
@@ -97,10 +95,6 @@ export function completeTest(catId: string): boolean {
     return { ...s, answers, results: { ...s.results, [catId]: result } }
   })
   return true
-}
-
-export function setPendingCompare(catId: string, shareId: string) {
-  setState((s) => ({ ...s, pendingCompare: { ...s.pendingCompare, [catId]: shareId } }))
 }
 
 export function setProfile(profile: GuestProfile | null) {

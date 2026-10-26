@@ -1,6 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import AppShell from './app/AppShell.tsx'
-import ComparePage from './pages/ComparePage.tsx'
 import DexPage from './pages/DexPage.tsx'
 import IntroPage from './pages/IntroPage.tsx'
 import LandingPage from './pages/LandingPage.tsx'
@@ -18,7 +17,6 @@ function App() {
           <Route path="/test/:catId" element={<IntroPage />} />
           <Route path="/test/:catId/q/:n" element={<QuizPage />} />
           <Route path="/result/:catId" element={<ResultPage />} />
-          <Route path="/compare/:shareId" element={<ComparePage />} />
           <Route path="/dex" element={<DexPage />} />
           <Route path="/stats/:catId?" element={<StatsPage />} />
           <Route path="*" element={<Navigate to="/main" replace />} />

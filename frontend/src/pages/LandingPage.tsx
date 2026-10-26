@@ -2,15 +2,12 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { useScrollContainer } from '../app/scrollContainer.ts'
 import Icon from '../components/Icon.tsx'
-import { CATEGORIES, QUESTION_COUNT, TOTAL_PARTICIPANTS } from '../data/categories.ts'
-import { useSheet } from '../hooks/useSheet.ts'
-import { analyze } from '../lib/rarity.ts'
+import { CATEGORIES, QUESTION_COUNT, totalParticipants } from '../data/categories.ts'
 import { answeredCount, firstUnanswered, useTestState } from '../store/testStore.ts'
 import styles from './LandingPage.module.css'
 
 function LandingPage() {
   const navigate = useNavigate()
-  const restore = useSheet('restore')
   const { answers, results } = useTestState()
   const rootRef = useRef<HTMLDivElement>(null)
   const scrollRef = useScrollContainer()
@@ -50,10 +47,6 @@ function LandingPage() {
             <span className={styles.logoMark} />
             나의 희귀도 테스트
           </div>
-          <button type="button" className={styles.restoreButton} onClick={restore.open}>
-            <Icon name="history" size={17} />
-            결과 불러오기
-          </button>
         </div>
         <div className={styles.badge}>취향 희귀도 측정소</div>
         <h1 className={styles.headline}>
@@ -88,7 +81,7 @@ function LandingPage() {
         </div>
         <div className={styles.participants}>
           <span>
-            지금까지 <b>{TOTAL_PARTICIPANTS.toLocaleString('ko-KR')}명</b>이 참여했어요
+            지금까지 <b>{totalParticipants().toLocaleString('ko-KR')}명</b>이 참여했어요
           </span>
           <Icon name="keyboard_double_arrow_down" size={26} className={styles.scrollHint} />
         </div>
@@ -127,7 +120,6 @@ function LandingPage() {
                 <span className={styles.catIcon} style={{ color: c.tint.fg }}>
                   <Icon name={c.icon} size={30} />
                 </span>
-                {result && <span className={styles.catDone}>{analyze(c, result.answers).tier}</span>}
                 <span className={styles.catText}>
                   <span className={styles.catName}>{c.name}</span>
                   <span className={styles.catDesc}>{c.desc}</span>

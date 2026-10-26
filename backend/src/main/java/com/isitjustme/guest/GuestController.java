@@ -22,7 +22,7 @@ import com.isitjustme.guest.GuestService.GuestSession;
 @RequestMapping("/api/v1/guests")
 public class GuestController {
 
-	static final String COOKIE_NAME = "guest_token";
+	public static final String COOKIE_NAME = "guest_token";
 
 	private final GuestService guestService;
 
@@ -45,7 +45,7 @@ public class GuestController {
 			.secure(secureCookie)
 			.sameSite("Lax")
 			.path("/")
-			.maxAge(GuestService.RETENTION)
+			.maxAge(GuestService.COOKIE_MAX_AGE)
 			.build();
 		return ResponseEntity.status(session.issued() ? HttpStatus.CREATED : HttpStatus.OK)
 			.header(HttpHeaders.SET_COOKIE, cookie.toString())

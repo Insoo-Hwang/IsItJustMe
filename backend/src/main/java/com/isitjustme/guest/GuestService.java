@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
@@ -15,10 +16,10 @@ import lombok.RequiredArgsConstructor;
 public class GuestService {
 
 	/**
-	 * Guests who haven't visited for this long are deleted, and the cookie expires
-	 * after the same period.
+	 * The cookie expires after this long without a visit. Guests themselves are kept
+	 * forever so their answers keep counting in the stats.
 	 */
-	static final Duration RETENTION = Duration.ofDays(180);
+	static final Duration COOKIE_MAX_AGE = Duration.ofDays(180);
 
 	private final GuestRepository guestRepository;
 
@@ -55,12 +56,26 @@ public class GuestService {
 	}
 
 	/**
-	 * Deletes guests whose last visit is older than {@link #RETENTION}. Data owned by a
-	 * guest is removed with it through {@code ON DELETE CASCADE} foreign keys.
+	 * Finds the guest owning the token and locks its row until the current transaction
+	 * ends, so one guest's submissions are applied one at a time.
 	 */
-	@Transactional
-	public int deleteInactive() {
-		return guestRepository.deleteByLastSeenAtBefore(Instant.now().minus(RETENTION));
+	@Transactional(propagation = Propagation.MANDATORY)
+	public Optional<Guest> lockByToken(@Nullable String rawToken) {
+		if (rawToken == null || rawToken.isBlank()) {
+			return Optional.empty();
+		}
+		return guestRepository.findByTokenHashForUpdate(GuestTokens.hash(rawToken));
+	}
+
+	/**
+	 * Finds the guest owning the token without locking it.
+	 */
+	@Transactional(readOnly = true)
+	public Optional<Guest> findByToken(@Nullable String rawToken) {
+		if (rawToken == null || rawToken.isBlank()) {
+			return Optional.empty();
+		}
+		return guestRepository.findByTokenHash(GuestTokens.hash(rawToken));
 	}
 
 	public record GuestSession(String token, boolean issued, @Nullable GuestProfile profile) {

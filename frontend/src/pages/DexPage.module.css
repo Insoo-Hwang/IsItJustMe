@@ -116,20 +116,6 @@
   font-size: 15px;
   font-weight: 800;
 }
-.doneTier {
-  font-family: var(--font-display);
-  font-size: 30px;
-  line-height: 1;
-}
-.doneRatio {
-  align-self: flex-start;
-  padding: 5px 9px;
-  border-radius: 999px;
-  background: var(--ink);
-  color: white;
-  font-size: 11px;
-  font-weight: 700;
-}
 
 .todoList {
   display: flex;

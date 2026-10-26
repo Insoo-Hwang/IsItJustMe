@@ -1,25 +1,19 @@
-import { CATEGORIES } from '../../data/categories.ts'
 import { useSheet } from '../../hooks/useSheet.ts'
 import { showToast } from '../../lib/toast.ts'
-import { useTestState } from '../../store/testStore.ts'
 import BottomSheet from '../BottomSheet.tsx'
 import Icon from '../Icon.tsx'
 import styles from './Sheets.module.css'
 
 function MenuSheet() {
   const sheet = useSheet('menu')
-  const { results } = useTestState()
   if (!sheet.isOpen) return null
-
-  const firstDone = CATEGORIES.find((c) => results[c.id])
 
   const items = [
     { icon: 'history', label: '내 결과 불러오기', go: () => sheet.go({ search: '?sheet=restore' }) },
     {
       icon: 'group',
       label: '친구에게 비교 링크 보내기',
-      go: () =>
-        firstDone ? sheet.go(`/result/${firstDone.id}?sheet=share`) : showToast('먼저 테스트를 완료해주세요'),
+      go: () => showToast('준비 중이에요'),
     },
     { icon: 'style', label: '취향 도감', go: () => sheet.go('/dex') },
     { icon: 'bar_chart', label: '취향 통계', go: () => sheet.go('/stats') },

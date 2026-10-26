@@ -2,7 +2,6 @@ package com.isitjustme.guest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.Duration;
 import java.time.Instant;
 
 import org.junit.jupiter.api.Test;
@@ -26,19 +25,6 @@ class GuestRepositoryTests {
 
 	@Autowired
 	private GuestRepository guestRepository;
-
-	@Test
-	void deletesOnlyGuestsLastSeenBeforeCutoff() {
-		Instant now = Instant.now();
-		guestRepository.save(new Guest("inactive", now.minus(Duration.ofDays(181))));
-		guestRepository.save(new Guest("active", now.minus(Duration.ofDays(179))));
-
-		int deleted = guestRepository.deleteByLastSeenAtBefore(now.minus(GuestService.RETENTION));
-
-		assertThat(deleted).isEqualTo(1);
-		assertThat(guestRepository.findByTokenHash("inactive")).isEmpty();
-		assertThat(guestRepository.findByTokenHash("active")).isPresent();
-	}
 
 	@Test
 	void storesProfile() {

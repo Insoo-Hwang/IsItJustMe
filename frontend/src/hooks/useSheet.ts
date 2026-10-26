@@ -1,6 +1,6 @@
 import { useLocation, useNavigate, useSearchParams, type To } from 'react-router'
 
-export type SheetName = 'share' | 'restore' | 'menu'
+export type SheetName = 'restore' | 'menu'
 
 type SheetLocationState = { sheetPushed?: boolean } | null
 

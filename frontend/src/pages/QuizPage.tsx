@@ -1,10 +1,12 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router'
+import { HttpError, submitAnswer } from '../api/categories.ts'
 import { ensureGuestSession } from '../api/guest.ts'
 import Icon from '../components/Icon.tsx'
 import TopBar from '../components/TopBar.tsx'
 import ui from '../components/ui.module.css'
-import { findCategory, QUESTION_COUNT, type Category, type Choice } from '../data/categories.ts'
+import { findCategory, QUESTION_COUNT, toAnswerBits, type Category, type Choice } from '../data/categories.ts'
 import { showToast } from '../lib/toast.ts'
 import {
   answeredCount,
@@ -42,6 +44,7 @@ function LoadingView({ category }: { category: Category }) {
 function QuizPage() {
   const { catId, n } = useParams()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { answers } = useTestState()
   const [phase, setPhase] = useState<'quiz' | 'profile' | 'loading'>('quiz')
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -97,18 +100,38 @@ function QuizPage() {
         console.error(err)
       }
     }
-    if (profile) submit()
+    if (profile) void submit()
     else setPhase('profile')
   }
 
-  const submit = () => {
-    completeTest(id)
+  // Saves the answers while the analyzing screen shows for at least ANALYZE_MS.
+  const submit = async () => {
+    const latest = getTestState().answers[id] ?? []
     setPhase('loading')
-    timer.current = setTimeout(() => navigate(`/result/${id}`, { replace: true }), ANALYZE_MS)
+    try {
+      await Promise.all([
+        submitAnswer(id, toAnswerBits(latest as Choice[])),
+        new Promise((resolve) => setTimeout(resolve, ANALYZE_MS)),
+      ])
+    } catch (err) {
+      console.error(err)
+      if (err instanceof HttpError && err.status === 409) {
+        // the guest has no profile on the server yet
+        setProfile(null)
+        setPhase('profile')
+        return
+      }
+      showToast('결과를 저장하지 못했어요. 다시 시도해주세요')
+      setPhase('quiz')
+      return
+    }
+    completeTest(id)
+    queryClient.removeQueries({ queryKey: ['result', id] })
+    navigate(`/result/${id}`, { replace: true })
   }
 
   if (phase === 'profile') {
-    return <ProfileStep title={category.name} onBack={() => setPhase('quiz')} onDone={submit} />
+    return <ProfileStep title={category.name} onBack={() => setPhase('quiz')} onDone={() => void submit()} />
   }
 
   const pick = (choice: Choice) => {

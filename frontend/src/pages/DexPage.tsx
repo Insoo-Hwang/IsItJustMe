@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router'
 import Icon from '../components/Icon.tsx'
 import ui from '../components/ui.module.css'
 import { CATEGORIES } from '../data/categories.ts'
-import { analyze } from '../lib/rarity.ts'
 import { useTestState } from '../store/testStore.ts'
 import styles from './DexPage.module.css'
 
@@ -64,7 +63,6 @@ function DexPage() {
           <div className={styles.doneGrid}>
             {done.map((c) => {
               const saved = results[c.id]
-              const r = analyze(c, saved.answers)
               return (
                 <button
                   key={c.id}
@@ -80,8 +78,6 @@ function DexPage() {
                     <span className={styles.date}>{formatDate(saved.completedAt)}</span>
                   </span>
                   <span className={styles.doneName}>{c.name}</span>
-                  <span className={styles.doneTier}>{r.tier}</span>
-                  <span className={styles.doneRatio}>100명 중 {r.top}명</span>
                 </button>
               )
             })}

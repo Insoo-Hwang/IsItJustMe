@@ -26,6 +26,12 @@ export function ensureGuestSession(): Promise<GuestSession> {
   return sessionRequest
 }
 
+// Forgets the cached session so the next call asks the server again (e.g. after a 401
+// because the cookie expired).
+export function resetGuestSession() {
+  sessionRequest = null
+}
+
 function putProfile(profile: GuestProfile): Promise<Response> {
   return fetch('/api/v1/guests/profile', {
     method: 'PUT',
@@ -39,8 +45,8 @@ export async function saveProfile(profile: GuestProfile): Promise<void> {
   await ensureGuestSession()
   let res = await putProfile(profile)
   if (res.status === 401) {
-    // cookie expired or guest was cleaned up: get a fresh session and retry once
-    sessionRequest = null
+    // cookie expired: get a fresh session and retry once
+    resetGuestSession()
     await ensureGuestSession()
     res = await putProfile(profile)
   }

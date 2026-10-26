@@ -25,7 +25,13 @@
 - 커밋 메시지는 한국어로, 담백하게 변경 내용만 짧게 적는다.
 - 작업 후 정리를 할 땐 어떤 작업을 진행했는지 이해하기 쉽게 작성한다.
 - API가 추가되면 아래 API 명세에 역할 · Request · Response를 표로 정리한다.
-- 게스트에 속한 데이터 테이블은 `guest_id` 외래키에 `ON DELETE CASCADE`를 건다. (미접속 게스트 삭제 시 함께 지워지도록)
+- 게스트에 속한 데이터 테이블은 `guest_id` 외래키에 `ON DELETE CASCADE`를 건다. (게스트 삭제 시 함께 지워지도록)
+
+## 잠재된 위험
+
+| 위험 | 발생 조건 | 영향 | 대응 방안 |
+|---|---|---|---|
+| 테스트 도중 질문 버전이 바뀌면 답이 다른 질문에 저장됨 | 사용자가 테스트를 푸는 사이에 새 버전이 발행될 때 | 이전 버전 질문의 답이 새 버전 질문의 답으로 저장되고 통계에 반영됨. 원본(`category_answer`)부터 틀어져 재계산으로도 복구 불가 | 목록 응답 · 제출 요청에 버전 ID를 넣고, 서버에서 현재 버전과 다르면 거절 |
 
 ## API 명세
 
@@ -58,6 +64,48 @@
 | 유효한 토큰 | 204 No Content | 성별 · 나이대 저장 (이미 있으면 덮어씀) |
 | 쿠키 없음 / DB에 없는 토큰 | 401 Unauthorized | 저장하지 않음. 프론트는 세션을 다시 받고 한 번 재시도 |
 | 값 누락 / 허용되지 않은 값 | 400 Bad Request | 저장하지 않음 |
+
+### `GET /api/v1/categories` — 카테고리 목록
+
+| 항목 | 내용 |
+|---|---|
+| 역할 | 카테고리와 현재 버전의 질문 10개, 참여자 수, 질문별 선택 비율을 내려준다 |
+| 호출 시점 | 앱 첫 진입 시 (화면을 그리기 전에 1회) |
+| Request | 없음 |
+| Response Body | `[{ "code", "name", "icon", "description", "tagline", "minutes", "recommend": string[], "participants", "questions": [{ "code", "prompt", "option0", "option1", "option0Rate" }] }]` — `option0Rate`는 option0을 고른 비율(%), 응답이 없으면 50 |
+
+### `PUT /api/v1/categories/{code}/answer` — 답변 제출
+
+| 항목 | 내용 |
+|---|---|
+| 역할 | 10문항 답을 현재 버전에 저장하고 조합별 집계를 갱신한다 (다시 제출하면 덮어씀) |
+| 호출 시점 | 마지막 문항을 답하고 (첫 테스트면 프로필 입력 후) 결과를 보기 전 |
+| Request | 쿠키 `guest_token` 필수. Body `{ "answerBits": 0 ~ 1023 }` — n번 비트가 1이면 n+1번 문항에서 option1 선택 |
+| Response | Body 없음 |
+
+| 상황 | 상태 코드 | 동작 |
+|---|---|---|
+| 저장 성공 | 204 No Content | 이전 조합 -1, 새 조합 +1 (같은 답이면 변경 없음) |
+| 범위 밖 / 누락된 값 | 400 Bad Request | 저장하지 않음 |
+| 쿠키 없음 / DB에 없는 토큰 | 401 Unauthorized | 저장하지 않음. 프론트는 세션을 다시 받고 한 번 재시도 |
+| 없는 카테고리 | 404 Not Found | 저장하지 않음 |
+| 프로필 미입력 | 409 Conflict | 저장하지 않음. 프론트는 프로필 입력 단계로 이동 |
+
+### `GET /api/v1/categories/{code}/result` — 결과 조회
+
+| 항목 | 내용 |
+|---|---|
+| 역할 | 내 답을 같은 버전 참여자 전체 · 같은 성별 나이대와 비교한 결과를 내려준다 |
+| 호출 시점 | 결과 화면 진입 시 |
+| Request | 쿠키 `guest_token` 필수 |
+| Response Body | `{ "answerBits", "overall": Summary, "peer": { "profile": { "gender", "ageGroup" }, "summary": Summary }, "questions": [...] }` — `questions`는 내가 푼 버전의 질문 (목록 API와 같은 형식) |
+| Summary | `{ "participants", "exact", "similar", "top" }` — 참여자 수, 나와 완전히 같은 다른 참여자 수, 80% 이상 일치하는 다른 참여자 비율(%), 내 조합보다 드물거나 같은 조합의 비율(%) |
+
+| 상황 | 상태 코드 | 동작 |
+|---|---|---|
+| 답변 있음 | 200 OK | 결과 반환 |
+| 쿠키 없음 / DB에 없는 토큰 | 401 Unauthorized | 프론트는 세션을 다시 받고 한 번 재시도 |
+| 없는 카테고리 / 답변 없음 | 404 Not Found | 프론트는 테스트 소개 화면으로 이동 |
 
 ## 작업 기록
 
@@ -112,3 +160,15 @@ Claude Design 시안을 React 화면으로 옮겼다. 테스트 · 결과 API가
   - 통계: 전체 / 나이대별 / 성별 보기, 내 그룹 강조
   - 그룹별 수치는 결과 API 전까지 임시 값 (`lib/demographics.ts`)
 - **테스트**: 프로필 저장 · 401 · 400, 세션 응답의 프로필 (`GuestControllerTests`), 실제 Postgres에 저장 · 조회 (`GuestRepositoryTests`)
+
+### 6. 답변 저장 · 결과 API
+카테고리와 질문을 DB로 옮기고, 답변을 서버에 저장해 실제 참여자와 비교한 결과를 보여준다.
+
+- **답변 저장**: 10문항 답을 10비트 정수(`answer_bits`) 하나로 저장한다. 같은 조합의 인원은 `combination_stats`에 버전 · 성별 · 나이대별로 모은다.
+- **질문 버전**: 질문 세트는 `category_version`으로 관리한다. 비교는 같은 버전끼리, 질문별 비율은 질문 `code` 기준으로 버전을 넘어 합산한다.
+- **결과 계산**: 완전 일치, 80% 이상 유사(다른 비트 2개 이하), 희귀도를 버전 하나의 집계로 계산한다. (`RarityCalculator`)
+- **게스트 영구 보관**: 180일 미접속 게스트 정리 작업을 제거했다.
+- **구현**
+  - Backend: Flyway V4(테이블), V5(기존 카테고리 6개 · 질문 60개 시드), `CategoryService` · `CategoryController` · `CombinationStatsRepository`
+  - Frontend: 카테고리를 API로 불러오고, 결과 화면은 결과 API 값을 사용 (`api/categories.ts`)
+- **테스트**: 결과 계산 (`RarityCalculatorTests`), API 응답 · 400 · 409 · 404 (`CategoryControllerTests`), 실제 Postgres에서 재제출 시 집계 이동 · 결과 계산 (`CategoryServiceTests`)
