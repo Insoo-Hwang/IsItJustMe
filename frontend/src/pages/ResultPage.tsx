@@ -129,7 +129,6 @@ function ResultView({ category, data }: { category: Category; data: ResultDto })
           style={{ left: -30, bottom: -60, width: 140, height: 140, boxShadow: 'inset 0 0 0 2px var(--tier-light)' }}
         />
         <div className={styles.cardHead}>
-          <span className={styles.brand}>나의 희귀도 테스트</span>
           <span className={styles.ratio}>{sameRatioLabel(overall)}</span>
         </div>
         <div className={styles.lead}>내 {withTopic(category.name)}</div>
@@ -212,7 +211,7 @@ function ResultView({ category, data }: { category: Category; data: ResultDto })
       <PickList title="가장 희귀한 내 선택 TOP 3" picks={result.rareTop3} tone="rare" />
 
       <div className={styles.actions}>
-        <button type="button" className={`${ui.dark} ${ui.large}`} onClick={() => showToast('준비 중이에요')}>
+        <button type="button" className={`${ui.primary} ${ui.large}`} onClick={() => showToast('준비 중이에요')}>
           <Icon name="ios_share" size={22} />
           친구에게 공유하기
         </button>

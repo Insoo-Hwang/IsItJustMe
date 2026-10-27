@@ -45,14 +45,14 @@ function LandingPage() {
         <div className={styles.header}>
           <div className={styles.logo}>
             <span className={styles.logoMark} />
-            나의 희귀도 테스트
+            나만 그래?
           </div>
           <button type="button" className={styles.meButton} onClick={() => navigate('/me')}>
             <Icon name="person" size={18} />
             나의 정보
           </button>
         </div>
-        <div className={styles.badge}>취향 희귀도 측정소</div>
+        <div className={styles.badge}>나의 취향 희귀도 확인하기</div>
         <h1 className={styles.headline}>
           내 취향, 나랑 똑같은
           <br />
