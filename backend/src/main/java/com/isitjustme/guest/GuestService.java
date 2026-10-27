@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 import org.jspecify.annotations.Nullable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,8 @@ public class GuestService {
 	static final Duration COOKIE_MAX_AGE = Duration.ofDays(180);
 
 	private final GuestRepository guestRepository;
+
+	private final ApplicationEventPublisher eventPublisher;
 
 	/**
 	 * Returns the guest for a valid token, or issues a new guest and token when the
@@ -43,15 +46,20 @@ public class GuestService {
 	}
 
 	/**
-	 * Saves the profile for the guest owning the token. Returns false for an unknown token.
+	 * Saves the profile for the guest owning the token and publishes
+	 * {@link GuestProfileChanged}. Returns false for an unknown token. Locks the guest like
+	 * a submission does, so the two never interleave.
 	 */
 	@Transactional
 	public boolean updateProfile(@Nullable String rawToken, GuestProfile profile) {
 		if (rawToken == null || rawToken.isBlank()) {
 			return false;
 		}
-		Optional<Guest> found = guestRepository.findByTokenHash(GuestTokens.hash(rawToken));
-		found.ifPresent((guest) -> guest.updateProfile(profile));
+		Optional<Guest> found = guestRepository.findByTokenHashForUpdate(GuestTokens.hash(rawToken));
+		found.ifPresent((guest) -> {
+			guest.updateProfile(profile);
+			eventPublisher.publishEvent(new GuestProfileChanged(guest.getId(), profile));
+		});
 		return found.isPresent();
 	}
 

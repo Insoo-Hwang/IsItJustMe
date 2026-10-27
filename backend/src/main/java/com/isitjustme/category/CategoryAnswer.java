@@ -79,6 +79,11 @@ public class CategoryAnswer {
 		this.updatedAt = now;
 	}
 
+	public void changeProfile(GuestProfile profile) {
+		this.gender = profile.gender();
+		this.ageGroup = profile.ageGroup();
+	}
+
 	public boolean matches(Long categoryVersionId, GuestProfile profile, int answerBits) {
 		return this.categoryVersionId.equals(categoryVersionId) && profile().equals(profile)
 				&& this.answerBits == answerBits;

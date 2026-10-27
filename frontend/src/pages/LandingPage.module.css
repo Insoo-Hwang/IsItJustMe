@@ -26,6 +26,20 @@
   font-size: 18px;
 }
 
+.meButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: white;
+  color: var(--ink);
+  box-shadow: 0 0 0 1px var(--line-strong);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .logoMark {
   width: 26px;
   height: 26px;
@@ -166,7 +180,7 @@
   border-top-left-radius: var(--rx) var(--ry);
   border-top-right-radius: var(--rx) var(--ry);
   padding: 44px 18px 24px;
-  /* fill down to the tab bar on tall screens */
+  /* fill to the bottom on tall screens */
   flex: 1;
   min-height: 720px;
 }
@@ -233,6 +247,19 @@
 }
 .catCard:active {
   transform: scale(0.95);
+}
+.doneBadge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .catIcon {
   width: 54px;

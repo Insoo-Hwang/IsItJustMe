@@ -7,8 +7,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.jspecify.annotations.Nullable;
+import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -16,8 +18,11 @@ import com.isitjustme.category.CategoryAnswerRepository.CategoryParticipants;
 import com.isitjustme.category.CategoryVersion.Status;
 import com.isitjustme.category.CombinationStatsRepository.StatsRow;
 import com.isitjustme.category.RarityCalculator.Summary;
+import com.isitjustme.guest.AgeGroup;
+import com.isitjustme.guest.Gender;
 import com.isitjustme.guest.Guest;
 import com.isitjustme.guest.GuestProfile;
+import com.isitjustme.guest.GuestProfileChanged;
 import com.isitjustme.guest.GuestService;
 
 import lombok.RequiredArgsConstructor;
@@ -103,6 +108,23 @@ public class CategoryService {
 	}
 
 	/**
+	 * Moves the guest's answers and their counts to the new profile, so results compare
+	 * with the guest's current peers.
+	 */
+	@EventListener
+	@Transactional(propagation = Propagation.MANDATORY)
+	public void onProfileChanged(GuestProfileChanged event) {
+		for (CategoryAnswer answer : answerRepository.findByGuestId(event.guestId())) {
+			if (answer.profile().equals(event.profile())) {
+				continue;
+			}
+			statsRepository.decrement(answer.getCategoryVersionId(), answer.profile(), answer.getAnswerBits());
+			answer.changeProfile(event.profile());
+			statsRepository.increment(answer.getCategoryVersionId(), event.profile(), answer.getAnswerBits());
+		}
+	}
+
+	/**
 	 * The guest's saved answer compared with everyone who answered the same version.
 	 */
 	@Transactional(readOnly = true)
@@ -122,6 +144,27 @@ public class CategoryService {
 		return new ResultView(answer.getAnswerBits(), RarityCalculator.summarize(rows, answer.getAnswerBits()),
 				new PeerView(profile, RarityCalculator.summarize(peerRows, answer.getAnswerBits())),
 				questionViews(questions, rates));
+	}
+
+	/**
+	 * Per-group picks for each question of the version the guest answered, for the
+	 * detailed result. Only guests who answered the category can see it.
+	 */
+	@Transactional(readOnly = true)
+	public QuestionStatsView questionStats(@Nullable String rawToken, String categoryCode) {
+		Guest guest = guestService.findByToken(rawToken)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+		Category category = findCategory(categoryCode);
+		CategoryAnswer answer = answerRepository.findByGuestIdAndCategoryId(guest.getId(), category.getId())
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+		List<Question> questions = questionRepository.findByCategoryVersionIdOrderByBitPosition(answer.getCategoryVersionId());
+		Map<String, List<GroupCount>> counts = statsRepository
+			.option0CountsByGroup(questions.stream().map(Question::getCode).toList());
+		return new QuestionStatsView(answer.getAnswerBits(), questions.stream()
+			.map((q) -> new QuestionStats(q.getCode(), q.getPrompt(), q.getOption0(), q.getOption1(),
+					counts.getOrDefault(q.getCode(), List.of())))
+			.toList());
 	}
 
 	private Category findCategory(String code) {
@@ -152,6 +195,19 @@ public class CategoryService {
 	}
 
 	public record PeerView(GuestProfile profile, Summary summary) {
+	}
+
+	public record QuestionStatsView(int answerBits, List<QuestionStats> questions) {
+	}
+
+	public record QuestionStats(String code, String prompt, String option0, String option1, List<GroupCount> groups) {
+	}
+
+	/**
+	 * @param option0 answers in the group that picked option 0
+	 * @param total answers in the group
+	 */
+	public record GroupCount(Gender gender, AgeGroup ageGroup, long option0, long total) {
 	}
 
 }

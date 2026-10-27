@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.isitjustme.category.CategoryService.CategoryView;
+import com.isitjustme.category.CategoryService.QuestionStatsView;
 import com.isitjustme.category.CategoryService.ResultView;
 import com.isitjustme.guest.GuestController;
 
@@ -48,6 +49,12 @@ public class CategoryController {
 	public ResultView result(@CookieValue(name = GuestController.COOKIE_NAME, required = false) String token,
 			@PathVariable String code) {
 		return categoryService.result(token, code);
+	}
+
+	@GetMapping("/{code}/result/questions")
+	public QuestionStatsView questionStats(
+			@CookieValue(name = GuestController.COOKIE_NAME, required = false) String token, @PathVariable String code) {
+		return categoryService.questionStats(token, code);
 	}
 
 	public record AnswerRequest(@NotNull @Min(0) @Max(1023) Integer answerBits) {

@@ -47,6 +47,10 @@ function LandingPage() {
             <span className={styles.logoMark} />
             나의 희귀도 테스트
           </div>
+          <button type="button" className={styles.meButton} onClick={() => navigate('/me')}>
+            <Icon name="person" size={18} />
+            나의 정보
+          </button>
         </div>
         <div className={styles.badge}>취향 희귀도 측정소</div>
         <h1 className={styles.headline}>
@@ -116,7 +120,13 @@ function LandingPage() {
                 className={styles.catCard}
                 style={{ background: c.tint.bg }}
                 onClick={() => navigate(result ? `/result/${c.id}` : `/test/${c.id}`)}
+                aria-label={result ? `${c.name} 결과 보기` : undefined}
               >
+                {result && (
+                  <span className={styles.doneBadge} aria-hidden>
+                    <Icon name="check" size={20} />
+                  </span>
+                )}
                 <span className={styles.catIcon} style={{ color: c.tint.fg }}>
                   <Icon name={c.icon} size={30} />
                 </span>

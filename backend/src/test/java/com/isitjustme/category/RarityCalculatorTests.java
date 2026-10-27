@@ -36,21 +36,26 @@ class RarityCalculatorTests {
 	}
 
 	@Test
-	void topCountsCombinationsAsRareAsMine() {
+	void countsOppositeAndDifferent() {
+		int mine = 0b0000000000;
 		List<StatsRow> rows = List.of(
-				new StatsRow(WOMAN_20S, 1, 2), // mine: 2 people
-				new StatsRow(WOMAN_20S, 2, 1), // rarer
-				new StatsRow(WOMAN_20S, 3, 2), // as rare
-				new StatsRow(WOMAN_20S, 4, 5)); // more common
+				new StatsRow(WOMAN_20S, mine, 1), // me
+				new StatsRow(WOMAN_20S, 0b1111111111, 2), // 0 matches: opposite and different
+				new StatsRow(MAN_30S, 0b0011111111, 1), // 2 matches: opposite
+				new StatsRow(MAN_30S, 0b0001111111, 1)); // 3 matches: neither
 
-		assertThat(RarityCalculator.summarize(rows, 1).top()).isEqualTo(50);
+		Summary summary = RarityCalculator.summarize(rows, mine);
+
+		// 3 opposite / 4 others
+		assertThat(summary.opposite()).isEqualTo(75.0);
+		assertThat(summary.different()).isEqualTo(2);
 	}
 
 	@Test
-	void onlyParticipantIsUniqueButNotRare() {
+	void onlyParticipantHasNobodyToCompare() {
 		Summary summary = RarityCalculator.summarize(List.of(new StatsRow(WOMAN_20S, 5, 1)), 5);
 
-		assertThat(summary).isEqualTo(new Summary(1, 0, 0, 100));
+		assertThat(summary).isEqualTo(new Summary(1, 0, 0, 0, 0));
 	}
 
 }

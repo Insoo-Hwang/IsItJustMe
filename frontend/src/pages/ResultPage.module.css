@@ -1,9 +1,41 @@
+/* muted blue for "same as me", muted coral for "apart from me" */
+.palette {
+  --same: oklch(0.7 0.09 250);
+  --same-soft: oklch(0.95 0.02 250);
+  --same-text: oklch(0.5 0.09 250);
+  --apart: oklch(0.74 0.1 30);
+  --apart-soft: oklch(0.95 0.025 30);
+  --apart-text: oklch(0.55 0.11 30);
+}
+
+/* pastel result card per tier */
+.tier-common {
+  --tier: oklch(0.93 0.035 250);
+  --tier-light: oklch(0.87 0.05 250);
+  --tier-deep: oklch(0.48 0.09 250);
+}
+.tier-firm {
+  --tier: oklch(0.93 0.04 165);
+  --tier-light: oklch(0.87 0.055 165);
+  --tier-deep: oklch(0.46 0.08 165);
+}
+.tier-unique {
+  --tier: oklch(0.93 0.04 35);
+  --tier-light: oklch(0.87 0.06 35);
+  --tier-deep: oklch(0.52 0.11 35);
+}
+.tier-rare {
+  --tier: oklch(0.92 0.04 300);
+  --tier-light: oklch(0.86 0.06 300);
+  --tier-deep: oklch(0.47 0.11 300);
+}
+
 .resultCard {
   position: relative;
   margin-top: 8px;
   border-radius: 32px;
-  background: var(--coral);
-  color: white;
+  background: var(--tier);
+  color: var(--ink);
   padding: 26px 24px 24px;
   overflow: hidden;
   animation: popIn 0.6s cubic-bezier(0.34, 1.5, 0.5, 1);
@@ -29,7 +61,7 @@
   padding: 6px 10px;
   border-radius: 999px;
   background: white;
-  color: var(--coral-deep);
+  color: var(--tier-deep);
   font-size: 12px;
   font-weight: 800;
 }
@@ -44,6 +76,7 @@
   font-weight: 400;
   font-size: 76px;
   line-height: 1.05;
+  color: var(--tier-deep);
 }
 .headline {
   margin-top: 8px;
@@ -61,7 +94,7 @@
 .rareLabel {
   font-size: 12px;
   font-weight: 700;
-  color: var(--coral-deep);
+  color: var(--tier-deep);
 }
 .rareRow {
   margin-top: 4px;
@@ -130,6 +163,12 @@
   font-size: 44px;
   line-height: 1;
 }
+.same {
+  color: var(--same);
+}
+.apart {
+  color: var(--apart);
+}
 .exactUnit {
   font-size: 18px;
   font-weight: 800;
@@ -168,7 +207,7 @@
   font-size: 17px;
 }
 .rankFirst {
-  background: var(--coral);
+  background: var(--apart);
   color: white;
 }
 .top3Body {
@@ -188,7 +227,7 @@
 .top3Rate {
   font-size: 14px;
   font-weight: 800;
-  color: var(--coral-text);
+  color: var(--apart-text);
 }
 .top3Prompt {
   font-size: 12px;
@@ -204,64 +243,31 @@
 .trackFill {
   height: 100%;
   border-radius: 999px;
-  background: var(--coral);
+  background: var(--apart);
 }
 
-.compareCta {
-  margin-top: 12px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 18px;
-  border-radius: 24px;
-  background: var(--ink);
-  color: white;
-  text-align: left;
+.common .rankFirst,
+.common .trackFill {
+  background: var(--same);
 }
-.circles {
-  position: relative;
-  width: 52px;
-  height: 36px;
-  flex: none;
+.common .top3Rate {
+  color: var(--same-text);
 }
-.circles::before,
-.circles::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-}
-.circles::before {
-  left: 0;
-  background: var(--coral);
-}
-.circles::after {
-  right: 0;
-  background: var(--blue);
-  opacity: 0.9;
-}
-.ctaText {
-  flex: 1;
+
+.actions {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 10px;
+  margin: 20px 0 28px;
 }
-.ctaTitle {
-  font-size: 16px;
-  font-weight: 800;
+/* the shared button style grows to fill a row; here they stack */
+.actions > button {
+  flex: none;
 }
-.ctaSub {
-  font-size: 13px;
-  opacity: 0.75;
-}
-
 .subActions {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
-  margin-top: 12px;
 }
 .subAction {
   height: 52px;
@@ -283,33 +289,26 @@
   flex-direction: column;
   gap: 6px;
 }
-.peerHead {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-}
 .peerLabel {
   font-size: 13px;
   font-weight: 700;
   color: var(--mute);
 }
-.peerTier {
-  padding: 5px 10px;
-  border-radius: 999px;
-  background: var(--butter);
-  font-size: 12px;
-  font-weight: 800;
-}
 .peerValue {
-  font-size: 18px;
-  font-weight: 800;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.peerCount {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-sub);
 }
 .peerValue b {
   font-family: var(--font-display);
   font-weight: 400;
   font-size: 34px;
-  color: var(--coral);
+  color: var(--same);
 }
 
 .status {

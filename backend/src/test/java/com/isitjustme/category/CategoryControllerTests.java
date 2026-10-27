@@ -27,6 +27,9 @@ import org.springframework.web.server.ResponseStatusException;
 import com.isitjustme.category.CategoryService.CategoryView;
 import com.isitjustme.category.CategoryService.PeerView;
 import com.isitjustme.category.CategoryService.QuestionView;
+import com.isitjustme.category.CategoryService.GroupCount;
+import com.isitjustme.category.CategoryService.QuestionStats;
+import com.isitjustme.category.CategoryService.QuestionStatsView;
 import com.isitjustme.category.CategoryService.ResultView;
 import com.isitjustme.category.RarityCalculator.Summary;
 import com.isitjustme.guest.AgeGroup;
@@ -97,8 +100,8 @@ class CategoryControllerTests {
 	@Test
 	void returnsResult() throws Exception {
 		GuestProfile profile = new GuestProfile(Gender.FEMALE, AgeGroup.TWENTIES);
-		given(categoryService.result("token", "food")).willReturn(new ResultView(717, new Summary(100, 2, 12.1, 8),
-				new PeerView(profile, new Summary(20, 0, 5.3, 4)), List.of(QUESTION)));
+		given(categoryService.result("token", "food")).willReturn(new ResultView(717, new Summary(100, 2, 12.1, 3.5, 1),
+				new PeerView(profile, new Summary(20, 0, 5.3, 0, 0)), List.of(QUESTION)));
 
 		mockMvc.perform(get("/api/v1/categories/food/result").cookie(new Cookie("guest_token", "token")))
 			.andExpect(status().isOk())
@@ -106,10 +109,26 @@ class CategoryControllerTests {
 			.andExpect(jsonPath("$.overall.participants").value(100))
 			.andExpect(jsonPath("$.overall.exact").value(2))
 			.andExpect(jsonPath("$.overall.similar").value(12.1))
-			.andExpect(jsonPath("$.overall.top").value(8))
+			.andExpect(jsonPath("$.overall.opposite").value(3.5))
+			.andExpect(jsonPath("$.overall.different").value(1))
 			.andExpect(jsonPath("$.peer.profile.ageGroup").value("TWENTIES"))
-			.andExpect(jsonPath("$.peer.summary.top").value(4))
+			.andExpect(jsonPath("$.peer.summary.exact").value(0))
 			.andExpect(jsonPath("$.questions[0].code").value("food-01"));
+	}
+
+	@Test
+	void returnsQuestionStats() throws Exception {
+		given(categoryService.questionStats("token", "food")).willReturn(new QuestionStatsView(1,
+				List.of(new QuestionStats("food-01", "탕수육은?", "부먹", "찍먹",
+						List.of(new GroupCount(Gender.MALE, AgeGroup.THIRTIES, 3, 5))))));
+
+		mockMvc.perform(get("/api/v1/categories/food/result/questions").cookie(new Cookie("guest_token", "token")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.answerBits").value(1))
+			.andExpect(jsonPath("$.questions[0].option1").value("찍먹"))
+			.andExpect(jsonPath("$.questions[0].groups[0].ageGroup").value("THIRTIES"))
+			.andExpect(jsonPath("$.questions[0].groups[0].option0").value(3))
+			.andExpect(jsonPath("$.questions[0].groups[0].total").value(5));
 	}
 
 	@Test

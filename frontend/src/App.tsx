@@ -1,11 +1,11 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import AppShell from './app/AppShell.tsx'
-import DexPage from './pages/DexPage.tsx'
 import IntroPage from './pages/IntroPage.tsx'
 import LandingPage from './pages/LandingPage.tsx'
+import ProfilePage from './pages/ProfilePage.tsx'
 import QuizPage from './pages/QuizPage.tsx'
+import ResultDetailPage from './pages/ResultDetailPage.tsx'
 import ResultPage from './pages/ResultPage.tsx'
-import StatsPage from './pages/StatsPage.tsx'
 
 function App() {
   return (
@@ -17,8 +17,8 @@ function App() {
           <Route path="/test/:catId" element={<IntroPage />} />
           <Route path="/test/:catId/q/:n" element={<QuizPage />} />
           <Route path="/result/:catId" element={<ResultPage />} />
-          <Route path="/dex" element={<DexPage />} />
-          <Route path="/stats/:catId?" element={<StatsPage />} />
+          <Route path="/result/:catId/detail" element={<ResultDetailPage />} />
+          <Route path="/me" element={<ProfilePage />} />
           <Route path="*" element={<Navigate to="/main" replace />} />
         </Route>
       </Routes>

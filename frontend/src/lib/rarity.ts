@@ -9,32 +9,27 @@ export type PickedChoice = {
   rate: number
 }
 
+export type Tone = 'rare' | 'unique' | 'firm' | 'common'
+
 export type RarityResult = {
-  // "상위 n%": share of participants whose combination is as rare as mine or rarer
-  top: number
   tier: string
+  // picks the result card color
+  tone: Tone
   headline: string
-  // % of other participants matching at least 8 of 10 answers
-  similar: number
-  // other participants with identical answers
-  exact: number
+  // picks that fewer than half of the participants made
+  minority: number
   picks: PickedChoice[]
   rareTop3: PickedChoice[]
+  commonTop3: PickedChoice[]
 }
 
-export function tierOf(top: number): string {
-  if (top <= 10) return '희귀종'
-  if (top <= 25) return '개성파'
-  if (top <= 50) return '반반러'
-  return '국룰러'
-}
-
-function headlineOf(top: number): string {
-  if (top <= 10) return '이 조합, 거의 없어요'
-  if (top <= 25) return '한 끗이 달라요'
-  if (top <= 50) return '대세 반, 개성 반'
-  return '누구나 끄덕일 취향'
-}
+// Tiers by how many of my 10 picks went with the minority.
+const TIERS: { min: number; tier: string; tone: Tone; headline: string }[] = [
+  { min: 7, tier: '희귀종', tone: 'rare', headline: '이 조합, 거의 없어요' },
+  { min: 5, tier: '개성파', tone: 'unique', headline: '한 끗이 달라요' },
+  { min: 3, tier: '소신파', tone: 'firm', headline: '남들 따라가지 않아요' },
+  { min: 0, tier: '국룰러', tone: 'common', headline: '누구나 끄덕일 취향' },
+]
 
 function picksOf(questions: Question[], answers: Choice[]): PickedChoice[] {
   return questions.map((q, i) => ({
@@ -45,20 +40,31 @@ function picksOf(questions: Question[], answers: Choice[]): PickedChoice[] {
   }))
 }
 
-function rareTop3Of(picks: PickedChoice[]): PickedChoice[] {
-  return [...picks].sort((x, y) => x.rate - y.rate).slice(0, 3)
+export function rarityOf(questions: Question[], answers: Choice[]): RarityResult {
+  const picks = picksOf(questions, answers)
+  const minority = picks.filter((p) => p.rate < 50).length
+  const { tier, tone, headline } = TIERS.find((t) => minority >= t.min)!
+  return {
+    tier,
+    tone,
+    headline,
+    minority,
+    picks,
+    rareTop3: [...picks].sort((x, y) => x.rate - y.rate).slice(0, 3),
+    commonTop3: [...picks].sort((x, y) => y.rate - x.rate).slice(0, 3),
+  }
 }
 
-// Real numbers counted by the server from everyone who answered the same questions.
-export function fromSummary(questions: Question[], answers: Choice[], summary: SummaryDto): RarityResult {
-  const picks = picksOf(questions, answers)
-  return {
-    top: summary.top,
-    tier: tierOf(summary.top),
-    headline: headlineOf(summary.top),
-    similar: summary.similar,
-    exact: summary.exact,
-    picks,
-    rareTop3: rareTop3Of(picks),
-  }
+// "n명 중 1명꼴": how often my exact combination shows up, counting me.
+export function sameRatioLabel(summary: SummaryDto): string {
+  if (summary.participants <= 1) return '1호 참여자'
+  const oneIn = Math.round(summary.participants / (summary.exact + 1))
+  if (oneIn <= 1) return '모두 나와 같은 답'
+  return `${oneIn.toLocaleString('ko-KR')}명 중 1명꼴`
+}
+
+// % of the other participants with identical answers
+export function exactRate(summary: SummaryDto): number {
+  const others = summary.participants - 1
+  return others > 0 ? (summary.exact / others) * 100 : 0
 }

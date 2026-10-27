@@ -131,7 +131,7 @@ function QuizPage() {
   }
 
   if (phase === 'profile') {
-    return <ProfileStep title={category.name} onBack={() => setPhase('quiz')} onDone={() => void submit()} />
+    return <ProfileStep title={category.name} backLabel="마지막 질문으로" onBack={() => setPhase('quiz')} onDone={() => void submit()} />
   }
 
   const pick = (choice: Choice) => {

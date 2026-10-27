@@ -24,9 +24,14 @@ export type CategoryDto = {
 
 export type SummaryDto = {
   participants: number
+  // other participants with identical answers
   exact: number
+  // % of other participants matching at least 8 of 10 answers
   similar: number
-  top: number
+  // % of other participants matching at most 2 of 10 answers
+  opposite: number
+  // other participants with every answer the other way
+  different: number
 }
 
 export type ResultDto = {
@@ -34,6 +39,19 @@ export type ResultDto = {
   overall: SummaryDto
   peer: { profile: GuestProfile; summary: SummaryDto }
   questions: QuestionDto[]
+}
+
+export type GroupCountDto = {
+  gender: GuestProfile['gender']
+  ageGroup: GuestProfile['ageGroup']
+  // answers in the group that picked option 0
+  option0: number
+  total: number
+}
+
+export type QuestionStatsDto = {
+  answerBits: number
+  questions: { code: string; prompt: string; option0: string; option1: string; groups: GroupCountDto[] }[]
 }
 
 export class HttpError extends Error {
@@ -79,4 +97,12 @@ export async function fetchResult(code: string): Promise<ResultDto> {
   const res = await withGuest(() => fetch(`/api/v1/categories/${code}/result`, { credentials: 'same-origin' }))
   if (!res.ok) throw new HttpError(res.status, `result failed: ${res.status}`)
   return res.json() as Promise<ResultDto>
+}
+
+export async function fetchQuestionStats(code: string): Promise<QuestionStatsDto> {
+  const res = await withGuest(() =>
+    fetch(`/api/v1/categories/${code}/result/questions`, { credentials: 'same-origin' }),
+  )
+  if (!res.ok) throw new HttpError(res.status, `question stats failed: ${res.status}`)
+  return res.json() as Promise<QuestionStatsDto>
 }

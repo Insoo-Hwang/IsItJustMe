@@ -100,8 +100,3 @@ export function completeTest(catId: string): boolean {
 export function setProfile(profile: GuestProfile | null) {
   setState((s) => ({ ...s, profile }))
 }
-
-// Clears answers and results on this device. The profile lives on the guest, so it stays.
-export function resetAll() {
-  setState((s) => ({ ...EMPTY, profile: s.profile }))
-}

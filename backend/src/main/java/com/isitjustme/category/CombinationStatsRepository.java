@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
+import com.isitjustme.category.CategoryService.GroupCount;
 import com.isitjustme.guest.AgeGroup;
 import com.isitjustme.guest.Gender;
 import com.isitjustme.guest.GuestProfile;
@@ -79,6 +80,33 @@ class CombinationStatsRepository {
 			.list()
 			.stream()
 			.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+	}
+
+	/**
+	 * Option 0 picks per gender and age group for each question code, summed over every
+	 * version the question appeared in. Groups nobody answered in are left out.
+	 */
+	Map<String, List<GroupCount>> option0CountsByGroup(Collection<String> codes) {
+		if (codes.isEmpty()) {
+			return Map.of();
+		}
+		return jdbcClient.sql("""
+				SELECT q.code, s.gender, s.age_group,
+				       SUM(s.participant_count) FILTER (WHERE (s.answer_bits >> q.bit_position) & 1 = 0) AS picked_0,
+				       SUM(s.participant_count) AS total
+				FROM question q
+				JOIN combination_stats s ON s.category_version_id = q.category_version_id
+				WHERE q.code IN (:codes)
+				GROUP BY q.code, s.gender, s.age_group
+				HAVING SUM(s.participant_count) > 0
+				""")
+			.param("codes", codes)
+			.query((rs, i) -> Map.entry(rs.getString(1), new GroupCount(Gender.valueOf(rs.getString(2)),
+					AgeGroup.valueOf(rs.getString(3)), rs.getLong(4), rs.getLong(5))))
+			.list()
+			.stream()
+			.collect(Collectors.groupingBy(Map.Entry::getKey,
+					Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
 	}
 
 	private static Map<String, Object> params(Long versionId, GuestProfile profile, int answerBits) {

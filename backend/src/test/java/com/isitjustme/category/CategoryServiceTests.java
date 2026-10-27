@@ -19,6 +19,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import com.isitjustme.category.CategoryService.CategoryView;
+import com.isitjustme.category.CategoryService.GroupCount;
+import com.isitjustme.category.CategoryService.QuestionStatsView;
 import com.isitjustme.category.CategoryService.ResultView;
 import com.isitjustme.guest.AgeGroup;
 import com.isitjustme.guest.Gender;
@@ -49,7 +51,7 @@ class CategoryServiceTests {
 		List<CategoryView> categories = categoryService.listCategories();
 
 		assertThat(categories).extracting(CategoryView::code)
-			.containsExactly("food", "love", "life", "travel", "music", "people");
+			.containsExactly("food", "love", "life", "travel", "spending", "people");
 		assertThat(categories.getFirst().questions()).hasSize(10);
 		assertThat(categories.getFirst().questions().getFirst().prompt()).isEqualTo("탕수육은?");
 		assertThat(categories.getFirst().questions().getFirst().option0Rate()).isEqualTo(50);
@@ -88,6 +90,40 @@ class CategoryServiceTests {
 	}
 
 	@Test
+	void questionStatsCountPicksPerGroup() {
+		GuestProfile woman20s = new GuestProfile(Gender.FEMALE, AgeGroup.TWENTIES);
+		String me = guestWithProfile(woman20s);
+		categoryService.submit(me, "food", 0b0);
+		categoryService.submit(guestWithProfile(woman20s), "food", 0b1);
+		categoryService.submit(guestWithProfile(new GuestProfile(Gender.MALE, AgeGroup.FORTIES)), "food", 0b1);
+
+		QuestionStatsView stats = categoryService.questionStats(me, "food");
+
+		assertThat(stats.answerBits()).isZero();
+		assertThat(stats.questions()).hasSize(10);
+		assertThat(stats.questions().getFirst().groups()).containsExactlyInAnyOrder(
+				new GroupCount(Gender.FEMALE, AgeGroup.TWENTIES, 1, 2),
+				new GroupCount(Gender.MALE, AgeGroup.FORTIES, 0, 1));
+	}
+
+	@Test
+	void changingProfileMovesExistingAnswers() {
+		GuestProfile woman20s = new GuestProfile(Gender.FEMALE, AgeGroup.TWENTIES);
+		GuestProfile man30s = new GuestProfile(Gender.MALE, AgeGroup.THIRTIES);
+		String me = guestWithProfile(woman20s);
+		categoryService.submit(me, "food", 0b1);
+		categoryService.submit(guestWithProfile(man30s), "food", 0b1);
+
+		guestService.updateProfile(me, man30s);
+
+		ResultView result = categoryService.result(me, "food");
+		assertThat(result.peer().profile()).isEqualTo(man30s);
+		assertThat(result.peer().summary().participants()).isEqualTo(2);
+		assertThat(countOf(0b1, woman20s)).isZero();
+		assertThat(countOf(0b1, man30s)).isEqualTo(2);
+	}
+
+	@Test
 	void rejectsAnswerWithoutProfile() {
 		String token = guestService.resolveOrIssue(null).token();
 
@@ -99,6 +135,16 @@ class CategoryServiceTests {
 		String token = guestService.resolveOrIssue(null).token();
 		guestService.updateProfile(token, profile);
 		return token;
+	}
+
+	private long countOf(int answerBits, GuestProfile profile) {
+		return jdbcClient.sql("""
+				SELECT COALESCE(SUM(participant_count), 0) FROM combination_stats
+				WHERE answer_bits = ? AND gender = ? AND age_group = ?
+				""")
+			.params(answerBits, profile.gender().name(), profile.ageGroup().name())
+			.query(Long.class)
+			.single();
 	}
 
 	private long countOf(int answerBits) {

@@ -9,14 +9,18 @@ import styles from './ProfileStep.module.css'
 
 type Props = {
   title: string
+  backLabel: string
   onBack: () => void
   onDone: (profile: GuestProfile) => void
+  // set when editing a saved profile from the home screen
+  initial?: GuestProfile | null
 }
 
-// Asked once per guest, between the last question and the first result.
-function ProfileStep({ title, onBack, onDone }: Props) {
-  const [gender, setGender] = useState<Gender | null>(null)
-  const [ageGroup, setAgeGroup] = useState<AgeGroup | null>(null)
+// Asked once per guest, between the last question and the first result. Also reused to edit it.
+function ProfileStep({ title, backLabel, onBack, onDone, initial }: Props) {
+  const editing = initial !== undefined
+  const [gender, setGender] = useState<Gender | null>(initial?.gender ?? null)
+  const [ageGroup, setAgeGroup] = useState<AgeGroup | null>(initial?.ageGroup ?? null)
   const [saving, setSaving] = useState(false)
 
   const submit = async () => {
@@ -40,16 +44,23 @@ function ProfileStep({ title, onBack, onDone }: Props) {
 
   return (
     <div className={`${ui.page} ${styles.step}`}>
-      <TopBar title={title} left={{ icon: 'arrow_back', label: '마지막 질문으로', onClick: onBack }} />
-      <div className={styles.head}>
-        <span className={styles.badge}>결과 보기 전 마지막 단계</span>
-        <h1 className={styles.title}>
-          내 또래와도
-          <br />
-          비교해볼까요?
-        </h1>
-        <p className={styles.sub}>한 번만 알려주면 다음 테스트부터는 묻지 않아요.</p>
-      </div>
+      <TopBar title={title} left={{ icon: 'arrow_back', label: backLabel, onClick: onBack }} />
+      {editing ? (
+        <div className={styles.head}>
+          <h1 className={styles.title}>성별 · 나이대</h1>
+          <p className={styles.sub}>바꾸면 이미 끝낸 테스트도 새 또래와 비교해요.</p>
+        </div>
+      ) : (
+        <div className={styles.head}>
+          <span className={styles.badge}>결과 보기 전 마지막 단계</span>
+          <h1 className={styles.title}>
+            내 또래와도
+            <br />
+            비교해볼까요?
+          </h1>
+          <p className={styles.sub}>한 번만 알려주면 다음 테스트부터는 묻지 않아요.</p>
+        </div>
+      )}
 
       <fieldset className={styles.group}>
         <legend className={styles.legend}>성별</legend>
@@ -95,7 +106,7 @@ function ProfileStep({ title, onBack, onDone }: Props) {
           aria-disabled={!gender || !ageGroup || saving}
           onClick={submit}
         >
-          {saving ? '저장 중…' : '결과 보기'}
+          {saving ? '저장 중…' : editing ? '저장하기' : '결과 보기'}
         </button>
       </div>
     </div>

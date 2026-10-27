@@ -32,8 +32,8 @@ const TINTS: Record<string, Category['tint']> = {
   love: { bg: 'oklch(0.94 0.04 0)', fg: 'oklch(0.58 0.17 0)' },
   life: { bg: 'oklch(0.95 0.06 90)', fg: 'oklch(0.55 0.12 75)' },
   travel: { bg: 'oklch(0.94 0.035 230)', fg: 'oklch(0.55 0.13 230)' },
-  music: { bg: 'oklch(0.94 0.04 300)', fg: 'oklch(0.55 0.15 300)' },
-  people: { bg: 'oklch(0.94 0.045 150)', fg: 'oklch(0.52 0.12 150)' },
+  spending: { bg: 'oklch(0.94 0.045 150)', fg: 'oklch(0.52 0.12 150)' },
+  people: { bg: 'oklch(0.94 0.04 300)', fg: 'oklch(0.55 0.15 300)' },
 }
 
 const DEFAULT_TINT: Category['tint'] = { bg: 'oklch(0.95 0.01 250)', fg: 'oklch(0.45 0.02 250)' }

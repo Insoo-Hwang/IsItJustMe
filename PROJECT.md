@@ -16,8 +16,7 @@
 | 4 | 나의 희귀한 취향 | 내가 고른 선택지 중 선택 비율이 낮은 TOP 3 |
 | 5 | 결과 카드 공유 | 카드형 결과 페이지 + 링크 복사 |
 | 6 | 친구와 비교 | 공유 링크로 들어온 친구와 일치율 · 공통점 · 차이점 비교 |
-| 7 | 취향 도감 | 완료한 테스트와 결과 모아보기 |
-| 8 | 취향 통계 | 질문별 선택 비율, 참여자 수, 내 선택 위치 |
+| 7 | 완료 표시 | 완료한 카테고리에 체크 표시, 누르면 결과로 이동 |
 
 ## 작업 규칙
 
@@ -54,14 +53,14 @@
 
 | 항목 | 내용 |
 |---|---|
-| 역할 | 게스트의 성별 · 나이대를 저장한다 (게스트당 한 번 입력) |
-| 호출 시점 | 첫 테스트의 마지막 문항을 답한 뒤, 결과를 보기 전 |
+| 역할 | 게스트의 성별 · 나이대를 저장하고, 이미 제출한 답변과 집계를 새 성별 · 나이대로 옮긴다 |
+| 호출 시점 | 첫 테스트의 마지막 문항을 답한 뒤 결과를 보기 전, 나의 정보 화면에서 저장할 때 |
 | Request | 쿠키 `guest_token` 필수. Body `{ "gender": "FEMALE" \| "MALE", "ageGroup": "TEENS" \| "TWENTIES" \| "THIRTIES" \| "FORTIES" \| "FIFTIES_PLUS" }` |
 | Response | Body 없음 |
 
 | 상황 | 상태 코드 | 동작 |
 |---|---|---|
-| 유효한 토큰 | 204 No Content | 성별 · 나이대 저장 (이미 있으면 덮어씀) |
+| 유효한 토큰 | 204 No Content | 성별 · 나이대 저장 (이미 있으면 덮어씀), 기존 답변의 집계를 새 칸으로 이동 |
 | 쿠키 없음 / DB에 없는 토큰 | 401 Unauthorized | 저장하지 않음. 프론트는 세션을 다시 받고 한 번 재시도 |
 | 값 누락 / 허용되지 않은 값 | 400 Bad Request | 저장하지 않음 |
 
@@ -99,7 +98,22 @@
 | 호출 시점 | 결과 화면 진입 시 |
 | Request | 쿠키 `guest_token` 필수 |
 | Response Body | `{ "answerBits", "overall": Summary, "peer": { "profile": { "gender", "ageGroup" }, "summary": Summary }, "questions": [...] }` — `questions`는 내가 푼 버전의 질문 (목록 API와 같은 형식) |
-| Summary | `{ "participants", "exact", "similar", "top" }` — 참여자 수, 나와 완전히 같은 다른 참여자 수, 80% 이상 일치하는 다른 참여자 비율(%), 내 조합보다 드물거나 같은 조합의 비율(%) |
+| Summary | `{ "participants", "exact", "similar", "opposite", "different" }` — 참여자 수, 나와 완전히 같은 다른 참여자 수, 8개 이상 일치하는 다른 참여자 비율(%), 2개 이하로 일치하는 다른 참여자 비율(%), 10개 모두 다른 참여자 수 |
+
+| 상황 | 상태 코드 | 동작 |
+|---|---|---|
+| 답변 있음 | 200 OK | 결과 반환 |
+| 쿠키 없음 / DB에 없는 토큰 | 401 Unauthorized | 프론트는 세션을 다시 받고 한 번 재시도 |
+| 없는 카테고리 / 답변 없음 | 404 Not Found | 프론트는 테스트 소개 화면으로 이동 |
+
+### `GET /api/v1/categories/{code}/result/questions` — 자세한 결과 조회
+
+| 항목 | 내용 |
+|---|---|
+| 역할 | 내가 푼 버전의 질문마다 성별 · 나이대별 선택 인원을 내려준다 |
+| 호출 시점 | 결과 화면에서 "더 자세한 결과 보기"를 눌렀을 때 |
+| Request | 쿠키 `guest_token` 필수 |
+| Response Body | `{ "answerBits", "questions": [{ "code", "prompt", "option0", "option1", "groups": [{ "gender", "ageGroup", "option0", "total" }] }] }` — `option0`은 그룹에서 option0을 고른 인원, `total`은 그룹의 응답 수. 질문 `code` 기준으로 버전을 넘어 합산하고, 응답이 없는 그룹은 빠짐 |
 
 | 상황 | 상태 코드 | 동작 |
 |---|---|---|
@@ -172,3 +186,27 @@ Claude Design 시안을 React 화면으로 옮겼다. 테스트 · 결과 API가
   - Backend: Flyway V4(테이블), V5(기존 카테고리 6개 · 질문 60개 시드), `CategoryService` · `CategoryController` · `CombinationStatsRepository`
   - Frontend: 카테고리를 API로 불러오고, 결과 화면은 결과 API 값을 사용 (`api/categories.ts`)
 - **테스트**: 결과 계산 (`RarityCalculatorTests`), API 응답 · 400 · 409 · 404 (`CategoryControllerTests`), 실제 Postgres에서 재제출 시 집계 이동 · 결과 계산 (`CategoryServiceTests`)
+
+### 7. 화면 정리
+- 하단 탭 바와 도감 · 통계 · 더보기 화면 제거 (도감 · 통계 데이터는 공개하지 않음)
+- 홈의 완료한 카테고리 카드에 체크 표시, 누르면 결과 화면으로 이동
+- 결과 화면의 친구 비교 버튼, 통계 버튼 제거
+
+### 8. 나의 정보 (성별 · 나이대 수정)
+- 홈 우측 상단 "나의 정보" 버튼, 수정 화면(`/me`) 추가 (`ProfileStep` 재사용)
+- 프로필을 바꾸면 이미 제출한 답변과 집계도 새 성별 · 나이대로 이동 (`GuestProfileChanged` 이벤트 → `CategoryService.onProfileChanged`)
+- 테스트: 프로필 변경 시 답변 · 집계 이동 (`CategoryServiceTests`)
+
+### 9. 결과 화면 개편
+- 결과 카드: 오른쪽 위를 "n명 중 1명꼴"(나와 답이 같은 사람 비율)로 변경, 등급은 소수 쪽(선택 비율 50% 미만)을 고른 문항 수로 결정 (7개 이상 희귀종 / 5~6 개성파 / 3~4 소신파 / 0~2 국룰러)
+- 지표 추가: 나와 취향이 갈리는 사람(2개 이하 일치, %), 나와 완전히 다른 사람(10개 모두 다름, 명). 희귀도(`top`) 제거
+- 또래 카드: 같은 성별 · 나이대 중 나와 완전히 같은 사람 비율(소수점 두 자리)과 인원
+- 가장 흔한 내 선택 TOP 3 추가
+- 하단: 친구에게 공유하기 · 더 자세한 결과 보기 · 다시 테스트 (다른 카테고리 제거)
+- 자세한 결과 화면(`/result/:catId/detail`): 문항별 선택 비율, 성별 · 나이대 필터, 내 선택 강조
+- API: Summary 변경, `GET /api/v1/categories/{code}/result/questions` 추가
+- 테스트: 갈리는 사람 · 완전히 다른 사람 계산 (`RarityCalculatorTests`), 그룹별 선택 인원 (`CategoryServiceTests`), 자세한 결과 응답 (`CategoryControllerTests`)
+
+### 10. 음악 취향 → 소비 취향
+- 음악 취향 카테고리 비활성화, 같은 자리에 소비 취향 카테고리 · 질문 10개 추가 (Flyway V6)
+- 카드 색: 소비 취향 초록, 인간관계 보라
