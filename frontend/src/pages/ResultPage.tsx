@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Navigate, useNavigate, useParams } from 'react-router'
 import { fetchResult, HttpError, type ResultDto } from '../api/categories.ts'
 import Icon from '../components/Icon.tsx'
+import tier from '../components/tier.module.css'
 import TopBar from '../components/TopBar.tsx'
 import ui from '../components/ui.module.css'
 import { findCategory, fromAnswerBits, toQuestion, type Category } from '../data/categories.ts'
@@ -121,7 +122,7 @@ function ResultView({ category, data }: { category: Category; data: ResultDto })
     <div className={`${ui.page} ${styles.palette}`}>
       <TopBar title={`${category.name} 결과`} left={{ icon: 'home', label: '홈으로', onClick: () => navigate('/main') }} />
 
-      <section className={`${styles.resultCard} ${styles[`tier-${result.tone}`]}`} aria-label="결과 카드">
+      <section className={`${styles.resultCard} ${tier[result.tone]}`} aria-label="결과 카드">
         <span className={styles.deco} style={{ right: -50, top: -50, width: 180, height: 180, background: 'var(--tier-light)' }} />
         <span className={styles.deco} style={{ right: 40, top: 96, width: 26, height: 26, background: 'var(--butter-deep)' }} />
         <span

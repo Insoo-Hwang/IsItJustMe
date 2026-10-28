@@ -8,28 +8,6 @@
   --apart-text: oklch(0.55 0.11 30);
 }
 
-/* pastel result card per tier */
-.tier-common {
-  --tier: oklch(0.93 0.035 250);
-  --tier-light: oklch(0.87 0.05 250);
-  --tier-deep: oklch(0.48 0.09 250);
-}
-.tier-firm {
-  --tier: oklch(0.93 0.04 165);
-  --tier-light: oklch(0.87 0.055 165);
-  --tier-deep: oklch(0.46 0.08 165);
-}
-.tier-unique {
-  --tier: oklch(0.93 0.04 35);
-  --tier-light: oklch(0.87 0.06 35);
-  --tier-deep: oklch(0.52 0.11 35);
-}
-.tier-rare {
-  --tier: oklch(0.92 0.04 300);
-  --tier-light: oklch(0.86 0.06 300);
-  --tier-deep: oklch(0.47 0.11 300);
-}
-
 .resultCard {
   position: relative;
   margin-top: 8px;

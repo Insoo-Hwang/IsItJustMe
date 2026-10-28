@@ -127,6 +127,7 @@ function QuizPage() {
     }
     completeTest(id)
     queryClient.removeQueries({ queryKey: ['result', id] })
+    queryClient.removeQueries({ queryKey: ['result', 'all'] })
     navigate(`/result/${id}`, { replace: true })
   }
 

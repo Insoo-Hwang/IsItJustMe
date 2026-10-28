@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.isitjustme.category.CategoryService.CategoryView;
+import com.isitjustme.category.CategoryService.OverallResultView;
 import com.isitjustme.category.CategoryService.QuestionStatsView;
 import com.isitjustme.category.CategoryService.ResultView;
 import com.isitjustme.guest.GuestController;
@@ -43,6 +44,15 @@ public class CategoryController {
 			@PathVariable String code, @Valid @RequestBody AnswerRequest request) {
 		categoryService.submit(token, code, request.answerBits());
 		return ResponseEntity.noContent().build();
+	}
+
+	/**
+	 * Result across every category, open once the guest answered all of them.
+	 */
+	@GetMapping("/result")
+	public OverallResultView overallResult(
+			@CookieValue(name = GuestController.COOKIE_NAME, required = false) String token) {
+		return categoryService.overallResult(token);
 	}
 
 	@GetMapping("/{code}/result")

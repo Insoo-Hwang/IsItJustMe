@@ -3,6 +3,7 @@ package com.isitjustme.category;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -49,6 +50,24 @@ class RarityCalculatorTests {
 		// 3 opposite / 4 others
 		assertThat(summary.opposite()).isEqualTo(75.0);
 		assertThat(summary.different()).isEqualTo(2);
+	}
+
+	@Test
+	void scalesThresholdsWithQuestionCount() {
+		long mine = 0L;
+		Map<Long, Long> byCombination = Map.of(
+				mine, 1L, // me
+				(1L << 12) - 1, 2L, // 12 of 60 differences: similar
+				(1L << 13) - 1, 1L, // 13 differences: not similar
+				(1L << 60) - 1, 1L); // every answer differs: opposite and different
+
+		Summary summary = RarityCalculator.summarize(byCombination, mine, 60);
+
+		assertThat(summary.participants()).isEqualTo(5);
+		// 2 similar / 4 others
+		assertThat(summary.similar()).isEqualTo(50.0);
+		assertThat(summary.opposite()).isEqualTo(25.0);
+		assertThat(summary.different()).isEqualTo(1);
 	}
 
 	@Test

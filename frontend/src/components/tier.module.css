@@ -1,0 +1,21 @@
+/* pastel colors per result tier */
+.common {
+  --tier: oklch(0.93 0.035 250);
+  --tier-light: oklch(0.87 0.05 250);
+  --tier-deep: oklch(0.48 0.09 250);
+}
+.firm {
+  --tier: oklch(0.93 0.04 165);
+  --tier-light: oklch(0.87 0.055 165);
+  --tier-deep: oklch(0.46 0.08 165);
+}
+.unique {
+  --tier: oklch(0.93 0.04 35);
+  --tier-light: oklch(0.87 0.06 35);
+  --tier-deep: oklch(0.52 0.11 35);
+}
+.rare {
+  --tier: oklch(0.92 0.04 300);
+  --tier-light: oklch(0.86 0.06 300);
+  --tier-deep: oklch(0.47 0.11 300);
+}

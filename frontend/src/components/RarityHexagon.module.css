@@ -1,0 +1,36 @@
+.chart {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  overflow: visible;
+}
+.ring {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+.spoke {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+.area {
+  fill: var(--tier-light);
+  fill-opacity: 0.7;
+  stroke: var(--tier-deep);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+.dot {
+  fill: var(--tier-deep);
+}
+.label {
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+.value {
+  font-size: 12px;
+  font-weight: 800;
+  fill: var(--tier-deep);
+}

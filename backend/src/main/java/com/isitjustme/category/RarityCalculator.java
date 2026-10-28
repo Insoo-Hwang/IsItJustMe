@@ -14,35 +14,39 @@ final class RarityCalculator {
 
 	static final int QUESTION_COUNT = 10;
 
-	static final int SIMILAR_MAX_DIFFERENCES = 2;
-
-	/** Two or fewer matching answers. */
-	static final int OPPOSITE_MIN_DIFFERENCES = QUESTION_COUNT - 2;
-
 	private RarityCalculator() {
 	}
 
 	static Summary summarize(List<StatsRow> rows, int myBits) {
-		Map<Integer, Long> byCombination = new HashMap<>();
-		rows.forEach((row) -> byCombination.merge(row.answerBits(), row.count(), Long::sum));
+		Map<Long, Long> byCombination = new HashMap<>();
+		rows.forEach((row) -> byCombination.merge((long) row.answerBits(), row.count(), Long::sum));
+		return summarize(byCombination, myBits, QUESTION_COUNT);
+	}
 
+	/**
+	 * Similar means at least 80% of the answers match, opposite at most 20%.
+	 * @param byCombination participants per answer combination, one bit per question
+	 */
+	static Summary summarize(Map<Long, Long> byCombination, long myBits, int questionCount) {
 		long participants = byCombination.values().stream().mapToLong(Long::longValue).sum();
 		if (participants == 0) {
 			return new Summary(0, 0, 0, 0, 0);
 		}
+		int similarMaxDifferences = questionCount / 5;
+		int oppositeMinDifferences = questionCount - questionCount / 5;
 		long mine = byCombination.getOrDefault(myBits, 0L);
 		long similar = 0;
 		long opposite = 0;
 		long different = 0;
-		for (Map.Entry<Integer, Long> entry : byCombination.entrySet()) {
-			int differences = Integer.bitCount(entry.getKey() ^ myBits);
-			if (differences <= SIMILAR_MAX_DIFFERENCES) {
+		for (Map.Entry<Long, Long> entry : byCombination.entrySet()) {
+			int differences = Long.bitCount(entry.getKey() ^ myBits);
+			if (differences <= similarMaxDifferences) {
 				similar += entry.getValue();
 			}
-			if (differences >= OPPOSITE_MIN_DIFFERENCES) {
+			if (differences >= oppositeMinDifferences) {
 				opposite += entry.getValue();
 			}
-			if (differences == QUESTION_COUNT) {
+			if (differences == questionCount) {
 				different += entry.getValue();
 			}
 		}
@@ -57,10 +61,10 @@ final class RarityCalculator {
 	}
 
 	/**
-	 * @param participants answers in this version
+	 * @param participants participants compared, including me
 	 * @param exact other participants with identical answers
-	 * @param similar % of other participants matching at least 8 of 10 answers
-	 * @param opposite % of other participants matching at most 2 of 10 answers
+	 * @param similar % of other participants matching at least 80% of the answers
+	 * @param opposite % of other participants matching at most 20% of the answers
 	 * @param different other participants with every answer the other way
 	 */
 	record Summary(long participants, long exact, double similar, double opposite, long different) {

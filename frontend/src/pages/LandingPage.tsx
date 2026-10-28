@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import { useScrollContainer } from '../app/scrollContainer.ts'
 import Icon from '../components/Icon.tsx'
 import { CATEGORIES, QUESTION_COUNT, totalParticipants } from '../data/categories.ts'
+import { showToast } from '../lib/toast.ts'
 import { answeredCount, firstUnanswered, useTestState } from '../store/testStore.ts'
 import styles from './LandingPage.module.css'
 
@@ -32,6 +33,14 @@ function LandingPage() {
 
   const inProgress = CATEGORIES.find((c) => answeredCount(answers[c.id]) > 0)
   const inProgressCount = answeredCount(inProgress && answers[inProgress.id])
+
+  const doneCount = CATEGORIES.filter((c) => results[c.id]).length
+  const allDone = doneCount === CATEGORIES.length
+
+  const openSummary = () => {
+    if (allDone) navigate('/summary')
+    else showToast(`테스트 ${CATEGORIES.length}개를 모두 끝내면 볼 수 있어요`)
+  }
 
   const resume = () => {
     if (!inProgress) return
@@ -72,9 +81,9 @@ function LandingPage() {
           <div className={`${styles.bubble} ${styles.bubbleButter}`}>부먹!</div>
           <div className={`${styles.bubble} ${styles.bubblePill}`}>아침형?</div>
           <div className={styles.speech}>
-            나와 취향이 비슷한 사람은
+            나의 취향은
             <br />
-            얼마나 있을까?
+            얼마나 특이할까?
           </div>
           <span className={styles.dot} style={{ left: 178, top: 150, width: 16, height: 16, background: 'var(--ink)' }} />
           <span className={styles.dot} style={{ right: 120, top: 270, width: 12, height: 12, background: 'var(--coral)' }} />
@@ -138,6 +147,19 @@ function LandingPage() {
             )
           })}
         </div>
+
+        <button
+          type="button"
+          className={`${styles.summary} ${allDone ? '' : styles.summaryLocked}`}
+          aria-disabled={!allDone}
+          onClick={openSummary}
+        >
+          <Icon name={allDone ? 'auto_awesome' : 'lock'} size={22} />
+          <span className={styles.summaryText}>종합 결과 보기</span>
+          <span className={styles.summaryCount}>
+            {doneCount}/{CATEGORIES.length}
+          </span>
+        </button>
 
         <div style={{ height: 24 }} />
       </section>

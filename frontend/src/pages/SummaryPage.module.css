@@ -1,0 +1,203 @@
+.hero {
+  margin-top: 8px;
+  padding: 26px 24px 24px;
+  border-radius: 32px;
+  background: var(--tier);
+  animation: popIn 0.6s cubic-bezier(0.34, 1.5, 0.5, 1);
+}
+.eyebrow {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--tier-deep);
+}
+.lead {
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.tier {
+  margin-top: 2px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 76px;
+  line-height: 1.05;
+  color: var(--tier-deep);
+}
+.headline {
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.count {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: white;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-sub);
+}
+.count b {
+  color: var(--tier-deep);
+  font-weight: 800;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+.metric {
+  padding: 16px 8px 14px;
+  text-align: center;
+}
+.metricValue {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1.1;
+  color: var(--tier-deep);
+}
+.metricValue small {
+  margin-left: 2px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+}
+.metricLabel {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-sub);
+}
+.note {
+  margin: 10px 4px 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--mute);
+}
+
+.chartCard {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.row {
+  width: 100%;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink);
+  text-align: left;
+}
+.icon {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rowText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rowName {
+  font-size: 15px;
+  font-weight: 800;
+}
+.rowRatio {
+  font-size: 12px;
+  color: var(--mute);
+}
+.chip {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--tier);
+  color: var(--tier-deep);
+  font-size: 13px;
+  font-weight: 800;
+}
+.chevron {
+  color: var(--faint);
+}
+
+.teaser {
+  margin: 36px 0 32px;
+  padding: 28px 22px 22px;
+  border-radius: 28px;
+  background: var(--ink);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  animation: fadeIn 0.8s ease-out;
+}
+.teaserMark {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px dashed oklch(1 0 0 / 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 32px;
+  animation: floatB 2.4s ease-in-out infinite alternate;
+}
+.teaserText {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.teaserButton {
+  width: 100%;
+  flex: none;
+  background: white;
+  color: var(--ink);
+}
+
+.status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 60vh;
+  color: var(--ink-sub);
+  font-size: 15px;
+}
+
+/* keyframes are scoped per module, so the global ones in index.css are not visible here */
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+@keyframes popIn {
+  0% { transform: scale(0.6); opacity: 0; }
+  70% { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes floatB {
+  0% { transform: translateY(-6px); }
+  100% { transform: translateY(6px); }
+}

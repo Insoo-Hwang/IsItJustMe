@@ -20,6 +20,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import com.isitjustme.category.CategoryService.CategoryView;
 import com.isitjustme.category.CategoryService.GroupCount;
+import com.isitjustme.category.CategoryService.OverallResultView;
 import com.isitjustme.category.CategoryService.QuestionStatsView;
 import com.isitjustme.category.CategoryService.ResultView;
 import com.isitjustme.guest.AgeGroup;
@@ -36,6 +37,8 @@ class CategoryServiceTests {
 	@Container
 	@ServiceConnection
 	static PostgreSQLContainer postgres = new PostgreSQLContainer(DockerImageName.parse("postgres:18"));
+
+	private static final List<String> CATEGORY_CODES = List.of("food", "love", "life", "travel", "spending", "people");
 
 	@Autowired
 	private CategoryService categoryService;
@@ -121,6 +124,33 @@ class CategoryServiceTests {
 		assertThat(result.peer().summary().participants()).isEqualTo(2);
 		assertThat(countOf(0b1, woman20s)).isZero();
 		assertThat(countOf(0b1, man30s)).isEqualTo(2);
+	}
+
+	@Test
+	void overallResultComparesGuestsWhoAnsweredEveryCategory() {
+		GuestProfile woman20s = new GuestProfile(Gender.FEMALE, AgeGroup.TWENTIES);
+		String me = guestWithProfile(woman20s);
+		String same = guestWithProfile(woman20s);
+		String close = guestWithProfile(woman20s);
+		String unfinished = guestWithProfile(woman20s);
+		for (String code : CATEGORY_CODES) {
+			categoryService.submit(me, code, 0);
+			categoryService.submit(same, code, 0);
+			categoryService.submit(close, code, 0b11);
+			if (!code.equals("people")) {
+				categoryService.submit(unfinished, code, 0);
+			}
+		}
+
+		OverallResultView result = categoryService.overallResult(me);
+
+		assertThat(result.questions()).isEqualTo(60);
+		assertThat(result.overall().participants()).isEqualTo(3);
+		assertThat(result.overall().exact()).isEqualTo(1);
+		// close differs in 12 of 60 answers, so both others are similar
+		assertThat(result.overall().similar()).isEqualTo(100.0);
+		assertThatThrownBy(() -> categoryService.overallResult(unfinished)).isInstanceOf(ResponseStatusException.class)
+			.hasMessageContaining("404");
 	}
 
 	@Test

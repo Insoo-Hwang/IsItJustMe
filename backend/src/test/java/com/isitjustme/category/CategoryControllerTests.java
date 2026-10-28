@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.isitjustme.category.CategoryService.CategoryView;
+import com.isitjustme.category.CategoryService.OverallResultView;
 import com.isitjustme.category.CategoryService.PeerView;
 import com.isitjustme.category.CategoryService.QuestionView;
 import com.isitjustme.category.CategoryService.GroupCount;
@@ -114,6 +115,18 @@ class CategoryControllerTests {
 			.andExpect(jsonPath("$.peer.profile.ageGroup").value("TWENTIES"))
 			.andExpect(jsonPath("$.peer.summary.exact").value(0))
 			.andExpect(jsonPath("$.questions[0].code").value("food-01"));
+	}
+
+	@Test
+	void returnsOverallResult() throws Exception {
+		given(categoryService.overallResult("token")).willReturn(new OverallResultView(60, new Summary(300, 3, 0.8, 1.2, 0)));
+
+		mockMvc.perform(get("/api/v1/categories/result").cookie(new Cookie("guest_token", "token")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.questions").value(60))
+			.andExpect(jsonPath("$.overall.participants").value(300))
+			.andExpect(jsonPath("$.overall.exact").value(3))
+			.andExpect(jsonPath("$.overall.similar").value(0.8));
 	}
 
 	@Test

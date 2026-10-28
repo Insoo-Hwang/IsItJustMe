@@ -26,9 +26,9 @@ export type SummaryDto = {
   participants: number
   // other participants with identical answers
   exact: number
-  // % of other participants matching at least 8 of 10 answers
+  // % of other participants matching at least 80% of the answers
   similar: number
-  // % of other participants matching at most 2 of 10 answers
+  // % of other participants matching at most 20% of the answers
   opposite: number
   // other participants with every answer the other way
   different: number
@@ -39,6 +39,12 @@ export type ResultDto = {
   overall: SummaryDto
   peer: { profile: GuestProfile; summary: SummaryDto }
   questions: QuestionDto[]
+}
+
+export type OverallResultDto = {
+  // questions compared across all categories
+  questions: number
+  overall: SummaryDto
 }
 
 export type GroupCountDto = {
@@ -97,6 +103,12 @@ export async function fetchResult(code: string): Promise<ResultDto> {
   const res = await withGuest(() => fetch(`/api/v1/categories/${code}/result`, { credentials: 'same-origin' }))
   if (!res.ok) throw new HttpError(res.status, `result failed: ${res.status}`)
   return res.json() as Promise<ResultDto>
+}
+
+export async function fetchOverallResult(): Promise<OverallResultDto> {
+  const res = await withGuest(() => fetch('/api/v1/categories/result', { credentials: 'same-origin' }))
+  if (!res.ok) throw new HttpError(res.status, `overall result failed: ${res.status}`)
+  return res.json() as Promise<OverallResultDto>
 }
 
 export async function fetchQuestionStats(code: string): Promise<QuestionStatsDto> {

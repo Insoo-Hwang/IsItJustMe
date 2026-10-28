@@ -1,0 +1,302 @@
+.page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 20px;
+  background: linear-gradient(to bottom, var(--paper), var(--tier) 120%);
+}
+.letterPage {
+  background: var(--paper);
+}
+
+.status {
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 60vh;
+  color: var(--ink-sub);
+  font-size: 15px;
+}
+
+/* dialogue */
+.dialogue {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 28px;
+}
+.tap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+}
+.stage {
+  flex: 1;
+  min-height: 280px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 24px 12px 20px;
+}
+.mystery {
+  width: 120px;
+  height: 120px;
+  margin: auto;
+  border-radius: 50%;
+  border: 3px dashed var(--tier-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 56px;
+  color: var(--tier-deep);
+  animation: floatB 2.4s ease-in-out infinite alternate;
+}
+.actor {
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--butter);
+  color: var(--ink-soft);
+  opacity: 0.45;
+  transform: scale(0.88);
+  transition: opacity 0.3s, transform 0.3s var(--spring);
+}
+.now {
+  background: white;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.speaking {
+  opacity: 1;
+  transform: scale(1);
+  animation: hop 0.5s ease-out;
+}
+.box {
+  position: relative;
+  min-height: 132px;
+  padding: 22px 22px 30px;
+  border-radius: 24px;
+  background: white;
+  box-shadow: 0 0 0 1px var(--line), 0 18px 40px -24px oklch(0.3 0.03 290 / 0.35);
+  display: flex;
+  flex-direction: column;
+}
+.systemBox {
+  background: var(--ink);
+  color: white;
+  box-shadow: none;
+  justify-content: center;
+  text-align: center;
+}
+.name {
+  position: absolute;
+  top: -14px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+}
+.namePast {
+  left: 18px;
+  background: var(--butter-deep);
+  color: var(--ink);
+}
+.nameNow {
+  right: 18px;
+  background: var(--tier-deep);
+  color: white;
+}
+.text {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.next {
+  position: absolute;
+  right: 16px;
+  bottom: 8px;
+  color: var(--faint);
+  animation: nudge 1s ease-in-out infinite;
+}
+.systemBox .next {
+  color: oklch(1 0 0 / 0.5);
+}
+
+.choices {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: fadeIn 0.4s ease-out;
+}
+.choice {
+  height: 54px;
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 0 0 1.5px var(--tier-light);
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  transition: transform 0.2s;
+}
+.choice:active {
+  transform: scale(0.97);
+}
+
+.talkHead {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sceneTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tier-deep);
+}
+.skip {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: oklch(1 0 0 / 0.7);
+  color: var(--mute);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* reveal */
+.reveal {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 40px 0 32px;
+  text-align: center;
+}
+.found {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: var(--tier-deep);
+  animation: fadeIn 0.6s ease-out;
+}
+.revealActor {
+  width: 140px;
+  height: 140px;
+  margin: 8px 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--butter);
+  color: var(--ink-soft);
+  animation: popIn 0.7s var(--spring);
+}
+.revealName {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 44px;
+  color: var(--ink);
+}
+.revealText {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-sub);
+}
+.revealButton {
+  flex: none;
+  width: 100%;
+  margin-top: auto;
+}
+
+/* letter */
+.letter {
+  padding: 48px 6px 32px;
+  display: flex;
+  flex-direction: column;
+}
+.letterNo {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--tier-deep);
+}
+.letterTitle {
+  margin-top: 10px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 34px;
+  line-height: 1.25;
+}
+.letterBody {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--ink-soft);
+  word-break: keep-all;
+}
+.letterBody p {
+  opacity: 0;
+  animation: fadeIn 1s ease-out forwards;
+}
+.letterActions {
+  margin-top: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.letterActions > button:first-child {
+  flex: none;
+}
+.subActions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+.subAction {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--ink-sub);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* keyframes are scoped per module, so the global ones in index.css are not visible here */
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+@keyframes popIn {
+  0% { transform: scale(0.6); opacity: 0; }
+  70% { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes floatB {
+  0% { transform: translateY(-6px); }
+  100% { transform: translateY(6px); }
+}
+@keyframes hop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+@keyframes nudge {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
