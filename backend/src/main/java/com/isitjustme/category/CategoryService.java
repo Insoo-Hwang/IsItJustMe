@@ -50,10 +50,11 @@ public class CategoryService {
 	private final GuestService guestService;
 
 	/**
-	 * Active categories with the questions of their published version.
+	 * Active categories with the questions of their published version, and when the
+	 * guest last finished each of them.
 	 */
 	@Transactional(readOnly = true)
-	public List<CategoryView> listCategories() {
+	public List<CategoryView> listCategories(@Nullable String rawToken) {
 		List<Category> categories = categoryRepository.findByActiveTrueOrderBySortOrder();
 		Map<Long, Long> versionByCategory = versionRepository
 			.findByCategoryIdInAndStatus(categories.stream().map(Category::getId).toList(), Status.PUBLISHED)
@@ -68,12 +69,18 @@ public class CategoryService {
 		Map<Long, Long> participants = answerRepository.countByCategory()
 			.stream()
 			.collect(Collectors.toMap(CategoryParticipants::getCategoryId, CategoryParticipants::getParticipants));
+		Map<Long, Instant> completedAt = guestService.findByToken(rawToken)
+			.map((guest) -> answerRepository.findByGuestId(guest.getId())
+				.stream()
+				.collect(Collectors.toMap(CategoryAnswer::getCategoryId, CategoryAnswer::getUpdatedAt)))
+			.orElse(Map.of());
 
 		return categories.stream()
 			.filter((c) -> versionByCategory.containsKey(c.getId()))
 			.map((c) -> new CategoryView(c.getCode(), c.getName(), c.getIcon(), c.getDescription(), c.getTagline(),
 					c.getMinutes(), c.getRecommend(), participants.getOrDefault(c.getId(), 0L),
-					questionViews(questionsByVersion.getOrDefault(versionByCategory.get(c.getId()), List.of()), rates)))
+					questionViews(questionsByVersion.getOrDefault(versionByCategory.get(c.getId()), List.of()), rates),
+					completedAt.get(c.getId())))
 			.toList();
 	}
 
@@ -225,8 +232,11 @@ public class CategoryService {
 			.toList();
 	}
 
+	/**
+	 * @param completedAt when the guest last submitted answers, or null if never
+	 */
 	public record CategoryView(String code, String name, String icon, String description, String tagline, int minutes,
-			List<String> recommend, long participants, List<QuestionView> questions) {
+			List<String> recommend, long participants, List<QuestionView> questions, @Nullable Instant completedAt) {
 	}
 
 	/**

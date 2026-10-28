@@ -68,10 +68,10 @@
 
 | 항목 | 내용 |
 |---|---|
-| 역할 | 카테고리와 현재 버전의 질문 10개, 참여자 수, 질문별 선택 비율을 내려준다 |
+| 역할 | 카테고리와 현재 버전의 질문 10개, 참여자 수, 질문별 선택 비율, 이 게스트의 완료 시각을 내려준다 |
 | 호출 시점 | 앱 첫 진입 시 (화면을 그리기 전에 1회) |
-| Request | 없음 |
-| Response Body | `[{ "code", "name", "icon", "description", "tagline", "minutes", "recommend": string[], "participants", "questions": [{ "code", "prompt", "option0", "option1", "option0Rate" }] }]` — `option0Rate`는 option0을 고른 비율(%), 응답이 없으면 50 |
+| Request | 쿠키 `guest_token` 선택 (없거나 DB에 없으면 `completedAt`이 모두 `null`) |
+| Response Body | `[{ "code", "name", "icon", "description", "tagline", "minutes", "recommend": string[], "participants", "questions": [{ "code", "prompt", "option0", "option1", "option0Rate" }], "completedAt" }]` — `option0Rate`는 option0을 고른 비율(%), 응답이 없으면 50. `completedAt`은 마지막으로 답을 제출한 시각, 없으면 `null` |
 
 ### `PUT /api/v1/categories/{code}/answer` — 답변 제출
 
@@ -238,3 +238,9 @@ Claude Design 시안을 React 화면으로 옮겼다. 테스트 · 결과 API가
 - 서버에 답이 없는 카테고리가 있으면 보고서 · 엔딩 대신 그 테스트 소개 화면으로 이동
 - 대사 · 편지는 `data/ending.ts`, 종합 결과 계산은 보고서와 엔딩이 같이 쓰도록 `lib/summary.ts`로 분리
 - 테스트: 60문항 기준 유사 · 갈림 계산 (`RarityCalculatorTests`), 모든 카테고리 완료자끼리 비교 · 미완료 404 (`CategoryServiceTests`), 응답 형식 (`CategoryControllerTests`)
+
+### 13. 완료 표시를 서버 기준으로 변경
+- 카테고리 목록 API에 `completedAt` 추가
+- 앱 시작 시 브라우저의 완료 기록을 서버 값으로 덮어씀 (`syncResults`). 쿠키가 바뀌었거나 답변 API 이전에 완료한 기록이 남아 있던 문제 수정
+- 브라우저 완료 기록에서 답 내용 제거 (완료 시각만 저장)
+- 테스트: 게스트별 완료 표시 (`CategoryServiceTests`), 응답 형식 (`CategoryControllerTests`)

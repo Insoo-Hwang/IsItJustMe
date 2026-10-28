@@ -236,6 +236,8 @@
   font-weight: 400;
   font-size: 34px;
   line-height: 1.25;
+  word-break: keep-all;
+  text-wrap: balance;
 }
 .letterBody {
   margin-top: 32px;
@@ -255,27 +257,29 @@
   margin-top: 48px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
-.letterActions > button:first-child {
+/* the shared button style grows to fill a row; here they stack */
+.letterActions > button {
   flex: none;
 }
 .subActions {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 .subAction {
-  height: 40px;
-  padding: 0 14px;
-  border-radius: 999px;
-  background: var(--soft);
-  color: var(--ink-sub);
-  font-size: 13px;
+  height: 52px;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 0 0 1px var(--line-strong);
+  color: var(--ink);
+  font-size: 15px;
   font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 6px;
 }
 
 /* keyframes are scoped per module, so the global ones in index.css are not visible here */

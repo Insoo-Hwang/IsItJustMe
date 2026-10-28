@@ -113,16 +113,17 @@ function EndingPage() {
             ))}
           </div>
           <div className={styles.letterActions}>
-            <button type="button" className={`${ui.dark} ${ui.large}`} onClick={() => navigate('/summary')}>
-              희귀도 보고서로 돌아가기
+            <button type="button" className={`${ui.primary} ${ui.large}`} onClick={() => navigate('/summary')}>
+              <Icon name="auto_awesome" size={22} />
+              종합 결과로 돌아가기
             </button>
             <div className={styles.subActions}>
               <button type="button" className={styles.subAction} onClick={() => setPhase('intro')}>
-                <Icon name="replay" size={18} />
-                처음부터 다시 보기
+                <Icon name="replay" size={20} />
+                처음부터 다시
               </button>
               <button type="button" className={styles.subAction} onClick={() => navigate('/main')}>
-                <Icon name="home" size={18} />
+                <Icon name="home" size={20} />
                 홈으로
               </button>
             </div>

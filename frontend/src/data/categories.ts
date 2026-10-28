@@ -60,11 +60,15 @@ function toCategory(dto: CategoryDto): Category {
 // Filled once by loadCategories() before the app renders.
 export let CATEGORIES: Category[] = []
 
-export async function loadCategories(): Promise<void> {
-  CATEGORIES = (await fetchCategories()).map(toCategory)
+// Returns when the guest finished each category, by category id.
+export async function loadCategories(): Promise<Record<string, string>> {
+  const dtos = await fetchCategories()
+  CATEGORIES = dtos.map(toCategory)
+  return Object.fromEntries(dtos.flatMap((d) => (d.completedAt ? [[d.code, d.completedAt]] : [])))
 }
 
-export function totalParticipants(): number {
+// Finished tests across categories; one guest counts once per category.
+export function totalTests(): number {
   return CATEGORIES.reduce((sum, c) => sum + c.participants, 0)
 }
 

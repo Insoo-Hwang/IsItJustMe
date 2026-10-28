@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Instant;
 import java.util.List;
 
 import jakarta.servlet.http.Cookie;
@@ -50,15 +51,17 @@ class CategoryControllerTests {
 
 	@Test
 	void listsCategories() throws Exception {
-		given(categoryService.listCategories()).willReturn(List.of(new CategoryView("food", "음식 취향", "restaurant",
-				"찍먹부터 민초까지", "사소한 음식 취향", 1, List.of("음식 얘기만 해도 신나는 분"), 12, List.of(QUESTION))));
+		given(categoryService.listCategories("token")).willReturn(List.of(new CategoryView("food", "음식 취향", "restaurant",
+				"찍먹부터 민초까지", "사소한 음식 취향", 1, List.of("음식 얘기만 해도 신나는 분"), 12, List.of(QUESTION),
+				Instant.parse("2026-10-28T13:00:00Z"))));
 
-		mockMvc.perform(get("/api/v1/categories"))
+		mockMvc.perform(get("/api/v1/categories").cookie(new Cookie("guest_token", "token")))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[0].code").value("food"))
 			.andExpect(jsonPath("$[0].participants").value(12))
 			.andExpect(jsonPath("$[0].questions[0].option0").value("찍먹"))
-			.andExpect(jsonPath("$[0].questions[0].option0Rate").value(38));
+			.andExpect(jsonPath("$[0].questions[0].option0Rate").value(38))
+			.andExpect(jsonPath("$[0].completedAt").value("2026-10-28T13:00:00Z"));
 	}
 
 	@Test

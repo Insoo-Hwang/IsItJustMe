@@ -32,8 +32,8 @@ public class CategoryController {
 	private final CategoryService categoryService;
 
 	@GetMapping
-	public List<CategoryView> list() {
-		return categoryService.listCategories();
+	public List<CategoryView> list(@CookieValue(name = GuestController.COOKIE_NAME, required = false) String token) {
+		return categoryService.listCategories(token);
 	}
 
 	/**

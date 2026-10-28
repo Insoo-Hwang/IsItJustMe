@@ -51,13 +51,26 @@ class CategoryServiceTests {
 
 	@Test
 	void listsSeededCategories() {
-		List<CategoryView> categories = categoryService.listCategories();
+		List<CategoryView> categories = categoryService.listCategories(null);
 
 		assertThat(categories).extracting(CategoryView::code)
 			.containsExactly("food", "love", "life", "travel", "spending", "people");
 		assertThat(categories.getFirst().questions()).hasSize(10);
 		assertThat(categories.getFirst().questions().getFirst().prompt()).isEqualTo("탕수육은?");
 		assertThat(categories.getFirst().questions().getFirst().option0Rate()).isEqualTo(50);
+		assertThat(categories).extracting(CategoryView::completedAt).containsOnlyNulls();
+	}
+
+	@Test
+	void listMarksCategoriesTheGuestFinished() {
+		String token = guestWithProfile(new GuestProfile(Gender.FEMALE, AgeGroup.TWENTIES));
+		categoryService.submit(token, "love", 0);
+
+		List<CategoryView> categories = categoryService.listCategories(token);
+
+		assertThat(categories).filteredOn((c) -> c.completedAt() != null)
+			.extracting(CategoryView::code)
+			.containsExactly("love");
 	}
 
 	@Test

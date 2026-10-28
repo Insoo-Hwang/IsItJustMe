@@ -5,14 +5,13 @@ import type { GuestProfile } from '../lib/profile.ts'
 export type Answers = (Choice | null)[]
 
 export type SavedResult = {
-  answers: Choice[]
   completedAt: string
 }
 
 export type TestState = {
   // in-progress answers per category
   answers: Record<string, Answers>
-  // last completed result per category
+  // categories finished on the server, synced on start
   results: Record<string, SavedResult>
   // copy of the profile saved on the guest, for showing it without a round trip
   profile: GuestProfile | null
@@ -91,10 +90,18 @@ export function completeTest(catId: string): boolean {
   setState((s) => {
     const answers = { ...s.answers }
     delete answers[catId]
-    const result = { answers: current as Choice[], completedAt: new Date().toISOString() }
-    return { ...s, answers, results: { ...s.results, [catId]: result } }
+    return { ...s, answers, results: { ...s.results, [catId]: { completedAt: new Date().toISOString() } } }
   })
   return true
+}
+
+// The server decides what is finished: this device may have finished tests as another
+// guest (expired cookie) or before answers were saved on the server.
+export function syncResults(completed: Record<string, string>) {
+  setState((s) => ({
+    ...s,
+    results: Object.fromEntries(Object.entries(completed).map(([id, completedAt]) => [id, { completedAt }])),
+  }))
 }
 
 export function setProfile(profile: GuestProfile | null) {

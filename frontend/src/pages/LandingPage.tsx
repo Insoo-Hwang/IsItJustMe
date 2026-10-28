@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { useScrollContainer } from '../app/scrollContainer.ts'
 import Icon from '../components/Icon.tsx'
-import { CATEGORIES, QUESTION_COUNT, totalParticipants } from '../data/categories.ts'
+import { CATEGORIES, QUESTION_COUNT, totalTests } from '../data/categories.ts'
 import { showToast } from '../lib/toast.ts'
 import { answeredCount, firstUnanswered, useTestState } from '../store/testStore.ts'
 import styles from './LandingPage.module.css'
@@ -94,7 +94,7 @@ function LandingPage() {
         </div>
         <div className={styles.participants}>
           <span>
-            지금까지 <b>{totalParticipants().toLocaleString('ko-KR')}명</b>이 참여했어요
+            지금까지 <b>{totalTests().toLocaleString('ko-KR')}건</b>의 테스트가 진행되었어요
           </span>
           <Icon name="keyboard_double_arrow_down" size={26} className={styles.scrollHint} />
         </div>

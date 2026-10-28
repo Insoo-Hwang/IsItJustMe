@@ -20,6 +20,8 @@ export type CategoryDto = {
   recommend: string[]
   participants: number
   questions: QuestionDto[]
+  // when this guest last finished the test, null if never
+  completedAt: string | null
 }
 
 export type SummaryDto = {
