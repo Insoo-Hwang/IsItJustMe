@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.jspecify.annotations.Nullable;
@@ -17,8 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.isitjustme.category.CategoryAnswerRepository.CategoryParticipants;
-import com.isitjustme.category.CategoryAnswerRepository.VersionAnswer;
-import com.isitjustme.category.CategoryVersion.Status;
+import com.isitjustme.category.CategoryAnswerRepository.GuestAnswer;
 import com.isitjustme.category.CombinationStatsRepository.StatsRow;
 import com.isitjustme.category.RarityCalculator.Summary;
 import com.isitjustme.guest.AgeGroup;
@@ -39,8 +38,6 @@ public class CategoryService {
 
 	private final CategoryRepository categoryRepository;
 
-	private final CategoryVersionRepository versionRepository;
-
 	private final QuestionRepository questionRepository;
 
 	private final CategoryAnswerRepository answerRepository;
@@ -50,22 +47,17 @@ public class CategoryService {
 	private final GuestService guestService;
 
 	/**
-	 * Active categories with the questions of their published version, and when the
-	 * guest last finished each of them.
+	 * Categories with their questions, and when the guest last finished each of them.
 	 */
 	@Transactional(readOnly = true)
 	public List<CategoryView> listCategories(@Nullable String rawToken) {
-		List<Category> categories = categoryRepository.findByActiveTrueOrderBySortOrder();
-		Map<Long, Long> versionByCategory = versionRepository
-			.findByCategoryIdInAndStatus(categories.stream().map(Category::getId).toList(), Status.PUBLISHED)
+		List<Category> categories = categoryRepository.findAllByOrderBySortOrder();
+		Map<Long, List<Question>> questionsByCategory = questionRepository
+			.findByCategoryIdInOrderByBitPosition(categories.stream().map(Category::getId).toList())
 			.stream()
-			.collect(Collectors.toMap(CategoryVersion::getCategoryId, CategoryVersion::getId));
-		Map<Long, List<Question>> questionsByVersion = questionRepository
-			.findByCategoryVersionIdInOrderByBitPosition(versionByCategory.values())
-			.stream()
-			.collect(Collectors.groupingBy(Question::getCategoryVersionId));
+			.collect(Collectors.groupingBy(Question::getCategoryId));
 		Map<String, Double> rates = statsRepository.option0Rates(
-				questionsByVersion.values().stream().flatMap(List::stream).map(Question::getCode).toList());
+				questionsByCategory.values().stream().flatMap(List::stream).map(Question::getCode).toList());
 		Map<Long, Long> participants = answerRepository.countByCategory()
 			.stream()
 			.collect(Collectors.toMap(CategoryParticipants::getCategoryId, CategoryParticipants::getParticipants));
@@ -76,17 +68,16 @@ public class CategoryService {
 			.orElse(Map.of());
 
 		return categories.stream()
-			.filter((c) -> versionByCategory.containsKey(c.getId()))
 			.map((c) -> new CategoryView(c.getCode(), c.getName(), c.getIcon(), c.getDescription(), c.getTagline(),
 					c.getMinutes(), c.getRecommend(), participants.getOrDefault(c.getId(), 0L),
-					questionViews(questionsByVersion.getOrDefault(versionByCategory.get(c.getId()), List.of()), rates),
+					questionViews(questionsByCategory.getOrDefault(c.getId(), List.of()), rates),
 					completedAt.get(c.getId())))
 			.toList();
 	}
 
 	/**
-	 * Saves the guest's answer to the published version of the category and moves the
-	 * guest's count from the previous combination to the new one.
+	 * Saves the guest's answer to the category and moves the guest's count from the
+	 * previous combination to the new one.
 	 */
 	@Transactional
 	public void submit(@Nullable String rawToken, String categoryCode, int answerBits) {
@@ -97,24 +88,21 @@ public class CategoryService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "profile required");
 		}
 		Category category = findCategory(categoryCode);
-		Long versionId = versionRepository.findByCategoryIdAndStatus(category.getId(), Status.PUBLISHED)
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND))
-			.getId();
 
 		Instant now = Instant.now();
 		Optional<CategoryAnswer> found = answerRepository.findByGuestIdAndCategoryId(guest.getId(), category.getId());
 		if (found.isPresent()) {
 			CategoryAnswer answer = found.get();
-			if (answer.matches(versionId, profile, answerBits)) {
+			if (answer.matches(profile, answerBits)) {
 				return;
 			}
-			statsRepository.decrement(answer.getCategoryVersionId(), answer.profile(), answer.getAnswerBits());
-			answer.update(versionId, profile, answerBits, now);
+			statsRepository.decrement(category.getId(), answer.profile(), answer.getAnswerBits());
+			answer.update(profile, answerBits, now);
 		}
 		else {
-			answerRepository.save(new CategoryAnswer(guest.getId(), category.getId(), versionId, profile, answerBits, now));
+			answerRepository.save(new CategoryAnswer(guest.getId(), category.getId(), profile, answerBits, now));
 		}
-		statsRepository.increment(versionId, profile, answerBits);
+		statsRepository.increment(category.getId(), profile, answerBits);
 	}
 
 	/**
@@ -128,14 +116,14 @@ public class CategoryService {
 			if (answer.profile().equals(event.profile())) {
 				continue;
 			}
-			statsRepository.decrement(answer.getCategoryVersionId(), answer.profile(), answer.getAnswerBits());
+			statsRepository.decrement(answer.getCategoryId(), answer.profile(), answer.getAnswerBits());
 			answer.changeProfile(event.profile());
-			statsRepository.increment(answer.getCategoryVersionId(), event.profile(), answer.getAnswerBits());
+			statsRepository.increment(answer.getCategoryId(), event.profile(), answer.getAnswerBits());
 		}
 	}
 
 	/**
-	 * The guest's saved answer compared with everyone who answered the same version.
+	 * The guest's saved answer compared with everyone who answered the category.
 	 */
 	@Transactional(readOnly = true)
 	public ResultView result(@Nullable String rawToken, String categoryCode) {
@@ -145,10 +133,10 @@ public class CategoryService {
 		CategoryAnswer answer = answerRepository.findByGuestIdAndCategoryId(guest.getId(), category.getId())
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-		List<StatsRow> rows = statsRepository.findByVersion(answer.getCategoryVersionId());
+		List<StatsRow> rows = statsRepository.findByCategory(category.getId());
 		GuestProfile profile = answer.profile();
 		List<StatsRow> peerRows = rows.stream().filter((row) -> row.profile().equals(profile)).toList();
-		List<Question> questions = questionRepository.findByCategoryVersionIdOrderByBitPosition(answer.getCategoryVersionId());
+		List<Question> questions = questionRepository.findByCategoryIdOrderByBitPosition(category.getId());
 		Map<String, Double> rates = statsRepository.option0Rates(questions.stream().map(Question::getCode).toList());
 
 		return new ResultView(answer.getAnswerBits(), RarityCalculator.summarize(rows, answer.getAnswerBits()),
@@ -157,8 +145,8 @@ public class CategoryService {
 	}
 
 	/**
-	 * Per-group picks for each question of the version the guest answered, for the
-	 * detailed result. Only guests who answered the category can see it.
+	 * Per-group picks for each question of the category, for the detailed result. Only
+	 * guests who answered the category can see it.
 	 */
 	@Transactional(readOnly = true)
 	public QuestionStatsView questionStats(@Nullable String rawToken, String categoryCode) {
@@ -168,7 +156,7 @@ public class CategoryService {
 		CategoryAnswer answer = answerRepository.findByGuestIdAndCategoryId(guest.getId(), category.getId())
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-		List<Question> questions = questionRepository.findByCategoryVersionIdOrderByBitPosition(answer.getCategoryVersionId());
+		List<Question> questions = questionRepository.findByCategoryIdOrderByBitPosition(category.getId());
 		Map<String, List<GroupCount>> counts = statsRepository
 			.option0CountsByGroup(questions.stream().map(Question::getCode).toList());
 		return new QuestionStatsView(answer.getAnswerBits(), questions.stream()
@@ -178,37 +166,37 @@ public class CategoryService {
 	}
 
 	/**
-	 * The guest's answers to every active category compared as one combination with
-	 * guests who answered the same versions of all of them.
+	 * The guest's answers to every category compared as one combination with guests who
+	 * answered all of them.
 	 */
 	@Transactional(readOnly = true)
 	public OverallResultView overallResult(@Nullable String rawToken) {
 		Guest guest = guestService.findByToken(rawToken)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-		List<Category> categories = categoryRepository.findByActiveTrueOrderBySortOrder();
-		Map<Long, CategoryAnswer> mine = answerRepository.findByGuestId(guest.getId())
+		List<Category> categories = categoryRepository.findAllByOrderBySortOrder();
+		Set<Long> answered = answerRepository.findByGuestId(guest.getId())
 			.stream()
-			.collect(Collectors.toMap(CategoryAnswer::getCategoryId, Function.identity()));
-		if (!categories.stream().allMatch((c) -> mine.containsKey(c.getId()))) {
+			.map(CategoryAnswer::getCategoryId)
+			.collect(Collectors.toSet());
+		if (!categories.stream().allMatch((c) -> answered.contains(c.getId()))) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		}
 
 		// Each category takes the next ten bits of a long, in display order (six categories = 60 bits).
-		Map<Long, Integer> shiftByVersion = new HashMap<>();
+		Map<Long, Integer> shiftByCategory = new HashMap<>();
 		for (int i = 0; i < categories.size(); i++) {
-			shiftByVersion.put(mine.get(categories.get(i).getId()).getCategoryVersionId(),
-					i * RarityCalculator.QUESTION_COUNT);
+			shiftByCategory.put(categories.get(i).getId(), i * RarityCalculator.QUESTION_COUNT);
 		}
 		Map<Long, Long> bitsByGuest = new HashMap<>();
 		Map<Long, Integer> answeredByGuest = new HashMap<>();
-		for (VersionAnswer answer : answerRepository.findByCategoryVersionIdIn(shiftByVersion.keySet())) {
-			long bits = (long) answer.getAnswerBits() << shiftByVersion.get(answer.getCategoryVersionId());
+		for (GuestAnswer answer : answerRepository.findByCategoryIdIn(shiftByCategory.keySet())) {
+			long bits = (long) answer.getAnswerBits() << shiftByCategory.get(answer.getCategoryId());
 			bitsByGuest.merge(answer.getGuestId(), bits, (a, b) -> a | b);
 			answeredByGuest.merge(answer.getGuestId(), 1, Integer::sum);
 		}
 		Map<Long, Long> byCombination = new HashMap<>();
-		answeredByGuest.forEach((guestId, answered) -> {
-			if (answered == categories.size()) {
+		answeredByGuest.forEach((guestId, count) -> {
+			if (count == categories.size()) {
 				byCombination.merge(bitsByGuest.get(guestId), 1L, Long::sum);
 			}
 		});
@@ -219,7 +207,7 @@ public class CategoryService {
 	}
 
 	private Category findCategory(String code) {
-		return categoryRepository.findByCodeAndActiveTrue(code)
+		return categoryRepository.findByCode(code)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 	}
 
@@ -240,7 +228,7 @@ public class CategoryService {
 	}
 
 	/**
-	 * @param option0Rate % of all answers, across versions, that picked option 0
+	 * @param option0Rate % of all answers that picked option 0
 	 */
 	public record QuestionView(String code, String prompt, String option0, String option1, int option0Rate) {
 	}

@@ -7,8 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface QuestionRepository extends JpaRepository<Question, Long> {
 
-	List<Question> findByCategoryVersionIdOrderByBitPosition(Long categoryVersionId);
+	List<Question> findByCategoryIdOrderByBitPosition(Long categoryId);
 
-	List<Question> findByCategoryVersionIdInOrderByBitPosition(Collection<Long> categoryVersionIds);
+	List<Question> findByCategoryIdInOrderByBitPosition(Collection<Long> categoryIds);
 
 }

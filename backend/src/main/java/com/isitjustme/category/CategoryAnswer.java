@@ -42,9 +42,6 @@ public class CategoryAnswer {
 	@Column(nullable = false, updatable = false)
 	private Long categoryId;
 
-	@Column(nullable = false)
-	private Long categoryVersionId;
-
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 10)
 	private Gender gender;
@@ -63,16 +60,14 @@ public class CategoryAnswer {
 	@Column(nullable = false)
 	private Instant updatedAt;
 
-	public CategoryAnswer(Long guestId, Long categoryId, Long categoryVersionId, GuestProfile profile, int answerBits,
-			Instant now) {
+	public CategoryAnswer(Long guestId, Long categoryId, GuestProfile profile, int answerBits, Instant now) {
 		this.guestId = guestId;
 		this.categoryId = categoryId;
 		this.completedAt = now;
-		update(categoryVersionId, profile, answerBits, now);
+		update(profile, answerBits, now);
 	}
 
-	public void update(Long categoryVersionId, GuestProfile profile, int answerBits, Instant now) {
-		this.categoryVersionId = categoryVersionId;
+	public void update(GuestProfile profile, int answerBits, Instant now) {
 		this.gender = profile.gender();
 		this.ageGroup = profile.ageGroup();
 		this.answerBits = answerBits;
@@ -84,9 +79,8 @@ public class CategoryAnswer {
 		this.ageGroup = profile.ageGroup();
 	}
 
-	public boolean matches(Long categoryVersionId, GuestProfile profile, int answerBits) {
-		return this.categoryVersionId.equals(categoryVersionId) && profile().equals(profile)
-				&& this.answerBits == answerBits;
+	public boolean matches(GuestProfile profile, int answerBits) {
+		return profile().equals(profile) && this.answerBits == answerBits;
 	}
 
 	public GuestProfile profile() {

@@ -7,7 +7,7 @@ import java.util.Map;
 import com.isitjustme.category.CombinationStatsRepository.StatsRow;
 
 /**
- * Computes result numbers from one version's combination counts. The counts already
+ * Computes result numbers from combination counts. The counts already
  * include the requesting guest's own answer.
  */
 final class RarityCalculator {

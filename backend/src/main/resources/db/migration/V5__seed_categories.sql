@@ -7,16 +7,13 @@ INSERT INTO category (code, name, icon, description, tagline, minutes, recommend
      ARRAY['루틴이 확실한 분', '나만 이런가 싶었던 분', '룸메이트와 비교해보고 싶은 분'], 3),
     ('travel', '여행 스타일', 'flight', '계획형 vs 즉흥형', '짐 싸는 순간부터 드러나는 나', 1,
      ARRAY['여행 계획 세우는 게 즐거운 분', '여행 메이트를 찾는 분', '다음 휴가를 고민 중인 분'], 4),
-    ('music', '음악 취향', 'music_note', '가사파 vs 멜로디파', '플레이리스트가 말해주는 나', 1,
-     ARRAY['이어폰을 늘 끼고 다니는 분', '노래방 선곡에 진심인 분', '음악 취향 친구를 찾는 분'], 5),
+    ('spending', '소비 취향', 'payments', '플렉스 vs 짠테크', '지갑이 열리는 순간 드러나는 나', 1,
+     ARRAY['장바구니에 물건이 쌓여 있는 분', '플렉스와 짠테크 사이에서 고민하는 분', '친구들 소비 습관이 궁금한 분'], 5),
     ('people', '인간관계', 'group', '단톡 답장 속도는?', '사람을 대하는 나만의 방식', 1,
      ARRAY['친구들 사이 내 포지션이 궁금한 분', '인간관계 고민이 많은 분', '단톡방에 공유하고 싶은 분'], 6);
 
-INSERT INTO category_version (category_id, version, status, published_at)
-SELECT id, 1, 'PUBLISHED', now() FROM category;
-
-INSERT INTO question (category_version_id, bit_position, code, prompt, option_0, option_1)
-SELECT v.id, q.bit_position, q.code, q.prompt, q.option_0, q.option_1
+INSERT INTO question (category_id, bit_position, code, prompt, option_0, option_1)
+SELECT c.id, q.bit_position, q.code, q.prompt, q.option_0, q.option_1
 FROM (VALUES
     ('food', 0, 'food-01', '탕수육은?', '찍먹', '부먹'),
     ('food', 1, 'food-02', '민트초코는?', '좋아한다 (호)', '싫어한다 (불호)'),
@@ -58,16 +55,16 @@ FROM (VALUES
     ('travel', 7, 'travel-08', '짐은?', '최대한 가볍게', '만약을 대비해'),
     ('travel', 8, 'travel-09', '일정은?', '빡빡하게', '여유롭게'),
     ('travel', 9, 'travel-10', '기념품은?', '꼭 산다', '안 산다'),
-    ('music', 0, 'music-01', '이어폰은?', '유선', '무선'),
-    ('music', 1, 'music-02', '노래 들을 때?', '가사가 중요', '멜로디가 중요'),
-    ('music', 2, 'music-03', '플레이리스트는?', '듣던 노래 반복', '새 노래 탐색'),
-    ('music', 3, 'music-04', '노래방에선?', '발라드', '신나는 노래'),
-    ('music', 4, 'music-05', '콘서트는?', '스탠딩', '좌석'),
-    ('music', 5, 'music-06', '일할 때?', '노동요 필수', '조용히'),
-    ('music', 6, 'music-07', '볼륨은?', '크게', '작게'),
-    ('music', 7, 'music-08', '재생 방식은?', '셔플', '순서대로'),
-    ('music', 8, 'music-09', '장르는?', '최애 하나', '잡식'),
-    ('music', 9, 'music-10', '아침 출근길엔?', '음악 듣는다', '안 듣는다'),
+    ('spending', 0, 'spending-01', '월급날엔?', '나에게 선물', '일단 저축'),
+    ('spending', 1, 'spending-02', '사고 싶은 게 생기면?', '바로 산다', '장바구니에 묵힌다'),
+    ('spending', 2, 'spending-03', '쇼핑은?', '온라인', '오프라인'),
+    ('spending', 3, 'spending-04', '물건을 살 땐?', '비싸도 좋은 거', '싸게 여러 개'),
+    ('spending', 4, 'spending-05', '할인 쿠폰은?', '꼭 찾아본다', '귀찮다'),
+    ('spending', 5, 'spending-06', '가계부는?', '쓴다', '안 쓴다'),
+    ('spending', 6, 'spending-07', '배달비는?', '아깝다', '편하면 OK'),
+    ('spending', 7, 'spending-08', '구독 서비스는?', '여러 개', '최소한만'),
+    ('spending', 8, 'spending-09', '더치페이는?', '정확히 나눈다', '번갈아 산다'),
+    ('spending', 9, 'spending-10', '여행 경비는?', '아낌없이', '알뜰하게'),
     ('people', 0, 'people-01', '단톡 답장은?', '바로 한다', '몰아서 한다'),
     ('people', 1, 'people-02', '약속은?', '먼저 잡는다', '기다린다'),
     ('people', 2, 'people-03', '친구는?', '넓고 얕게', '좁고 깊게'),
@@ -79,5 +76,4 @@ FROM (VALUES
     ('people', 8, 'people-09', '칭찬은?', '직접 한다', '돌려서 한다'),
     ('people', 9, 'people-10', '모임에선?', '끝까지 있는다', '먼저 집에 간다')
 ) AS q (category_code, bit_position, code, prompt, option_0, option_1)
-JOIN category c ON c.code = q.category_code
-JOIN category_version v ON v.category_id = c.id AND v.version = 1;
+JOIN category c ON c.code = q.category_code;

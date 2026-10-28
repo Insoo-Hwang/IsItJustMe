@@ -7,8 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CategoryRepository extends JpaRepository<Category, Long> {
 
-	List<Category> findByActiveTrueOrderBySortOrder();
+	List<Category> findAllByOrderBySortOrder();
 
-	Optional<Category> findByCodeAndActiveTrue(String code);
+	Optional<Category> findByCode(String code);
 
 }

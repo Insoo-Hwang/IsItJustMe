@@ -52,9 +52,6 @@ public class Category {
 	@Column(nullable = false)
 	private int sortOrder;
 
-	@Column(nullable = false)
-	private boolean active;
-
 	@Column(nullable = false, updatable = false)
 	private Instant createdAt;
 

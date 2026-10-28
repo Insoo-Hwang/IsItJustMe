@@ -13,7 +13,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * One question of a version. Picking {@code option0} stores 0 at {@code bitPosition}
+ * One question of a category. Picking {@code option0} stores 0 at {@code bitPosition}
  * of the answer bits, picking {@code option1} stores 1.
  */
 @Entity
@@ -26,7 +26,7 @@ public class Question {
 	private Long id;
 
 	@Column(nullable = false)
-	private Long categoryVersionId;
+	private Long categoryId;
 
 	@JdbcTypeCode(SqlTypes.SMALLINT)
 	@Column(nullable = false)

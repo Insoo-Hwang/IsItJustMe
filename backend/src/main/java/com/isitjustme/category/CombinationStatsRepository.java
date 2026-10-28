@@ -25,41 +25,41 @@ class CombinationStatsRepository {
 
 	private final JdbcClient jdbcClient;
 
-	void increment(Long versionId, GuestProfile profile, int answerBits) {
+	void increment(Long categoryId, GuestProfile profile, int answerBits) {
 		jdbcClient.sql("""
-				INSERT INTO combination_stats (category_version_id, gender, age_group, answer_bits, participant_count)
-				VALUES (:versionId, :gender, :ageGroup, :answerBits, 1)
-				ON CONFLICT (category_version_id, gender, age_group, answer_bits)
+				INSERT INTO combination_stats (category_id, gender, age_group, answer_bits, participant_count)
+				VALUES (:categoryId, :gender, :ageGroup, :answerBits, 1)
+				ON CONFLICT (category_id, gender, age_group, answer_bits)
 				DO UPDATE SET participant_count = combination_stats.participant_count + 1
 				""")
-			.params(params(versionId, profile, answerBits))
+			.params(params(categoryId, profile, answerBits))
 			.update();
 	}
 
-	void decrement(Long versionId, GuestProfile profile, int answerBits) {
+	void decrement(Long categoryId, GuestProfile profile, int answerBits) {
 		jdbcClient.sql("""
 				UPDATE combination_stats SET participant_count = participant_count - 1
-				WHERE category_version_id = :versionId AND gender = :gender AND age_group = :ageGroup
+				WHERE category_id = :categoryId AND gender = :gender AND age_group = :ageGroup
 				  AND answer_bits = :answerBits AND participant_count > 0
 				""")
-			.params(params(versionId, profile, answerBits))
+			.params(params(categoryId, profile, answerBits))
 			.update();
 	}
 
-	List<StatsRow> findByVersion(Long versionId) {
+	List<StatsRow> findByCategory(Long categoryId) {
 		return jdbcClient.sql("""
 				SELECT gender, age_group, answer_bits, participant_count FROM combination_stats
-				WHERE category_version_id = :versionId AND participant_count > 0
+				WHERE category_id = :categoryId AND participant_count > 0
 				""")
-			.param("versionId", versionId)
+			.param("categoryId", categoryId)
 			.query((rs, i) -> new StatsRow(new GuestProfile(Gender.valueOf(rs.getString(1)), AgeGroup.valueOf(rs.getString(2))),
 					rs.getInt(3), rs.getLong(4)))
 			.list();
 	}
 
 	/**
-	 * Share of answers that picked option 0 for each question code, summed over every
-	 * version the question appeared in. Codes nobody answered yet are left out.
+	 * Share of answers that picked option 0 for each question code. Codes nobody answered
+	 * yet are left out.
 	 */
 	Map<String, Double> option0Rates(Collection<String> codes) {
 		if (codes.isEmpty()) {
@@ -70,7 +70,7 @@ class CombinationStatsRepository {
 				       SUM(s.participant_count) FILTER (WHERE (s.answer_bits >> q.bit_position) & 1 = 0) AS picked_0,
 				       SUM(s.participant_count) AS total
 				FROM question q
-				JOIN combination_stats s ON s.category_version_id = q.category_version_id
+				JOIN combination_stats s ON s.category_id = q.category_id
 				WHERE q.code IN (:codes)
 				GROUP BY q.code
 				HAVING SUM(s.participant_count) > 0
@@ -83,8 +83,8 @@ class CombinationStatsRepository {
 	}
 
 	/**
-	 * Option 0 picks per gender and age group for each question code, summed over every
-	 * version the question appeared in. Groups nobody answered in are left out.
+	 * Option 0 picks per gender and age group for each question code. Groups nobody
+	 * answered in are left out.
 	 */
 	Map<String, List<GroupCount>> option0CountsByGroup(Collection<String> codes) {
 		if (codes.isEmpty()) {
@@ -95,7 +95,7 @@ class CombinationStatsRepository {
 				       SUM(s.participant_count) FILTER (WHERE (s.answer_bits >> q.bit_position) & 1 = 0) AS picked_0,
 				       SUM(s.participant_count) AS total
 				FROM question q
-				JOIN combination_stats s ON s.category_version_id = q.category_version_id
+				JOIN combination_stats s ON s.category_id = q.category_id
 				WHERE q.code IN (:codes)
 				GROUP BY q.code, s.gender, s.age_group
 				HAVING SUM(s.participant_count) > 0
@@ -109,8 +109,8 @@ class CombinationStatsRepository {
 					Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
 	}
 
-	private static Map<String, Object> params(Long versionId, GuestProfile profile, int answerBits) {
-		return Map.of("versionId", versionId, "gender", profile.gender().name(), "ageGroup",
+	private static Map<String, Object> params(Long categoryId, GuestProfile profile, int answerBits) {
+		return Map.of("categoryId", categoryId, "gender", profile.gender().name(), "ageGroup",
 				profile.ageGroup().name(), "answerBits", answerBits);
 	}
 

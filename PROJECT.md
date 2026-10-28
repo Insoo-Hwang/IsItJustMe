@@ -28,9 +28,7 @@
 
 ## 잠재된 위험
 
-| 위험 | 발생 조건 | 영향 | 대응 방안 |
-|---|---|---|---|
-| 테스트 도중 질문 버전이 바뀌면 답이 다른 질문에 저장됨 | 사용자가 테스트를 푸는 사이에 새 버전이 발행될 때 | 이전 버전 질문의 답이 새 버전 질문의 답으로 저장되고 통계에 반영됨. 원본(`category_answer`)부터 틀어져 재계산으로도 복구 불가 | 목록 응답 · 제출 요청에 버전 ID를 넣고, 서버에서 현재 버전과 다르면 거절 |
+현재 없음
 
 ## API 명세
 
@@ -68,7 +66,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 역할 | 카테고리와 현재 버전의 질문 10개, 참여자 수, 질문별 선택 비율, 이 게스트의 완료 시각을 내려준다 |
+| 역할 | 카테고리와 질문 10개, 참여자 수, 질문별 선택 비율, 이 게스트의 완료 시각을 내려준다 |
 | 호출 시점 | 앱 첫 진입 시 (화면을 그리기 전에 1회) |
 | Request | 쿠키 `guest_token` 선택 (없거나 DB에 없으면 `completedAt`이 모두 `null`) |
 | Response Body | `[{ "code", "name", "icon", "description", "tagline", "minutes", "recommend": string[], "participants", "questions": [{ "code", "prompt", "option0", "option1", "option0Rate" }], "completedAt" }]` — `option0Rate`는 option0을 고른 비율(%), 응답이 없으면 50. `completedAt`은 마지막으로 답을 제출한 시각, 없으면 `null` |
@@ -77,7 +75,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 역할 | 10문항 답을 현재 버전에 저장하고 조합별 집계를 갱신한다 (다시 제출하면 덮어씀) |
+| 역할 | 10문항 답을 저장하고 조합별 집계를 갱신한다 (다시 제출하면 덮어씀) |
 | 호출 시점 | 마지막 문항을 답하고 (첫 테스트면 프로필 입력 후) 결과를 보기 전 |
 | Request | 쿠키 `guest_token` 필수. Body `{ "answerBits": 0 ~ 1023 }` — n번 비트가 1이면 n+1번 문항에서 option1 선택 |
 | Response | Body 없음 |
@@ -94,10 +92,10 @@
 
 | 항목 | 내용 |
 |---|---|
-| 역할 | 내 답을 같은 버전 참여자 전체 · 같은 성별 나이대와 비교한 결과를 내려준다 |
+| 역할 | 내 답을 같은 카테고리 참여자 전체 · 같은 성별 나이대와 비교한 결과를 내려준다 |
 | 호출 시점 | 결과 화면 진입 시 |
 | Request | 쿠키 `guest_token` 필수 |
-| Response Body | `{ "answerBits", "overall": Summary, "peer": { "profile": { "gender", "ageGroup" }, "summary": Summary }, "questions": [...] }` — `questions`는 내가 푼 버전의 질문 (목록 API와 같은 형식) |
+| Response Body | `{ "answerBits", "overall": Summary, "peer": { "profile": { "gender", "ageGroup" }, "summary": Summary }, "questions": [...] }` — `questions`는 카테고리의 질문 (목록 API와 같은 형식) |
 | Summary | `{ "participants", "exact", "similar", "opposite", "different" }` — 참여자 수, 나와 완전히 같은 다른 참여자 수, 8개 이상 일치하는 다른 참여자 비율(%), 2개 이하로 일치하는 다른 참여자 비율(%), 10개 모두 다른 참여자 수 |
 
 | 상황 | 상태 코드 | 동작 |
@@ -110,7 +108,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 역할 | 모든 카테고리의 답을 하나의 조합으로 묶어, 같은 버전으로 모든 카테고리를 완료한 참여자와 비교한 결과를 내려준다 |
+| 역할 | 모든 카테고리의 답을 하나의 조합으로 묶어, 모든 카테고리를 완료한 참여자와 비교한 결과를 내려준다 |
 | 호출 시점 | 종합 결과 화면 · 엔딩 화면 진입 시 |
 | Request | 쿠키 `guest_token` 필수 |
 | Response Body | `{ "questions", "overall": Summary }` — `questions`는 비교한 문항 수(카테고리 6개 = 60), Summary는 결과 조회와 같은 형식 (유사 = 80% 이상 일치, 갈림 = 20% 이하 일치) |
@@ -125,10 +123,10 @@
 
 | 항목 | 내용 |
 |---|---|
-| 역할 | 내가 푼 버전의 질문마다 성별 · 나이대별 선택 인원을 내려준다 |
+| 역할 | 카테고리의 질문마다 성별 · 나이대별 선택 인원을 내려준다 |
 | 호출 시점 | 결과 화면에서 "더 자세한 결과 보기"를 눌렀을 때 |
 | Request | 쿠키 `guest_token` 필수 |
-| Response Body | `{ "answerBits", "questions": [{ "code", "prompt", "option0", "option1", "groups": [{ "gender", "ageGroup", "option0", "total" }] }] }` — `option0`은 그룹에서 option0을 고른 인원, `total`은 그룹의 응답 수. 질문 `code` 기준으로 버전을 넘어 합산하고, 응답이 없는 그룹은 빠짐 |
+| Response Body | `{ "answerBits", "questions": [{ "code", "prompt", "option0", "option1", "groups": [{ "gender", "ageGroup", "option0", "total" }] }] }` — `option0`은 그룹에서 option0을 고른 인원, `total`은 그룹의 응답 수. 응답이 없는 그룹은 빠짐 |
 
 | 상황 | 상태 코드 | 동작 |
 |---|---|---|
@@ -244,3 +242,12 @@ Claude Design 시안을 React 화면으로 옮겼다. 테스트 · 결과 API가
 - 앱 시작 시 브라우저의 완료 기록을 서버 값으로 덮어씀 (`syncResults`). 쿠키가 바뀌었거나 답변 API 이전에 완료한 기록이 남아 있던 문제 수정
 - 브라우저 완료 기록에서 답 내용 제거 (완료 시각만 저장)
 - 테스트: 게스트별 완료 표시 (`CategoryServiceTests`), 응답 형식 (`CategoryControllerTests`)
+
+### 14. 질문 버전 제거
+카테고리와 질문이 바뀌지 않으므로 버전 관리를 없앴다.
+
+- 테이블: `category_version` 제거 (6개 → 5개). `question` · `category_answer` · `combination_stats`가 카테고리를 직접 참조
+- `category.active`와 음악 취향 카테고리 제거
+- 마이그레이션 V4 ~ V6을 V4(테이블) · V5(카테고리 6개 · 질문 60개 시드)로 다시 작성
+- 잠재된 위험의 "테스트 도중 질문 버전 변경" 항목 해소
+- API 응답 형식은 그대로
