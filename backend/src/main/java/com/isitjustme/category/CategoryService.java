@@ -1,11 +1,11 @@
 package com.isitjustme.category;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.jspecify.annotations.Nullable;
@@ -173,14 +173,10 @@ public class CategoryService {
 	public OverallResultView overallResult(@Nullable String rawToken) {
 		Guest guest = guestService.findByToken(rawToken)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-		List<Category> categories = categoryRepository.findAllByOrderBySortOrder();
-		Set<Long> answered = answerRepository.findByGuestId(guest.getId())
-			.stream()
-			.map(CategoryAnswer::getCategoryId)
-			.collect(Collectors.toSet());
-		if (!categories.stream().allMatch((c) -> answered.contains(c.getId()))) {
+		if (!completeAnswers(List.of(guest.getId())).containsKey(guest.getId())) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		}
+		List<Category> categories = categoryRepository.findAllByOrderBySortOrder();
 
 		// Each category takes the next ten bits of a long, in display order (six categories = 60 bits).
 		Map<Long, Integer> shiftByCategory = new HashMap<>();
@@ -204,6 +200,28 @@ public class CategoryService {
 		int questionCount = categories.size() * RarityCalculator.QUESTION_COUNT;
 		return new OverallResultView(questionCount,
 				RarityCalculator.summarize(byCombination, bitsByGuest.get(guest.getId()), questionCount));
+	}
+
+	/**
+	 * Each guest's answers in display order, only for the guests who answered every
+	 * category.
+	 */
+	@Transactional(readOnly = true)
+	public Map<Long, List<CategoryBits>> completeAnswers(Collection<Long> guestIds) {
+		List<Category> categories = categoryRepository.findAllByOrderBySortOrder();
+		Map<Long, Map<Long, Integer>> bitsByGuest = new HashMap<>();
+		for (CategoryAnswer answer : answerRepository.findByGuestIdIn(guestIds)) {
+			bitsByGuest.computeIfAbsent(answer.getGuestId(), (id) -> new HashMap<>())
+				.put(answer.getCategoryId(), answer.getAnswerBits());
+		}
+		Map<Long, List<CategoryBits>> complete = new HashMap<>();
+		bitsByGuest.forEach((guestId, bits) -> {
+			if (categories.stream().allMatch((c) -> bits.containsKey(c.getId()))) {
+				complete.put(guestId,
+						categories.stream().map((c) -> new CategoryBits(c.getCode(), bits.get(c.getId()))).toList());
+			}
+		});
+		return complete;
 	}
 
 	private Category findCategory(String code) {
@@ -243,6 +261,12 @@ public class CategoryService {
 	 * @param questions questions compared across all categories
 	 */
 	public record OverallResultView(int questions, Summary overall) {
+	}
+
+	/**
+	 * @param answerBits bit n is 1 when question n+1 got option 1
+	 */
+	public record CategoryBits(String code, int answerBits) {
 	}
 
 	public record QuestionStatsView(int answerBits, List<QuestionStats> questions) {

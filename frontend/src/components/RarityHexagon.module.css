@@ -34,3 +34,22 @@
   font-weight: 800;
   fill: var(--tier-deep);
 }
+.otherArea {
+  fill: var(--other-light);
+  fill-opacity: 0.45;
+  stroke: var(--other-deep);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+.otherDot {
+  fill: var(--other-deep);
+}
+.separator {
+  font-size: 12px;
+  fill: var(--faint);
+}
+.otherValue {
+  font-size: 12px;
+  font-weight: 800;
+  fill: var(--other-deep);
+}

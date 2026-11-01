@@ -1,0 +1,96 @@
+.space {
+  margin-top: 8px;
+  padding: 10px 6px 16px;
+  border-radius: 32px;
+  background: oklch(0.22 0.04 285);
+  color: white;
+}
+.chart {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+.star {
+  fill: white;
+  opacity: 0.55;
+}
+.orbit {
+  fill: none;
+  stroke: oklch(1 0 0 / 0.09);
+  stroke-dasharray: 3 5;
+}
+.link {
+  stroke: oklch(1 0 0 / 0.18);
+  stroke-width: 1;
+}
+.linkSelected {
+  stroke: white;
+  stroke-width: 2;
+}
+.sun {
+  fill: var(--butter-deep);
+}
+.sunLabel {
+  font-size: 12px;
+  font-weight: 800;
+  fill: var(--ink);
+  pointer-events: none;
+}
+.planet {
+  cursor: pointer;
+  outline: none;
+}
+.planet:focus-visible .halo,
+.halo {
+  fill: none;
+  stroke: white;
+  stroke-width: 2;
+}
+.planet:focus-visible > circle:not(.halo) {
+  stroke: white;
+  stroke-width: 2;
+}
+.planetLabel {
+  font-size: 11px;
+  font-weight: 700;
+  fill: white;
+  pointer-events: none;
+}
+.note {
+  margin-top: 4px;
+  text-align: center;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.pick {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+.pickNames {
+  font-size: 16px;
+  font-weight: 800;
+}
+.pickMatch {
+  font-size: 14px;
+  color: var(--ink-sub);
+}
+.pickMatch b {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  color: var(--ink);
+}
+.pickLine {
+  font-size: 14px;
+  font-weight: 600;
+}
+.pickEmpty {
+  padding: 8px 0;
+  font-size: 14px;
+  color: var(--mute);
+}

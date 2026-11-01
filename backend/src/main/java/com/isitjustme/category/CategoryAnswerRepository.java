@@ -13,6 +13,8 @@ public interface CategoryAnswerRepository extends JpaRepository<CategoryAnswer, 
 
 	List<CategoryAnswer> findByGuestId(Long guestId);
 
+	List<CategoryAnswer> findByGuestIdIn(Collection<Long> guestIds);
+
 	@Query("select a.categoryId as categoryId, count(a) as participants from CategoryAnswer a group by a.categoryId")
 	List<CategoryParticipants> countByCategory();
 

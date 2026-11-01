@@ -74,3 +74,8 @@ export function exactRate(summary: SummaryDto): number {
   const others = summary.participants - 1
   return others > 0 ? (summary.exact / others) * 100 : 0
 }
+
+// Share of my picks that went with the minority, the value drawn on the category hexagon.
+export function minorityShare(result: RarityResult): number {
+  return result.picks.length > 0 ? result.minority / result.picks.length : 0
+}

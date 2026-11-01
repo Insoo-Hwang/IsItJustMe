@@ -84,3 +84,8 @@ export function toAnswerBits(answers: Choice[]): number {
 export function fromAnswerBits(bits: number): Choice[] {
   return Array.from({ length: QUESTION_COUNT }, (_, i): Choice => (bits & (1 << i) ? 'b' : 'a'))
 }
+
+// "음식 취향" → "음식", for chart axes and short lists
+export function shortName(category: Category): string {
+  return category.name.replace(/ 취향$/, '')
+}

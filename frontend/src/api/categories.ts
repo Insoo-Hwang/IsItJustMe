@@ -72,7 +72,7 @@ export class HttpError extends Error {
 }
 
 // Sends a guest request; on 401 gets a fresh session and retries once.
-async function withGuest(request: () => Promise<Response>): Promise<Response> {
+export async function withGuest(request: () => Promise<Response>): Promise<Response> {
   await ensureGuestSession()
   let res = await request()
   if (res.status === 401) {

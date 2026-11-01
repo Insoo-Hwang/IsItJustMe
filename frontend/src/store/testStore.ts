@@ -15,10 +15,19 @@ export type TestState = {
   results: Record<string, SavedResult>
   // copy of the profile saved on the guest, for showing it without a round trip
   profile: GuestProfile | null
+  // the taste universe this guest was invited to, kept while they take the tests
+  invite: Invite | null
+  // last name typed for sharing or joining, only on this device
+  lastName: string
+}
+
+export type Invite = {
+  // share token of the owner's room
+  token: string
 }
 
 const KEY = 'rarity-test-v1'
-const EMPTY: TestState = { answers: {}, results: {}, profile: null }
+const EMPTY: TestState = { answers: {}, results: {}, profile: null, invite: null, lastName: '' }
 
 function load(): TestState {
   try {
@@ -106,4 +115,12 @@ export function syncResults(completed: Record<string, string>) {
 
 export function setProfile(profile: GuestProfile | null) {
   setState((s) => ({ ...s, profile }))
+}
+
+export function setInvite(invite: Invite) {
+  setState((s) => ({ ...s, invite }))
+}
+
+export function setLastName(lastName: string) {
+  setState((s) => ({ ...s, lastName }))
 }

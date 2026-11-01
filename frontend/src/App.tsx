@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import AppShell from './app/AppShell.tsx'
 import EndingPage from './pages/EndingPage.tsx'
 import IntroPage from './pages/IntroPage.tsx'
+import InvitePage from './pages/InvitePage.tsx'
 import LandingPage from './pages/LandingPage.tsx'
 import ProfilePage from './pages/ProfilePage.tsx'
 import QuizPage from './pages/QuizPage.tsx'
@@ -23,6 +24,7 @@ function App() {
           <Route path="/me" element={<ProfilePage />} />
           <Route path="/summary" element={<SummaryPage />} />
           <Route path="/ending" element={<EndingPage />} />
+          <Route path="/invite/:token" element={<InvitePage />} />
           <Route path="*" element={<Navigate to="/main" replace />} />
         </Route>
       </Routes>

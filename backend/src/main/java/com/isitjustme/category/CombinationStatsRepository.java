@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Repository
 @RequiredArgsConstructor
-class CombinationStatsRepository {
+public class CombinationStatsRepository {
 
 	private final JdbcClient jdbcClient;
 

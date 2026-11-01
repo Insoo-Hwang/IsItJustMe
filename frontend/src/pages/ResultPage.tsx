@@ -9,7 +9,6 @@ import { findCategory, fromAnswerBits, toQuestion, type Category } from '../data
 import { withTopic } from '../lib/korean.ts'
 import { ageGroupLabel, genderLabel } from '../lib/profile.ts'
 import { exactRate, rarityOf, sameRatioLabel, type PickedChoice } from '../lib/rarity.ts'
-import { showToast } from '../lib/toast.ts'
 import { clearAnswers } from '../store/testStore.ts'
 import styles from './ResultPage.module.css'
 
@@ -212,9 +211,9 @@ function ResultView({ category, data }: { category: Category; data: ResultDto })
       <PickList title="가장 희귀한 내 선택 TOP 3" picks={result.rareTop3} tone="rare" />
 
       <div className={styles.actions}>
-        <button type="button" className={`${ui.primary} ${ui.large}`} onClick={() => showToast('준비 중이에요')}>
-          <Icon name="ios_share" size={22} />
-          친구에게 공유하기
+        <button type="button" className={`${ui.primary} ${ui.large}`} onClick={() => navigate('/main')}>
+          <Icon name="home" size={22} />
+          홈으로 가기
         </button>
         <div className={styles.subActions}>
           <button type="button" className={styles.subAction} onClick={() => navigate(`/result/${id}/detail`)}>

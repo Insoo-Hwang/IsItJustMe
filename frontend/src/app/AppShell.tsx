@@ -1,20 +1,37 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
-import { Outlet, useLocation } from 'react-router'
+import { Outlet, useLocation, useNavigate } from 'react-router'
 import { ensureGuestSession } from '../api/guest.ts'
 import Toaster from '../components/Toast.tsx'
-import { setProfile } from '../store/testStore.ts'
+import { INVITE_PARAM } from '../lib/room.ts'
+import { setInvite, setProfile, useTestState } from '../store/testStore.ts'
 import { ScrollContainerContext } from './scrollContainer.ts'
 import styles from './AppShell.module.css'
 
 function AppShell() {
   const scrollRef = useRef<HTMLDivElement>(null)
-  const { pathname, hash } = useLocation()
+  const { pathname, search, hash } = useLocation()
+  const navigate = useNavigate()
+  const { invite } = useTestState()
 
   useEffect(() => {
     ensureGuestSession()
       .then((session) => setProfile(session.profile))
       .catch((err: unknown) => console.error(err))
   }, [])
+
+  // An invited friend keeps ?invite=<token> on every page: a tagged link remembers the
+  // invite, and an untagged page gets the remembered tag back.
+  useEffect(() => {
+    const params = new URLSearchParams(search)
+    const tagged = params.get(INVITE_PARAM)
+    if (tagged) {
+      if (tagged !== invite?.token) setInvite({ token: tagged })
+      return
+    }
+    if (!invite) return
+    params.set(INVITE_PARAM, invite.token)
+    navigate({ pathname, search: `?${params}`, hash }, { replace: true })
+  }, [pathname, search, hash, invite, navigate])
 
   // New page starts at the top, or at the #anchor when one is given.
   useLayoutEffect(() => {

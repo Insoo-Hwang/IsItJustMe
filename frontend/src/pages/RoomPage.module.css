@@ -1,0 +1,364 @@
+/* invite, compare and universe pages */
+.page {
+  padding-bottom: 28px;
+}
+
+.status {
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 60vh;
+  color: var(--ink-sub);
+  font-size: 15px;
+  text-align: center;
+}
+
+/* invite */
+.sectionTitle {
+  margin: 28px 4px 10px;
+  font-size: 18px;
+  font-weight: 800;
+}
+.sectionStatus {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 20px;
+  font-size: 14px;
+  color: var(--ink-sub);
+}
+
+.invite {
+  margin-top: 8px;
+  padding: 26px 24px 24px;
+  border-radius: 32px;
+  background: var(--tier);
+  animation: popIn 0.6s cubic-bezier(0.34, 1.5, 0.5, 1);
+}
+.inviteBadge {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: white;
+  color: var(--tier-deep);
+  font-size: 13px;
+  font-weight: 800;
+}
+.inviteTitle {
+  margin-top: 14px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 1.25;
+}
+.inviteText {
+  margin-top: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.inviteDone {
+  margin-top: 18px;
+  padding: 12px 16px;
+  border-radius: 18px;
+  background: white;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-sub);
+}
+.inviteDone b {
+  color: var(--tier-deep);
+  font-weight: 800;
+}
+
+.chartCard {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.chip {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--tier);
+  color: var(--ink-sub);
+  font-size: 12px;
+  font-weight: 700;
+}
+.chip b {
+  color: var(--tier-deep);
+  font-weight: 800;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+/* the shared button style grows to fill a row; here they stack */
+.actions > button {
+  flex: none;
+}
+.hint {
+  text-align: center;
+  font-size: 13px;
+  color: var(--mute);
+}
+.subAction {
+  height: 52px;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 0 0 1px var(--line-strong);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* compare */
+.versus {
+  padding: 24px 20px 22px;
+  border-radius: 32px;
+  background: var(--ink);
+  color: white;
+  text-align: center;
+  animation: popIn 0.6s cubic-bezier(0.34, 1.5, 0.5, 1);
+}
+.versusNames {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 800;
+}
+.versusNames > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ownerName {
+  color: var(--coral-light);
+}
+.otherName {
+  color: oklch(0.78 0.11 258);
+}
+.matchLabel {
+  margin-top: 18px;
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0.75;
+}
+.matchValue {
+  font-family: var(--font-display);
+  font-size: 72px;
+  line-height: 1.05;
+}
+.matchValue small {
+  margin-left: 2px;
+  font-size: 30px;
+}
+.matchLine {
+  margin-top: 6px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.versusButton {
+  width: 100%;
+  flex: none;
+  margin-top: 18px;
+}
+
+.pair {
+  --tier-light: var(--coral-soft);
+  --tier-deep: var(--coral-text);
+  --other-light: var(--blue-soft);
+  --other-deep: var(--blue-text);
+}
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 4px 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.legendOwner,
+.legendOther {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.legendOwner::before,
+.legendOther::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.legendOwner::before {
+  background: var(--tier-deep);
+}
+.legendOther::before {
+  background: var(--other-deep);
+}
+.note {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--mute);
+  text-align: center;
+}
+
+.extremes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+.extreme {
+  padding: 16px;
+  text-align: center;
+}
+.extremeLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-sub);
+}
+.extremeValue {
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: 26px;
+}
+.extremeNote {
+  font-size: 12px;
+  color: var(--mute);
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 14px 0 0;
+  list-style: none;
+}
+.barsHint {
+  font-size: 12px;
+  color: var(--mute);
+}
+.barList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.bar {
+  width: 100%;
+  padding: 8px 0;
+  background: none;
+  color: var(--ink);
+  display: grid;
+  grid-template-columns: 44px 1fr 40px 20px;
+  align-items: center;
+  text-align: left;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.barTrack {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--track);
+  overflow: hidden;
+}
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ink-soft);
+}
+.barValue {
+  text-align: right;
+  color: var(--ink-sub);
+}
+.barChevron {
+  color: var(--faint);
+}
+
+.questions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 10px;
+  padding: 0;
+  list-style: none;
+}
+.question {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--chip);
+}
+.questionHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.questionPrompt {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.same,
+.diff {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.same {
+  background: var(--blue-soft);
+  color: var(--blue-text);
+}
+.diff {
+  background: var(--soft);
+  color: var(--ink-sub);
+}
+.answers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.answers b {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+}
+.answerOwner b {
+  color: var(--coral-text);
+}
+.answerMine b {
+  color: var(--blue-text);
+}

@@ -1,9 +1,12 @@
 import { Navigate, useNavigate } from 'react-router'
 import Icon from '../components/Icon.tsx'
 import RarityHexagon from '../components/RarityHexagon.tsx'
+import ShareUniverseButton from '../components/ShareUniverseButton.tsx'
 import tier from '../components/tier.module.css'
 import TopBar from '../components/TopBar.tsx'
 import ui from '../components/ui.module.css'
+import { shortName } from '../data/categories.ts'
+import { minorityShare } from '../lib/rarity.ts'
 import { useSummary } from '../lib/summary.ts'
 import styles from './SummaryPage.module.css'
 
@@ -43,8 +46,8 @@ function SummaryPage() {
 
   const { rows, picks, minority, tier: overall, overall: summary } = state.summary
   const axes = rows.map(({ category, rarity }) => ({
-    label: category.name.replace(/ 취향$/, ''),
-    value: rarity.picks.length > 0 ? rarity.minority / rarity.picks.length : 0,
+    label: shortName(category),
+    value: minorityShare(rarity),
   }))
 
   return (
@@ -111,6 +114,13 @@ function SummaryPage() {
           </li>
         ))}
       </ul>
+
+      <section className={`${ui.card} ${styles.share}`} aria-label="친구와 비교">
+        <p className={styles.shareText}>친구들은 나랑 얼마나 다를까?</p>
+        <ShareUniverseButton className={`${ui.primary} ${ui.large} ${styles.shareButton}`}>
+          공유하기
+        </ShareUniverseButton>
+      </section>
 
       <section className={styles.teaser} aria-label="마지막 비교 대상">
         <div className={styles.teaserMark} aria-hidden>

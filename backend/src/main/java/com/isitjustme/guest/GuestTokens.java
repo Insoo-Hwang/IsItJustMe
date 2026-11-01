@@ -10,7 +10,7 @@ import java.util.HexFormat;
 /**
  * Raw tokens live only in the visitor's cookie; the DB stores their SHA-256 hash.
  */
-final class GuestTokens {
+public final class GuestTokens {
 
 	private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -19,7 +19,7 @@ final class GuestTokens {
 	private GuestTokens() {
 	}
 
-	static String generate() {
+	public static String generate() {
 		byte[] bytes = new byte[TOKEN_BYTES];
 		RANDOM.nextBytes(bytes);
 		return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);

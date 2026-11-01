@@ -5,6 +5,8 @@ type Axis = { label: string; value: number }
 type Props = {
   // 0 ~ 1 per axis, clockwise from the top
   axes: Axis[]
+  // a second person's values on the same axes, drawn over the first in --other colors
+  other?: number[]
 }
 
 const SIZE = 300
@@ -21,15 +23,21 @@ function polygon(values: number[]): string {
   return values.map((v, i) => point(i, values.length, RADIUS * v).join(',')).join(' ')
 }
 
+// keeps a zero value visible as a small dot near the center
+const shown = (v: number) => Math.max(0.04, v)
+const percent = (v: number) => `${Math.round(v * 100)}%`
+
 // Radar chart of the minority-pick share per category. Colors come from the tier class.
-function RarityHexagon({ axes }: Props) {
+function RarityHexagon({ axes, other }: Props) {
   const count = axes.length
   return (
     <svg
       className={styles.chart}
       viewBox={`0 0 ${SIZE} ${SIZE}`}
       role="img"
-      aria-label={axes.map((a) => `${a.label} ${Math.round(a.value * 100)}%`).join(', ')}
+      aria-label={axes
+        .map((a, i) => `${a.label} ${percent(a.value)}${other ? ` · ${percent(other[i])}` : ''}`)
+        .join(', ')}
     >
       {RINGS.map((r) => (
         <polygon key={r} className={styles.ring} points={polygon(axes.map(() => r))} />
@@ -38,10 +46,15 @@ function RarityHexagon({ axes }: Props) {
         const [x, y] = point(i, count, RADIUS)
         return <line key={a.label} className={styles.spoke} x1={CENTER} y1={CENTER} x2={x} y2={y} />
       })}
-      <polygon className={styles.area} points={polygon(axes.map((a) => Math.max(0.04, a.value)))} />
+      <polygon className={styles.area} points={polygon(axes.map((a) => shown(a.value)))} />
       {axes.map((a, i) => {
-        const [x, y] = point(i, count, RADIUS * Math.max(0.04, a.value))
+        const [x, y] = point(i, count, RADIUS * shown(a.value))
         return <circle key={a.label} className={styles.dot} cx={x} cy={y} r={4} />
+      })}
+      {other && <polygon className={styles.otherArea} points={polygon(other.map(shown))} />}
+      {other?.map((v, i) => {
+        const [x, y] = point(i, count, RADIUS * shown(v))
+        return <circle key={axes[i].label} className={styles.otherDot} cx={x} cy={y} r={4} />
       })}
       {axes.map((a, i) => {
         const [x, y] = point(i, count, RADIUS + 30)
@@ -51,8 +64,14 @@ function RarityHexagon({ axes }: Props) {
               {a.label}
             </tspan>
             <tspan x={x} dy="1.25em" className={styles.value}>
-              {Math.round(a.value * 100)}%
+              {percent(a.value)}
             </tspan>
+            {other && (
+              <>
+                <tspan className={styles.separator}> · </tspan>
+                <tspan className={styles.otherValue}>{percent(other[i])}</tspan>
+              </>
+            )}
           </text>
         )
       })}

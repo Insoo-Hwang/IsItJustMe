@@ -275,6 +275,14 @@
   font-size: 16px;
   font-weight: 800;
 }
+/* softer than the summary button so the two read apart */
+.compare {
+  background: var(--coral-soft);
+  color: var(--coral-text);
+}
+.summary + .summary {
+  margin-top: 10px;
+}
 .summaryLocked {
   background: var(--disabled);
   color: var(--disabled-text);

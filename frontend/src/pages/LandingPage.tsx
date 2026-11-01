@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router'
 import { useScrollContainer } from '../app/scrollContainer.ts'
 import Icon from '../components/Icon.tsx'
 import { CATEGORIES, QUESTION_COUNT, totalTests } from '../data/categories.ts'
+import { withAnd } from '../lib/korean.ts'
+import { invitePath, useInviteRoom } from '../lib/room.ts'
 import { showToast } from '../lib/toast.ts'
 import { answeredCount, firstUnanswered, useTestState } from '../store/testStore.ts'
 import styles from './LandingPage.module.css'
@@ -10,6 +12,7 @@ import styles from './LandingPage.module.css'
 function LandingPage() {
   const navigate = useNavigate()
   const { answers, results } = useTestState()
+  const invited = useInviteRoom()
   const rootRef = useRef<HTMLDivElement>(null)
   const scrollRef = useScrollContainer()
 
@@ -40,6 +43,12 @@ function LandingPage() {
   const openSummary = () => {
     if (allDone) navigate('/summary')
     else showToast(`테스트 ${CATEGORIES.length}개를 모두 끝내면 볼 수 있어요`)
+  }
+
+  const openInvite = () => {
+    if (!invited) return
+    if (allDone) navigate(invitePath(invited.token))
+    else showToast(`테스트 ${CATEGORIES.length}개를 모두 끝내면 비교할 수 있어요`)
   }
 
   const resume = () => {
@@ -106,6 +115,7 @@ function LandingPage() {
           <p className={styles.sheetSub}>카테고리마다 {QUESTION_COUNT}문항, 1분이면 끝나요</p>
         </div>
 
+
         {inProgress && (
           <button type="button" className={styles.resume} onClick={resume}>
             <Icon name="play_circle" />
@@ -160,6 +170,21 @@ function LandingPage() {
             {doneCount}/{CATEGORIES.length}
           </span>
         </button>
+
+        {invited && (
+          <button
+            type="button"
+            className={`${styles.summary} ${allDone ? styles.compare : styles.summaryLocked}`}
+            aria-disabled={!allDone}
+            onClick={openInvite}
+          >
+            <Icon name={allDone ? 'public' : 'lock'} size={22} />
+            <span className={styles.summaryText}>{withAnd(invited.room.ownerName)} 비교하기</span>
+            <span className={styles.summaryCount}>
+              {doneCount}/{CATEGORIES.length}
+            </span>
+          </button>
+        )}
 
         <div style={{ height: 24 }} />
       </section>
