@@ -384,6 +384,6 @@ Claude Design 시안을 React 화면으로 옮겼다. 테스트 · 결과 API가
 - 카테고리별 참여자 수를 답변 테이블 전체 대신 `combination_stats` 합계로 계산
 - 카테고리 · 질문은 캐시한 목록에서 찾음 (`CategoryCatalog`)
 - 프로필을 바꾸면 답변의 `updated_at`도 바꿈 (결과 보정에 사용)
-- 결과 · 자세한 결과 화면에 "바로 반영되지 않아요" 안내 문구
+- 결과 · 자세한 결과 화면에 "바로 반영되지 않을 수 있어요" 안내 문구
 - API 응답 형식은 그대로
 - 테스트: 캐시 값이 Redis에서 그대로 읽히는지 · TTL · 공유자 이름 변경 시 캐시 삭제 (`CacheTests`), 캐시 이후 답 보정 (`StatsSnapshotTests`), Redis가 꺼져 있어도 DB에서 읽음 (`RedisDownTests`)
