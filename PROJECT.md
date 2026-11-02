@@ -343,3 +343,11 @@ Claude Design 시안을 React 화면으로 옮겼다. 테스트 · 결과 API가
 - API: `POST /api/v1/rooms`, `GET /api/v1/rooms/{token}`, `POST /api/v1/rooms/{token}/planets`, `GET /api/v1/rooms/{token}/universe`, `GET /api/v1/rooms/{token}/compare`
 - 6개 카테고리 답 조회를 `CategoryService.completeAnswers`로 분리해 종합 결과와 같이 사용
 - 테스트: 일치율 계산 (`TasteMatchTests`), 방 생성 · 이름 변경 · 등록 · 우주 · 비교 · 400 · 404 · 409 (`RoomServiceTests`), 응답 형식 · 다른 사람 비교 경로 없음 (`RoomControllerTests`)
+
+### 16. 종합 결과 계산을 DB로 이동
+- 테이블: `overall_answer`(게스트 · 60비트 답안) 추가, 기존 답변으로 채움 (Flyway V7)
+- 6개 카테고리를 모두 답했을 때와 답을 고칠 때 `submit`에서 함께 저장
+- 종합 결과는 답변 전체를 읽지 않고, DB에서 XOR · `bit_count`로 센 숫자만 받는다 (`OverallAnswerRepository.count`)
+- `RarityCalculator`: 센 숫자(`Counts`)로 결과를 만드는 메서드 분리
+- API 응답 형식은 그대로
+- 테스트: 갈림 · 완전히 다른 사람, 재응답 시 종합 결과 변경 (`CategoryServiceTests`)

@@ -20,6 +20,7 @@ import org.testcontainers.utility.DockerImageName;
 import com.isitjustme.category.CategoryService;
 import com.isitjustme.category.CategoryService.CategoryBits;
 import com.isitjustme.category.CombinationStatsRepository;
+import com.isitjustme.category.OverallAnswerRepository;
 import com.isitjustme.guest.AgeGroup;
 import com.isitjustme.guest.Gender;
 import com.isitjustme.guest.GuestProfile;
@@ -33,7 +34,8 @@ import com.isitjustme.room.RoomService.UniverseView;
 @DataJpaTest
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({ RoomService.class, CategoryService.class, CombinationStatsRepository.class, GuestService.class })
+@Import({ RoomService.class, CategoryService.class, CombinationStatsRepository.class, OverallAnswerRepository.class,
+		GuestService.class })
 class RoomServiceTests {
 
 	@Container

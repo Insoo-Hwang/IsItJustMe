@@ -18,25 +18,11 @@ public interface CategoryAnswerRepository extends JpaRepository<CategoryAnswer, 
 	@Query("select a.categoryId as categoryId, count(a) as participants from CategoryAnswer a group by a.categoryId")
 	List<CategoryParticipants> countByCategory();
 
-	@Query("select a.guestId as guestId, a.categoryId as categoryId, a.answerBits as answerBits"
-			+ " from CategoryAnswer a where a.categoryId in :categoryIds")
-	List<GuestAnswer> findByCategoryIdIn(Collection<Long> categoryIds);
-
 	interface CategoryParticipants {
 
 		Long getCategoryId();
 
 		long getParticipants();
-
-	}
-
-	interface GuestAnswer {
-
-		Long getGuestId();
-
-		Long getCategoryId();
-
-		int getAnswerBits();
 
 	}
 

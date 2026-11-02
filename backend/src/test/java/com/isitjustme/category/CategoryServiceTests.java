@@ -31,7 +31,8 @@ import com.isitjustme.guest.GuestService;
 @DataJpaTest
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({ CategoryService.class, CombinationStatsRepository.class, GuestService.class })
+@Import({ CategoryService.class, CombinationStatsRepository.class, OverallAnswerRepository.class,
+		GuestService.class })
 class CategoryServiceTests {
 
 	@Container
@@ -145,11 +146,13 @@ class CategoryServiceTests {
 		String me = guestWithProfile(woman20s);
 		String same = guestWithProfile(woman20s);
 		String close = guestWithProfile(woman20s);
+		String opposite = guestWithProfile(woman20s);
 		String unfinished = guestWithProfile(woman20s);
 		for (String code : CATEGORY_CODES) {
 			categoryService.submit(me, code, 0);
 			categoryService.submit(same, code, 0);
 			categoryService.submit(close, code, 0b11);
+			categoryService.submit(opposite, code, 1023);
 			if (!code.equals("people")) {
 				categoryService.submit(unfinished, code, 0);
 			}
@@ -158,12 +161,31 @@ class CategoryServiceTests {
 		OverallResultView result = categoryService.overallResult(me);
 
 		assertThat(result.questions()).isEqualTo(60);
-		assertThat(result.overall().participants()).isEqualTo(3);
+		assertThat(result.overall().participants()).isEqualTo(4);
 		assertThat(result.overall().exact()).isEqualTo(1);
-		// close differs in 12 of 60 answers, so both others are similar
-		assertThat(result.overall().similar()).isEqualTo(100.0);
+		// close differs in 12 of 60 answers: similar. 2 of 3 others
+		assertThat(result.overall().similar()).isEqualTo(66.7);
+		assertThat(result.overall().opposite()).isEqualTo(33.3);
+		assertThat(result.overall().different()).isEqualTo(1);
 		assertThatThrownBy(() -> categoryService.overallResult(unfinished)).isInstanceOf(ResponseStatusException.class)
 			.hasMessageContaining("404");
+	}
+
+	@Test
+	void resubmittingChangesTheOverallCombination() {
+		GuestProfile woman20s = new GuestProfile(Gender.FEMALE, AgeGroup.TWENTIES);
+		String me = guestWithProfile(woman20s);
+		String other = guestWithProfile(woman20s);
+		for (String code : CATEGORY_CODES) {
+			categoryService.submit(me, code, 0);
+			categoryService.submit(other, code, 0);
+		}
+		assertThat(categoryService.overallResult(me).overall().exact()).isEqualTo(1);
+
+		categoryService.submit(other, "people", 1);
+
+		assertThat(categoryService.overallResult(me).overall().exact()).isZero();
+		assertThat(categoryService.overallResult(me).overall().similar()).isEqualTo(100.0);
 	}
 
 	@Test

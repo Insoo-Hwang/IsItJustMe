@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.isitjustme.category.CategoryAnswerRepository.CategoryParticipants;
-import com.isitjustme.category.CategoryAnswerRepository.GuestAnswer;
 import com.isitjustme.category.CombinationStatsRepository.StatsRow;
 import com.isitjustme.category.RarityCalculator.Summary;
 import com.isitjustme.guest.AgeGroup;
@@ -43,6 +42,8 @@ public class CategoryService {
 	private final CategoryAnswerRepository answerRepository;
 
 	private final CombinationStatsRepository statsRepository;
+
+	private final OverallAnswerRepository overallRepository;
 
 	private final GuestService guestService;
 
@@ -103,6 +104,8 @@ public class CategoryService {
 			answerRepository.save(new CategoryAnswer(guest.getId(), category.getId(), profile, answerBits, now));
 		}
 		statsRepository.increment(category.getId(), profile, answerBits);
+		Optional.ofNullable(completeAnswers(List.of(guest.getId())).get(guest.getId()))
+			.ifPresent((answers) -> overallRepository.save(guest.getId(), overallBits(answers)));
 	}
 
 	/**
@@ -173,33 +176,11 @@ public class CategoryService {
 	public OverallResultView overallResult(@Nullable String rawToken) {
 		Guest guest = guestService.findByToken(rawToken)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-		if (!completeAnswers(List.of(guest.getId())).containsKey(guest.getId())) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-		}
-		List<Category> categories = categoryRepository.findAllByOrderBySortOrder();
-
-		// Each category takes the next ten bits of a long, in display order (six categories = 60 bits).
-		Map<Long, Integer> shiftByCategory = new HashMap<>();
-		for (int i = 0; i < categories.size(); i++) {
-			shiftByCategory.put(categories.get(i).getId(), i * RarityCalculator.QUESTION_COUNT);
-		}
-		Map<Long, Long> bitsByGuest = new HashMap<>();
-		Map<Long, Integer> answeredByGuest = new HashMap<>();
-		for (GuestAnswer answer : answerRepository.findByCategoryIdIn(shiftByCategory.keySet())) {
-			long bits = (long) answer.getAnswerBits() << shiftByCategory.get(answer.getCategoryId());
-			bitsByGuest.merge(answer.getGuestId(), bits, (a, b) -> a | b);
-			answeredByGuest.merge(answer.getGuestId(), 1, Integer::sum);
-		}
-		Map<Long, Long> byCombination = new HashMap<>();
-		answeredByGuest.forEach((guestId, count) -> {
-			if (count == categories.size()) {
-				byCombination.merge(bitsByGuest.get(guestId), 1L, Long::sum);
-			}
-		});
-
-		int questionCount = categories.size() * RarityCalculator.QUESTION_COUNT;
+		long myBits = overallRepository.findBits(guest.getId())
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+		int questionCount = (int) categoryRepository.count() * RarityCalculator.QUESTION_COUNT;
 		return new OverallResultView(questionCount,
-				RarityCalculator.summarize(byCombination, bitsByGuest.get(guest.getId()), questionCount));
+				RarityCalculator.summarize(overallRepository.count(myBits, questionCount)));
 	}
 
 	/**
@@ -222,6 +203,15 @@ public class CategoryService {
 			}
 		});
 		return complete;
+	}
+
+	// Each category takes the next ten bits of a long, in display order (six categories = 60 bits).
+	private static long overallBits(List<CategoryBits> answers) {
+		long bits = 0;
+		for (int i = 0; i < answers.size(); i++) {
+			bits |= (long) answers.get(i).answerBits() << (i * RarityCalculator.QUESTION_COUNT);
+		}
+		return bits;
 	}
 
 	private Category findCategory(String code) {
