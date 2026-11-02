@@ -31,8 +31,8 @@ import com.isitjustme.guest.GuestService;
 @DataJpaTest
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({ CategoryService.class, CombinationStatsRepository.class, OverallAnswerRepository.class,
-		GuestService.class })
+@Import({ CategoryService.class, CategoryStatsCache.class, CombinationStatsRepository.class,
+		OverallAnswerRepository.class, GuestService.class })
 class CategoryServiceTests {
 
 	@Container

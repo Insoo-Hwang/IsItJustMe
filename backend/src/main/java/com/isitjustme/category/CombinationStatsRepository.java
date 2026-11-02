@@ -1,6 +1,5 @@
 package com.isitjustme.category;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -58,24 +57,35 @@ public class CombinationStatsRepository {
 	}
 
 	/**
+	 * Answers per category code.
+	 */
+	Map<String, Long> participantsByCategory() {
+		return jdbcClient.sql("""
+				SELECT c.code, COALESCE(SUM(s.participant_count), 0)
+				FROM category c
+				LEFT JOIN combination_stats s ON s.category_id = c.id
+				GROUP BY c.code
+				""")
+			.query((rs, i) -> Map.entry(rs.getString(1), rs.getLong(2)))
+			.list()
+			.stream()
+			.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+	}
+
+	/**
 	 * Share of answers that picked option 0 for each question code. Codes nobody answered
 	 * yet are left out.
 	 */
-	Map<String, Double> option0Rates(Collection<String> codes) {
-		if (codes.isEmpty()) {
-			return Map.of();
-		}
+	Map<String, Double> option0Rates() {
 		return jdbcClient.sql("""
 				SELECT q.code,
 				       SUM(s.participant_count) FILTER (WHERE (s.answer_bits >> q.bit_position) & 1 = 0) AS picked_0,
 				       SUM(s.participant_count) AS total
 				FROM question q
 				JOIN combination_stats s ON s.category_id = q.category_id
-				WHERE q.code IN (:codes)
 				GROUP BY q.code
 				HAVING SUM(s.participant_count) > 0
 				""")
-			.param("codes", codes)
 			.query((rs, i) -> Map.entry(rs.getString(1), rs.getLong(2) / (double) rs.getLong(3)))
 			.list()
 			.stream()
@@ -83,24 +93,21 @@ public class CombinationStatsRepository {
 	}
 
 	/**
-	 * Option 0 picks per gender and age group for each question code. Groups nobody
-	 * answered in are left out.
+	 * Option 0 picks per gender and age group for each question code of the category.
+	 * Groups nobody answered in are left out.
 	 */
-	Map<String, List<GroupCount>> option0CountsByGroup(Collection<String> codes) {
-		if (codes.isEmpty()) {
-			return Map.of();
-		}
+	Map<String, List<GroupCount>> option0CountsByGroup(long categoryId) {
 		return jdbcClient.sql("""
 				SELECT q.code, s.gender, s.age_group,
 				       SUM(s.participant_count) FILTER (WHERE (s.answer_bits >> q.bit_position) & 1 = 0) AS picked_0,
 				       SUM(s.participant_count) AS total
 				FROM question q
 				JOIN combination_stats s ON s.category_id = q.category_id
-				WHERE q.code IN (:codes)
+				WHERE q.category_id = :categoryId
 				GROUP BY q.code, s.gender, s.age_group
 				HAVING SUM(s.participant_count) > 0
 				""")
-			.param("codes", codes)
+			.param("categoryId", categoryId)
 			.query((rs, i) -> Map.entry(rs.getString(1), new GroupCount(Gender.valueOf(rs.getString(2)),
 					AgeGroup.valueOf(rs.getString(3)), rs.getLong(4), rs.getLong(5))))
 			.list()

@@ -74,9 +74,10 @@ public class CategoryAnswer {
 		this.updatedAt = now;
 	}
 
-	public void changeProfile(GuestProfile profile) {
+	public void changeProfile(GuestProfile profile, Instant now) {
 		this.gender = profile.gender();
 		this.ageGroup = profile.ageGroup();
+		this.updatedAt = now;
 	}
 
 	public boolean matches(GuestProfile profile, int answerBits) {

@@ -1,7 +1,6 @@
 package com.isitjustme.room;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -11,6 +10,8 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.isitjustme.category.CategoryService;
@@ -18,6 +19,7 @@ import com.isitjustme.category.CategoryService.CategoryBits;
 import com.isitjustme.guest.Guest;
 import com.isitjustme.guest.GuestService;
 import com.isitjustme.guest.GuestTokens;
+import com.isitjustme.room.RoomCards.RoomCard;
 import com.isitjustme.room.TasteMatch.CategoryMatch;
 import com.isitjustme.room.TasteMatch.Comparison;
 
@@ -35,6 +37,8 @@ public class RoomService {
 	static final int NAME_MAX_LENGTH = 10;
 
 	private final ShareRoomRepository roomRepository;
+
+	private final RoomCards roomCards;
 
 	private final UniversePlanetRepository planetRepository;
 
@@ -54,7 +58,16 @@ public class RoomService {
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
 		requireComplete(guest.getId());
 		Optional<ShareRoom> found = roomRepository.findByOwnerGuestId(guest.getId());
-		found.ifPresent((room) -> room.rename(name));
+		found.ifPresent((room) -> {
+			room.rename(name);
+			// after commit, so a request in between cannot cache the old name again
+			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+				@Override
+				public void afterCommit() {
+					roomCards.evict(room.getShareToken());
+				}
+			});
+		});
 		return found
 			.orElseGet(() -> roomRepository.save(new ShareRoom(guest.getId(), GuestTokens.generate(), name, Instant.now())))
 			.getShareToken();
@@ -66,24 +79,18 @@ public class RoomService {
 	 */
 	@Transactional(readOnly = true)
 	public RoomView room(@Nullable String rawToken, String shareToken) {
-		ShareRoom room = findRoom(shareToken);
-		Optional<Guest> viewer = guestService.findByToken(rawToken);
-		List<Long> guestIds = new ArrayList<>(List.of(room.getOwnerGuestId()));
-		viewer.ifPresent((guest) -> guestIds.add(guest.getId()));
-		Map<Long, List<CategoryBits>> answers = categoryService.completeAnswers(guestIds);
-
-		ViewerView viewerView = viewer.map((guest) -> {
-			if (guest.getId().equals(room.getOwnerGuestId())) {
+		RoomCard room = roomCards.find(shareToken);
+		ViewerView viewerView = guestService.findByToken(rawToken).map((guest) -> {
+			if (guest.getId() == room.ownerGuestId()) {
 				return new ViewerView(Role.OWNER, true, null);
 			}
-			Long planetId = planetRepository.findByRoomIdAndGuestId(room.getId(), guest.getId())
+			Long planetId = planetRepository.findByRoomIdAndGuestId(room.id(), guest.getId())
 				.map(UniversePlanet::getId)
 				.orElse(null);
-			return new ViewerView((planetId != null) ? Role.MEMBER : Role.VISITOR, answers.containsKey(guest.getId()),
+			return new ViewerView((planetId != null) ? Role.MEMBER : Role.VISITOR, isComplete(guest.getId()),
 					planetId);
 		}).orElse(new ViewerView(Role.VISITOR, false, null));
-		return new RoomView(room.getOwnerName(), ownerAnswers(room, answers),
-				planetRepository.countByRoomId(room.getId()), viewerView);
+		return new RoomView(room.ownerName(), room.owner(), planetRepository.countByRoomId(room.id()), viewerView);
 	}
 
 	/**
@@ -95,13 +102,13 @@ public class RoomService {
 		String name = validName(planetName);
 		Guest guest = guestService.lockByToken(rawToken)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-		ShareRoom room = findRoom(shareToken);
-		if (guest.getId().equals(room.getOwnerGuestId())) {
+		RoomCard room = roomCards.find(shareToken);
+		if (guest.getId() == room.ownerGuestId()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "owner cannot join");
 		}
 		requireComplete(guest.getId());
-		return planetRepository.findByRoomIdAndGuestId(room.getId(), guest.getId())
-			.orElseGet(() -> planetRepository.save(new UniversePlanet(room.getId(), guest.getId(), name, Instant.now())))
+		return planetRepository.findByRoomIdAndGuestId(room.id(), guest.getId())
+			.orElseGet(() -> planetRepository.save(new UniversePlanet(room.id(), guest.getId(), name, Instant.now())))
 			.getId();
 	}
 
@@ -111,18 +118,16 @@ public class RoomService {
 	 */
 	@Transactional(readOnly = true)
 	public UniverseView universe(@Nullable String rawToken, String shareToken) {
-		ShareRoom room = findRoom(shareToken);
+		RoomCard room = roomCards.find(shareToken);
 		Long viewerId = guestService.findByToken(rawToken).map(Guest::getId).orElse(null);
-		List<UniversePlanet> planets = planetRepository.findByRoomIdOrderById(room.getId());
-		List<Long> guestIds = new ArrayList<>(List.of(room.getOwnerGuestId()));
-		planets.forEach((p) -> guestIds.add(p.getGuestId()));
-		Map<Long, List<CategoryBits>> answers = categoryService.completeAnswers(guestIds);
-		List<CategoryBits> owner = ownerAnswers(room, answers);
+		List<UniversePlanet> planets = planetRepository.findByRoomIdOrderById(room.id());
+		Map<Long, List<CategoryBits>> answers = categoryService
+			.completeAnswers(planets.stream().map(UniversePlanet::getGuestId).toList());
 
 		return new UniverseView(planets.stream()
 			.filter((p) -> answers.containsKey(p.getGuestId()))
 			.map((p) -> new PlanetView(p.getId(), p.getName(),
-					TasteMatch.compare(owner, answers.get(p.getGuestId())).match(),
+					TasteMatch.compare(room.owner(), answers.get(p.getGuestId())).match(),
 					Objects.equals(p.getGuestId(), viewerId)))
 			.toList());
 	}
@@ -135,29 +140,26 @@ public class RoomService {
 	public ComparisonView compare(@Nullable String rawToken, String shareToken) {
 		Guest guest = guestService.findByToken(rawToken)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-		ShareRoom room = findRoom(shareToken);
-		if (guest.getId().equals(room.getOwnerGuestId())) {
+		RoomCard room = roomCards.find(shareToken);
+		if (guest.getId() == room.ownerGuestId()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "owner cannot compare with self");
 		}
-		Map<Long, List<CategoryBits>> answers = categoryService
-			.completeAnswers(List.of(room.getOwnerGuestId(), guest.getId()));
-		List<CategoryBits> mine = answers.get(guest.getId());
+		List<CategoryBits> mine = categoryService.completeAnswers(List.of(guest.getId())).get(guest.getId());
 		if (mine == null) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "answers incomplete");
 		}
-		Comparison comparison = TasteMatch.compare(ownerAnswers(room, answers), mine);
-		Optional<UniversePlanet> planet = planetRepository.findByRoomIdAndGuestId(room.getId(), guest.getId());
-		return new ComparisonView(room.getOwnerName(), planet.map(UniversePlanet::getId).orElse(null),
+		Comparison comparison = TasteMatch.compare(room.owner(), mine);
+		Optional<UniversePlanet> planet = planetRepository.findByRoomIdAndGuestId(room.id(), guest.getId());
+		return new ComparisonView(room.ownerName(), planet.map(UniversePlanet::getId).orElse(null),
 				planet.map(UniversePlanet::getName).orElse(null), comparison.match(), comparison.categories());
 	}
 
-	private ShareRoom findRoom(String shareToken) {
-		return roomRepository.findByShareToken(shareToken)
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+	private boolean isComplete(Long guestId) {
+		return categoryService.completeAnswers(List.of(guestId)).containsKey(guestId);
 	}
 
 	private void requireComplete(Long guestId) {
-		if (!categoryService.completeAnswers(List.of(guestId)).containsKey(guestId)) {
+		if (!isComplete(guestId)) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "answers incomplete");
 		}
 	}
@@ -168,15 +170,6 @@ public class RoomService {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid name");
 		}
 		return trimmed;
-	}
-
-	// Answers are overwritten, never deleted, so an owner stays complete once the room exists.
-	private static List<CategoryBits> ownerAnswers(ShareRoom room, Map<Long, List<CategoryBits>> answers) {
-		List<CategoryBits> owner = answers.get(room.getOwnerGuestId());
-		if (owner == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-		}
-		return owner;
 	}
 
 	public enum Role {

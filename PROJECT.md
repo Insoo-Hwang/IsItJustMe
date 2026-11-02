@@ -29,6 +29,30 @@
 ## 잠재된 위험
 
 - 취향 우주에 등록한 뒤 등록을 취소하거나 행성 이름을 바꿀 수 없다.
+- 공유자가 다시 테스트해도, 초대장 · 비교 · 우주는 최대 30분 동안 예전 답으로 보인다. (공유방 캐시)
+- 결과 화면을 연 사람이 집계 캐시가 만들어진 뒤 답을 고쳤다면, 캐시가 만료될 때까지(최대 1시간) 참여자가 1명 많게 나온다.
+
+## Redis 캐시
+
+모든 사용자가 똑같이 받는 데이터만 Redis에 캐시한다. 사람마다 다른 값(내 답, 완료 여부, 비교 결과)은 캐시하지 않고, 캐시한 값에 요청마다 합친다.
+
+| 캐시 이름 | 내용 | TTL | Key | 읽는 곳 |
+|---|---|---|---|---|
+| `categories` | 카테고리 · 질문 목록 | 없음 | `categories::SimpleKey []` | 모든 카테고리 API, 공유방 |
+| `participants` | 카테고리별 참여자 수 | 5분 | `participants::SimpleKey []` | 홈 |
+| `option0-rates` | 질문별 선택 비율 (60문항) | 30분 | `option0-rates::SimpleKey []` | 홈, 결과 |
+| `combination-stats` | 카테고리의 조합별 인원 + 캐시 시각 | 1시간 | `combination-stats::{카테고리 id}` | 결과 |
+| `question-stats` | 카테고리의 문항 × 성별 · 나이대별 선택 인원 | 1시간 | `question-stats::{카테고리 id}` | 자세한 결과 |
+| `rooms` | 공유방(방 id · 공유자 · 이름) + 공유자 답 | 30분 | `rooms::{공유 토큰}` | 초대장, 비교, 우주, 우주 등록 |
+
+- **설정**: `CacheConfig` (`@EnableCaching`, 캐시별 TTL · 저장 타입). 캐시하는 메서드는 `CategoryStatsCache`, `RoomCards`에 모았다.
+- **저장 형식**: 캐시마다 정해진 record 하나를 JSON으로 저장한다 (`JacksonJsonRedisSerializer`). 값에 클래스 이름이 들어가지 않는다.
+- **쓰기**: 저장 · 삭제가 끝난 뒤에 응답한다 (`immediateWrites`, 기본값은 백그라운드 저장).
+- **갱신**: TTL이 지나면 다음 요청이 DB에서 다시 읽어 저장한다. 공유자 이름을 바꾸면 커밋 후 그 방의 캐시를 지운다.
+- **결과 보정**: 조합별 인원 캐시에는 만든 시각을 함께 저장한다. 내 답이 그 뒤에 저장됐으면(답 수정 · 프로필 변경 포함) 캐시에 나를 1명 더해서 계산한다. (`StatsSnapshot.rowsWith`)
+- **Redis 장애**: 연결 · 명령 제한 시간을 0.5초로 두고, 캐시 오류는 로그만 남기고 DB에서 읽는다. 읽을 수 없는 값(코드 변경 전에 저장된 값 등)은 지운다.
+- **로컬 실행**: `compose.yaml`의 `redis:8` (포트 6379). 값 확인은 `docker exec -it <컨테이너> redis-cli`에서 `KEYS *`, `GET "participants::SimpleKey []"`, `TTL <key>`.
+- **캐시하지 않는 것**: 종합 결과(DB에서 직접 계산), 취향 우주 행성 목록, 게스트 세션.
 
 ## API 명세
 
@@ -354,3 +378,11 @@ Claude Design 시안을 React 화면으로 옮겼다. 테스트 · 결과 API가
 
 ### 17. 사용하지 않는 인덱스 삭제
 - `idx_guest_last_seen_at`(미접속 게스트 정리용), `idx_category_answer_category`(종합 결과 전체 조회용) 삭제 (Flyway V8)
+
+### 18. Redis 캐시
+- 모든 사용자에게 같은 데이터 6종을 Redis에 캐시 (위 "Redis 캐시" 참고)
+- 카테고리별 참여자 수를 답변 테이블 전체 대신 `combination_stats` 합계로 계산
+- 카테고리 · 질문은 캐시한 목록에서 찾음 (`CategoryCatalog`)
+- 프로필을 바꾸면 답변의 `updated_at`도 바꿈 (결과 보정에 사용)
+- API 응답 형식은 그대로
+- 테스트: 캐시 값이 Redis에서 그대로 읽히는지 · TTL · 공유자 이름 변경 시 캐시 삭제 (`CacheTests`), 캐시 이후 답 보정 (`StatsSnapshotTests`), Redis가 꺼져 있어도 DB에서 읽음 (`RedisDownTests`)

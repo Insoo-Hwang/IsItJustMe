@@ -16,7 +16,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.isitjustme.category.CategoryAnswerRepository.CategoryParticipants;
+import com.isitjustme.category.CategoryCatalog.CategoryInfo;
+import com.isitjustme.category.CategoryCatalog.QuestionInfo;
 import com.isitjustme.category.CombinationStatsRepository.StatsRow;
 import com.isitjustme.category.RarityCalculator.Summary;
 import com.isitjustme.guest.AgeGroup;
@@ -35,9 +36,7 @@ public class CategoryService {
 	/** Shown for a question nobody has answered yet. */
 	private static final int DEFAULT_OPTION0_RATE = 50;
 
-	private final CategoryRepository categoryRepository;
-
-	private final QuestionRepository questionRepository;
+	private final CategoryStatsCache statsCache;
 
 	private final CategoryAnswerRepository answerRepository;
 
@@ -52,27 +51,20 @@ public class CategoryService {
 	 */
 	@Transactional(readOnly = true)
 	public List<CategoryView> listCategories(@Nullable String rawToken) {
-		List<Category> categories = categoryRepository.findAllByOrderBySortOrder();
-		Map<Long, List<Question>> questionsByCategory = questionRepository
-			.findByCategoryIdInOrderByBitPosition(categories.stream().map(Category::getId).toList())
-			.stream()
-			.collect(Collectors.groupingBy(Question::getCategoryId));
-		Map<String, Double> rates = statsRepository.option0Rates(
-				questionsByCategory.values().stream().flatMap(List::stream).map(Question::getCode).toList());
-		Map<Long, Long> participants = answerRepository.countByCategory()
-			.stream()
-			.collect(Collectors.toMap(CategoryParticipants::getCategoryId, CategoryParticipants::getParticipants));
+		Map<String, Long> participants = statsCache.participants().byCategory();
+		Map<String, Double> rates = statsCache.option0Rates().byQuestion();
 		Map<Long, Instant> completedAt = guestService.findByToken(rawToken)
 			.map((guest) -> answerRepository.findByGuestId(guest.getId())
 				.stream()
 				.collect(Collectors.toMap(CategoryAnswer::getCategoryId, CategoryAnswer::getUpdatedAt)))
 			.orElse(Map.of());
 
-		return categories.stream()
-			.map((c) -> new CategoryView(c.getCode(), c.getName(), c.getIcon(), c.getDescription(), c.getTagline(),
-					c.getMinutes(), c.getRecommend(), participants.getOrDefault(c.getId(), 0L),
-					questionViews(questionsByCategory.getOrDefault(c.getId(), List.of()), rates),
-					completedAt.get(c.getId())))
+		return statsCache.catalog()
+			.categories()
+			.stream()
+			.map((c) -> new CategoryView(c.code(), c.name(), c.icon(), c.description(), c.tagline(), c.minutes(),
+					c.recommend(), participants.getOrDefault(c.code(), 0L), questionViews(c.questions(), rates),
+					completedAt.get(c.id())))
 			.toList();
 	}
 
@@ -88,22 +80,22 @@ public class CategoryService {
 		if (profile == null) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "profile required");
 		}
-		Category category = findCategory(categoryCode);
+		CategoryInfo category = findCategory(categoryCode);
 
 		Instant now = Instant.now();
-		Optional<CategoryAnswer> found = answerRepository.findByGuestIdAndCategoryId(guest.getId(), category.getId());
+		Optional<CategoryAnswer> found = answerRepository.findByGuestIdAndCategoryId(guest.getId(), category.id());
 		if (found.isPresent()) {
 			CategoryAnswer answer = found.get();
 			if (answer.matches(profile, answerBits)) {
 				return;
 			}
-			statsRepository.decrement(category.getId(), answer.profile(), answer.getAnswerBits());
+			statsRepository.decrement(category.id(), answer.profile(), answer.getAnswerBits());
 			answer.update(profile, answerBits, now);
 		}
 		else {
-			answerRepository.save(new CategoryAnswer(guest.getId(), category.getId(), profile, answerBits, now));
+			answerRepository.save(new CategoryAnswer(guest.getId(), category.id(), profile, answerBits, now));
 		}
-		statsRepository.increment(category.getId(), profile, answerBits);
+		statsRepository.increment(category.id(), profile, answerBits);
 		Optional.ofNullable(completeAnswers(List.of(guest.getId())).get(guest.getId()))
 			.ifPresent((answers) -> overallRepository.save(guest.getId(), overallBits(answers)));
 	}
@@ -115,12 +107,13 @@ public class CategoryService {
 	@EventListener
 	@Transactional(propagation = Propagation.MANDATORY)
 	public void onProfileChanged(GuestProfileChanged event) {
+		Instant now = Instant.now();
 		for (CategoryAnswer answer : answerRepository.findByGuestId(event.guestId())) {
 			if (answer.profile().equals(event.profile())) {
 				continue;
 			}
 			statsRepository.decrement(answer.getCategoryId(), answer.profile(), answer.getAnswerBits());
-			answer.changeProfile(event.profile());
+			answer.changeProfile(event.profile(), now);
 			statsRepository.increment(answer.getCategoryId(), event.profile(), answer.getAnswerBits());
 		}
 	}
@@ -132,19 +125,17 @@ public class CategoryService {
 	public ResultView result(@Nullable String rawToken, String categoryCode) {
 		Guest guest = guestService.findByToken(rawToken)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-		Category category = findCategory(categoryCode);
-		CategoryAnswer answer = answerRepository.findByGuestIdAndCategoryId(guest.getId(), category.getId())
+		CategoryInfo category = findCategory(categoryCode);
+		CategoryAnswer answer = answerRepository.findByGuestIdAndCategoryId(guest.getId(), category.id())
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-		List<StatsRow> rows = statsRepository.findByCategory(category.getId());
+		List<StatsRow> rows = statsCache.stats(category.id()).rowsWith(answer);
 		GuestProfile profile = answer.profile();
 		List<StatsRow> peerRows = rows.stream().filter((row) -> row.profile().equals(profile)).toList();
-		List<Question> questions = questionRepository.findByCategoryIdOrderByBitPosition(category.getId());
-		Map<String, Double> rates = statsRepository.option0Rates(questions.stream().map(Question::getCode).toList());
 
 		return new ResultView(answer.getAnswerBits(), RarityCalculator.summarize(rows, answer.getAnswerBits()),
 				new PeerView(profile, RarityCalculator.summarize(peerRows, answer.getAnswerBits())),
-				questionViews(questions, rates));
+				questionViews(category.questions(), statsCache.option0Rates().byQuestion()));
 	}
 
 	/**
@@ -155,16 +146,15 @@ public class CategoryService {
 	public QuestionStatsView questionStats(@Nullable String rawToken, String categoryCode) {
 		Guest guest = guestService.findByToken(rawToken)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-		Category category = findCategory(categoryCode);
-		CategoryAnswer answer = answerRepository.findByGuestIdAndCategoryId(guest.getId(), category.getId())
+		CategoryInfo category = findCategory(categoryCode);
+		CategoryAnswer answer = answerRepository.findByGuestIdAndCategoryId(guest.getId(), category.id())
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-		List<Question> questions = questionRepository.findByCategoryIdOrderByBitPosition(category.getId());
-		Map<String, List<GroupCount>> counts = statsRepository
-			.option0CountsByGroup(questions.stream().map(Question::getCode).toList());
-		return new QuestionStatsView(answer.getAnswerBits(), questions.stream()
-			.map((q) -> new QuestionStats(q.getCode(), q.getPrompt(), q.getOption0(), q.getOption1(),
-					counts.getOrDefault(q.getCode(), List.of())))
+		Map<String, List<GroupCount>> counts = statsCache.questionStats(category.id()).byQuestion();
+		return new QuestionStatsView(answer.getAnswerBits(), category.questions()
+			.stream()
+			.map((q) -> new QuestionStats(q.code(), q.prompt(), q.option0(), q.option1(),
+					counts.getOrDefault(q.code(), List.of())))
 			.toList());
 	}
 
@@ -178,7 +168,7 @@ public class CategoryService {
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
 		long myBits = overallRepository.findBits(guest.getId())
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-		int questionCount = (int) categoryRepository.count() * RarityCalculator.QUESTION_COUNT;
+		int questionCount = statsCache.catalog().categories().size() * RarityCalculator.QUESTION_COUNT;
 		return new OverallResultView(questionCount,
 				RarityCalculator.summarize(overallRepository.count(myBits, questionCount)));
 	}
@@ -189,7 +179,7 @@ public class CategoryService {
 	 */
 	@Transactional(readOnly = true)
 	public Map<Long, List<CategoryBits>> completeAnswers(Collection<Long> guestIds) {
-		List<Category> categories = categoryRepository.findAllByOrderBySortOrder();
+		List<CategoryInfo> categories = statsCache.catalog().categories();
 		Map<Long, Map<Long, Integer>> bitsByGuest = new HashMap<>();
 		for (CategoryAnswer answer : answerRepository.findByGuestIdIn(guestIds)) {
 			bitsByGuest.computeIfAbsent(answer.getGuestId(), (id) -> new HashMap<>())
@@ -197,9 +187,9 @@ public class CategoryService {
 		}
 		Map<Long, List<CategoryBits>> complete = new HashMap<>();
 		bitsByGuest.forEach((guestId, bits) -> {
-			if (categories.stream().allMatch((c) -> bits.containsKey(c.getId()))) {
+			if (categories.stream().allMatch((c) -> bits.containsKey(c.id()))) {
 				complete.put(guestId,
-						categories.stream().map((c) -> new CategoryBits(c.getCode(), bits.get(c.getId()))).toList());
+						categories.stream().map((c) -> new CategoryBits(c.code(), bits.get(c.id()))).toList());
 			}
 		});
 		return complete;
@@ -214,15 +204,16 @@ public class CategoryService {
 		return bits;
 	}
 
-	private Category findCategory(String code) {
-		return categoryRepository.findByCode(code)
+	private CategoryInfo findCategory(String code) {
+		return statsCache.catalog()
+			.find(code)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 	}
 
-	private static List<QuestionView> questionViews(List<Question> questions, Map<String, Double> rates) {
+	private static List<QuestionView> questionViews(List<QuestionInfo> questions, Map<String, Double> rates) {
 		return questions.stream()
-			.map((q) -> new QuestionView(q.getCode(), q.getPrompt(), q.getOption0(), q.getOption1(),
-					Optional.ofNullable(rates.get(q.getCode()))
+			.map((q) -> new QuestionView(q.code(), q.prompt(), q.option0(), q.option1(),
+					Optional.ofNullable(rates.get(q.code()))
 						.map((rate) -> (int) Math.round(rate * 100))
 						.orElse(DEFAULT_OPTION0_RATE)))
 			.toList();
