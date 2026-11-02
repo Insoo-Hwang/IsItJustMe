@@ -209,6 +209,7 @@ function ResultView({ category, data }: { category: Category; data: ResultDto })
 
       <PickList title="가장 흔한 내 선택 TOP 3" picks={result.commonTop3} tone="common" />
       <PickList title="가장 희귀한 내 선택 TOP 3" picks={result.rareTop3} tone="rare" />
+      <p className={styles.note}>다른 참여자의 답은 최대 1시간 늦게 결과에 반영돼요.</p>
 
       <div className={styles.actions}>
         <button type="button" className={`${ui.primary} ${ui.large}`} onClick={() => navigate('/main')}>

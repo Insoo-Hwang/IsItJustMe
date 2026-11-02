@@ -295,3 +295,9 @@
   color: var(--ink-sub);
   font-size: 15px;
 }
+.note {
+  margin: 12px 4px 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--mute);
+}

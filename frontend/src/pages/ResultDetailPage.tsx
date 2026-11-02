@@ -103,6 +103,7 @@ function DetailView({ category, data }: { category: Category; data: QuestionStat
         <Chips label="성별" options={GENDERS} value={gender} onChange={setGender} />
         <Chips label="나이대" options={AGE_GROUPS} value={ageGroup} onChange={setAgeGroup} />
       </div>
+      <p className={styles.note}>응답 수는 최대 1시간 늦게 반영돼요. 방금 낸 내 답도 아직 빠져 있을 수 있어요.</p>
 
       <ol className={styles.list} aria-label={`${category.name} 문항별 선택 비율`}>
         {data.questions.map((q, i) => {
