@@ -351,3 +351,6 @@ Claude Design 시안을 React 화면으로 옮겼다. 테스트 · 결과 API가
 - `RarityCalculator`: 센 숫자(`Counts`)로 결과를 만드는 메서드 분리
 - API 응답 형식은 그대로
 - 테스트: 갈림 · 완전히 다른 사람, 재응답 시 종합 결과 변경 (`CategoryServiceTests`)
+
+### 17. 사용하지 않는 인덱스 삭제
+- `idx_guest_last_seen_at`(미접속 게스트 정리용), `idx_category_answer_category`(종합 결과 전체 조회용) 삭제 (Flyway V8)
