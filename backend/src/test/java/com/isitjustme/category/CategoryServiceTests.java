@@ -167,6 +167,8 @@ class CategoryServiceTests {
 		assertThat(result.overall().similar()).isEqualTo(66.7);
 		assertThat(result.overall().opposite()).isEqualTo(33.3);
 		assertThat(result.overall().different()).isEqualTo(1);
+		// (60 same + 48 close + 0 opposite) / 180, the unfinished guest left out
+		assertThat(result.averageMatch()).isEqualTo(60.0);
 		assertThatThrownBy(() -> categoryService.overallResult(unfinished)).isInstanceOf(ResponseStatusException.class)
 			.hasMessageContaining("404");
 	}
@@ -181,11 +183,22 @@ class CategoryServiceTests {
 			categoryService.submit(other, code, 0);
 		}
 		assertThat(categoryService.overallResult(me).overall().exact()).isEqualTo(1);
+		assertThat(categoryService.overallResult(me).averageMatch()).isEqualTo(100.0);
 
 		categoryService.submit(other, "people", 1);
 
 		assertThat(categoryService.overallResult(me).overall().exact()).isZero();
 		assertThat(categoryService.overallResult(me).overall().similar()).isEqualTo(100.0);
+		// 59 of 60
+		assertThat(categoryService.overallResult(me).averageMatch()).isEqualTo(98.3);
+	}
+
+	@Test
+	void averageMatchIsEmptyWithoutOtherGuests() {
+		String me = guestWithProfile(new GuestProfile(Gender.MALE, AgeGroup.FORTIES));
+		CATEGORY_CODES.forEach((code) -> categoryService.submit(me, code, 0b101));
+
+		assertThat(categoryService.overallResult(me).averageMatch()).isNull();
 	}
 
 	@Test

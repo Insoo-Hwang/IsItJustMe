@@ -1,5 +1,6 @@
 package com.isitjustme.category;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,6 +34,8 @@ public class CategoryStatsCache {
 	private final QuestionRepository questionRepository;
 
 	private final CombinationStatsRepository statsRepository;
+
+	private final OverallAnswerRepository overallRepository;
 
 	@Cacheable(CacheConfig.CATEGORIES)
 	public CategoryCatalog catalog() {
@@ -70,6 +73,11 @@ public class CategoryStatsCache {
 	@Cacheable(cacheNames = CacheConfig.QUESTION_STATS, key = "#categoryId")
 	public QuestionGroupCounts questionStats(long categoryId) {
 		return new QuestionGroupCounts(statsRepository.option0CountsByGroup(categoryId));
+	}
+
+	@Cacheable(CacheConfig.OVERALL_BIT_STATS)
+	public OverallBitStats overallBitStats() {
+		return overallRepository.bitStats();
 	}
 
 	/**
@@ -144,6 +152,29 @@ public class CategoryStatsCache {
 	 * @param counts participants per answer combination, indexed by answer bits
 	 */
 	public record GroupCounts(GuestProfile profile, long[] counts) {
+	}
+
+	/**
+	 * Guests who answered every category and their option 1 picks per bit of
+	 * {@code overall_bits}, both read at {@code takenAt}.
+	 * @param oneCounts guests whose answer has the bit set, by bit position
+	 */
+	public record OverallBitStats(Instant takenAt, long participants, long[] oneCounts) {
+
+		/**
+		 * An answer saved this long before the snapshot was taken is surely in it. Closer than
+		 * that, the snapshot may have been read before the answer's transaction committed.
+		 */
+		static final Duration COMMIT_MARGIN = Duration.ofSeconds(10);
+
+		/**
+		 * Whether the counts surely hold the guest's answers as they were last changed at
+		 * {@code changedAt}.
+		 */
+		boolean includes(Instant changedAt) {
+			return changedAt.isBefore(takenAt.minus(COMMIT_MARGIN));
+		}
+
 	}
 
 	/**

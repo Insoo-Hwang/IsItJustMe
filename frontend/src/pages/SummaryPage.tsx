@@ -44,7 +44,7 @@ function SummaryPage() {
     )
   }
 
-  const { rows, picks, minority, tier: overall, overall: summary } = state.summary
+  const { rows, picks, minority, tier: overall, overall: summary, questions, averageMatch } = state.summary
   const axes = rows.map(({ category, rarity }) => ({
     label: shortName(category),
     value: minorityShare(rarity),
@@ -90,6 +90,27 @@ function SummaryPage() {
         유사 취향은 {picks}문항 중 80% 이상 같은 사람이에요. 6개 테스트를 모두 끝낸 {fmt(summary.participants)}명 기준
         잠정 결과예요.
       </p>
+
+      <section className={`${ui.card} ${styles.average}`} aria-label="다른 사람들과 평균 취향 일치율">
+        <div className={styles.averageLabel}>다른 사람들과 평균 취향 일치율</div>
+        {averageMatch == null ? (
+          <p className={styles.averageEmpty}>아직 비교할 참여자가 없어요</p>
+        ) : (
+          <>
+            <div className={styles.averageValue}>
+              {averageMatch.toFixed(1)}
+              <small>%</small>
+            </div>
+            <div className={styles.averageTrack} aria-hidden>
+              <span style={{ width: `${averageMatch}%` }} />
+            </div>
+            <p className={styles.averageText}>
+              다른 참여자들과 {questions}개 문항 중 평균 <b>{Math.round((averageMatch / 100) * questions)}개</b> 정도의
+              선택이 같아요.
+            </p>
+          </>
+        )}
+      </section>
 
       <section className={`${ui.card} ${styles.chartCard}`} aria-label="카테고리별 희귀도">
         <h2 className={ui.cardTitle}>카테고리별 소수 선택 비율</h2>

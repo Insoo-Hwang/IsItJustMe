@@ -44,6 +44,7 @@
 | `combination-stats` | 카테고리의 성별 · 나이대별 조합 인원 배열(1024칸) + 캐시 시각 | 1시간 | `combination-stats::{카테고리 id}` | 결과 |
 | `question-stats` | 카테고리의 문항 × 성별 · 나이대별 선택 인원 | 1시간 | `question-stats::{카테고리 id}` | 자세한 결과 |
 | `rooms` | 공유방(방 id · 공유자 · 이름) + 공유자 답 | 30분 | `rooms::{공유 토큰}` | 초대장, 비교, 우주, 우주 등록 |
+| `overall-bit-stats` | 종합 완료 인원 + 60문항별 두 번째 선택지 인원 + 캐시 시각 | 30분 | `overall-bit-stats::SimpleKey []` | 종합 결과 (평균 취향 일치율) |
 
 - **설정**: `CacheConfig` (`@EnableCaching`, 캐시별 TTL · 저장 타입). 캐시하는 메서드는 `CategoryStatsCache`, `RoomCards`에 모았다.
 - **저장 형식**: 캐시마다 정해진 record 하나를 JSON으로 저장한다 (`JacksonJsonRedisSerializer`). 값에 클래스 이름이 들어가지 않는다.
@@ -135,7 +136,7 @@
 | 역할 | 모든 카테고리의 답을 하나의 조합으로 묶어, 모든 카테고리를 완료한 참여자와 비교한 결과를 내려준다 |
 | 호출 시점 | 종합 결과 화면 · 엔딩 화면 진입 시 |
 | Request | 쿠키 `guest_token` 필수 |
-| Response Body | `{ "questions", "overall": Summary }` — `questions`는 비교한 문항 수(카테고리 6개 = 60), Summary는 결과 조회와 같은 형식 (유사 = 80% 이상 일치, 갈림 = 20% 이하 일치) |
+| Response Body | `{ "questions", "overall": Summary, "averageMatch" }` — `questions`는 비교한 문항 수(카테고리 6개 = 60), Summary는 결과 조회와 같은 형식 (유사 = 80% 이상 일치, 갈림 = 20% 이하 일치). `averageMatch`는 다른 종합 완료자들과 같은 답을 고른 문항 비율의 평균(%, 소수 첫째 자리), 나 말고 완료한 사람이 없으면 `null` |
 
 | 상황 | 상태 코드 | 동작 |
 |---|---|---|
@@ -398,3 +399,12 @@ Claude Design 시안을 React 화면으로 옮겼다. 테스트 · 결과 API가
 - 예전 형태로 캐시된 값은 읽지 않고 지운 뒤 DB에서 다시 읽음
 - API 응답 형식은 그대로
 - 테스트: 배열 보정 · JSON 왕복 · 예전 형태 거부 (`StatsSnapshotTests`), `RarityCalculatorTests` 배열로 변경
+
+### 21. 종합 결과에 평균 취향 일치율 추가
+- 테이블: `overall_stats`(종합 완료 인원 · 60문항별 두 번째 선택지 인원, 한 행) (Flyway V10)
+- `overall_answer`의 추가 · 수정 · 삭제(게스트 삭제 CASCADE 포함) 때 트리거가 같은 트랜잭션에서 갱신
+- 기존 답은 마이그레이션에서 `overall_stats_rebuild()`로 집계 (값이 어긋나면 같은 함수로 다시 집계)
+- 집계를 Redis에 30분 캐시 (`overall-bit-stats`). 내 답이 캐시 시각 10초 전 이후에 바뀌었으면 DB에서 바로 읽음
+- 종합 결과 API에 `averageMatch` 추가, 종합 결과 화면에 카드 추가 (비교할 사람이 없으면 안내 문구)
+- 기존 종합 결과 계산은 그대로
+- 테스트: 1명 · 2명 · 모두 같음 · 모두 반대 · 전부 0 · 전부 1 · 직접 XOR 비교 (`RarityCalculatorTests`), 추가 · 수정 · 삭제 · 게스트 삭제 · 재집계 · 동시 저장 · DB XOR 비교 (`OverallStatsTests`), 재응답 전후 · 혼자일 때 (`CategoryServiceTests`), 캐시 이후 답 · TTL (`CacheTests`), Redis 장애 (`RedisDownTests`), 응답 형식 (`CategoryControllerTests`)

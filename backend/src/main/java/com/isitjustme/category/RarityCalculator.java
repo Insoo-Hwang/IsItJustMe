@@ -1,5 +1,7 @@
 package com.isitjustme.category;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * Computes result numbers from combination counts. The counts already
  * include the requesting guest's own answer.
@@ -51,6 +53,26 @@ final class RarityCalculator {
 		double oppositeRate = (others > 0) ? round1(counts.opposite() * 100.0 / others) : 0;
 		return new Summary(counts.participants(), Math.max(0, counts.same() - 1), similarRate, oppositeRate,
 				counts.different());
+	}
+
+	/**
+	 * Average share of answers that every other guest has in common with mine, from how many
+	 * guests picked option 1 per question. The counts include me, so I am taken out of each
+	 * question.
+	 * @param participants guests counted, including me
+	 * @param oneCounts guests who picked option 1, by bit position
+	 * @return % rounded to one decimal, or null when nobody else is counted
+	 */
+	static @Nullable Double averageMatch(long myBits, long participants, long[] oneCounts, int questionCount) {
+		if (participants <= 1) {
+			return null;
+		}
+		long matches = 0;
+		for (int bit = 0; bit < questionCount; bit++) {
+			long same = (((myBits >>> bit) & 1) == 1) ? oneCounts[bit] : participants - oneCounts[bit];
+			matches += same - 1;
+		}
+		return round1(matches * 100.0 / (questionCount * (participants - 1)));
 	}
 
 	static int similarMaxDifferences(int questionCount) {

@@ -1,6 +1,7 @@
 package com.isitjustme;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 import java.util.List;
 
@@ -11,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.jdbc.core.simple.JdbcClient;
 
 import com.isitjustme.category.CategoryService;
 import com.isitjustme.category.CategoryStatsCache;
@@ -51,6 +53,9 @@ class CacheTests {
 	@Autowired
 	private StringRedisTemplate redis;
 
+	@Autowired
+	private JdbcClient jdbcClient;
+
 	@BeforeEach
 	void clearCaches() {
 		cacheManager.getCacheNames().forEach((name) -> cacheManager.getCache(name).invalidate());
@@ -73,6 +78,7 @@ class CacheTests {
 		assertThat(statsCache.questionStats(categoryId)).isEqualTo(statsCache.questionStats(categoryId));
 		assertThat(statsCache.questionStats(categoryId).byQuestion()).isNotEmpty();
 		assertThat(roomCards.find(shareToken)).isEqualTo(roomCards.find(shareToken));
+		assertThat(statsCache.overallBitStats()).usingRecursiveComparison().isEqualTo(statsCache.overallBitStats());
 
 		assertThat(ttlOf("categories")).isEqualTo(-1);
 		assertThat(ttlOf("participants")).isBetween(1L, 5 * 60L);
@@ -80,6 +86,36 @@ class CacheTests {
 		assertThat(ttlOf("combination-stats")).isBetween(1L, 60 * 60L);
 		assertThat(ttlOf("question-stats")).isBetween(1L, 60 * 60L);
 		assertThat(ttlOf("rooms")).isBetween(1L, 30 * 60L);
+		assertThat(ttlOf("overall-bit-stats")).isBetween(1L, 30 * 60L);
+	}
+
+	@Test
+	void averageMatchCountsAnAnswerTheCachedCountsMiss() {
+		completedGuest(0b0);
+		// cached before the next guest answers
+		long cachedParticipants = statsCache.overallBitStats().participants();
+
+		String me = completedGuest(0b1111111111);
+
+		assertThat(statsCache.overallBitStats().participants()).isEqualTo(cachedParticipants);
+		assertThat(categoryService.overallResult(me).averageMatch()).isCloseTo(directAverageMatch(me), within(0.05));
+	}
+
+	// every other guest compared one by one
+	private double directAverageMatch(String token) {
+		return jdbcClient.sql("""
+				SELECT AVG(60 - BIT_COUNT((o.overall_bits # m.overall_bits)::BIT(64))) * 100 / 60
+				FROM overall_answer o
+				JOIN overall_answer m ON m.guest_id = :me
+				WHERE o.guest_id <> m.guest_id
+				""").param("me", guestService.findByToken(token).orElseThrow().getId()).query(Double.class).single();
+	}
+
+	private String completedGuest(int bits) {
+		String token = guestService.resolveOrIssue(null).token();
+		guestService.updateProfile(token, new GuestProfile(Gender.FEMALE, AgeGroup.TWENTIES));
+		CATEGORY_CODES.forEach((code) -> categoryService.submit(token, code, bits));
+		return token;
 	}
 
 	@Test

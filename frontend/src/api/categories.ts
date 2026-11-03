@@ -47,6 +47,8 @@ export type OverallResultDto = {
   // questions compared across all categories
   questions: number
   overall: SummaryDto
+  // % of answers other guests share with mine on average, null when nobody else finished
+  averageMatch: number | null
 }
 
 export type GroupCountDto = {

@@ -28,7 +28,8 @@ import com.isitjustme.config.CacheConfig;
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ImportAutoConfiguration(DataRedisAutoConfiguration.class)
-@Import({ CacheConfig.class, CategoryStatsCache.class, CombinationStatsRepository.class })
+@Import({ CacheConfig.class, CategoryStatsCache.class, CombinationStatsRepository.class,
+		OverallAnswerRepository.class })
 class RedisDownTests {
 
 	@Container
@@ -44,6 +45,7 @@ class RedisDownTests {
 
 		assertThat(statsCache.catalog().categories()).hasSize(6);
 		assertThat(statsCache.participants().byCategory()).containsEntry("food", 0L);
+		assertThat(statsCache.overallBitStats().participants()).isZero();
 
 		assertThat(Duration.between(start, Instant.now())).isLessThan(Duration.ofSeconds(5));
 	}

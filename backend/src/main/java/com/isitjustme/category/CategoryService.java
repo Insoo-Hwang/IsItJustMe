@@ -2,6 +2,7 @@ package com.isitjustme.category;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.isitjustme.category.CategoryCatalog.CategoryInfo;
 import com.isitjustme.category.CategoryCatalog.QuestionInfo;
+import com.isitjustme.category.CategoryStatsCache.OverallBitStats;
 import com.isitjustme.category.CategoryStatsCache.StatsSnapshot;
 import com.isitjustme.category.RarityCalculator.Summary;
 import com.isitjustme.guest.AgeGroup;
@@ -168,8 +170,26 @@ public class CategoryService {
 		long myBits = overallRepository.findBits(guest.getId())
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 		int questionCount = statsCache.catalog().categories().size() * RarityCalculator.QUESTION_COUNT;
+		OverallBitStats bitStats = bitStatsWith(guest.getId());
 		return new OverallResultView(questionCount,
-				RarityCalculator.summarize(overallRepository.count(myBits, questionCount)));
+				RarityCalculator.summarize(overallRepository.count(myBits, questionCount)),
+				RarityCalculator.averageMatch(myBits, bitStats.participants(), bitStats.oneCounts(), questionCount));
+	}
+
+	/**
+	 * The cached per-bit counts when they surely hold the guest's current answers, otherwise
+	 * a fresh read, since {@link RarityCalculator#averageMatch} takes the guest back out of
+	 * them. Answers change only through {@link #submit}, which also moves
+	 * {@code updated_at}; a profile change moves it too, costing only a fresh read.
+	 */
+	private OverallBitStats bitStatsWith(Long guestId) {
+		OverallBitStats cached = statsCache.overallBitStats();
+		Instant changedAt = answerRepository.findByGuestId(guestId)
+			.stream()
+			.map(CategoryAnswer::getUpdatedAt)
+			.max(Comparator.naturalOrder())
+			.orElseThrow();
+		return cached.includes(changedAt) ? cached : overallRepository.bitStats();
 	}
 
 	/**
@@ -239,8 +259,10 @@ public class CategoryService {
 
 	/**
 	 * @param questions questions compared across all categories
+	 * @param averageMatch % of answers other guests have in common with mine on average, null
+	 * when nobody else answered every category
 	 */
-	public record OverallResultView(int questions, Summary overall) {
+	public record OverallResultView(int questions, Summary overall, @Nullable Double averageMatch) {
 	}
 
 	/**

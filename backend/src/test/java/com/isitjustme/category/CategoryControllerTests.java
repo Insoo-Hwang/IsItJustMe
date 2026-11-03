@@ -1,5 +1,6 @@
 package com.isitjustme.category;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.given;
@@ -122,14 +123,26 @@ class CategoryControllerTests {
 
 	@Test
 	void returnsOverallResult() throws Exception {
-		given(categoryService.overallResult("token")).willReturn(new OverallResultView(60, new Summary(300, 3, 0.8, 1.2, 0)));
+		given(categoryService.overallResult("token"))
+			.willReturn(new OverallResultView(60, new Summary(300, 3, 0.8, 1.2, 0), 63.4));
 
 		mockMvc.perform(get("/api/v1/categories/result").cookie(new Cookie("guest_token", "token")))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.questions").value(60))
 			.andExpect(jsonPath("$.overall.participants").value(300))
 			.andExpect(jsonPath("$.overall.exact").value(3))
-			.andExpect(jsonPath("$.overall.similar").value(0.8));
+			.andExpect(jsonPath("$.overall.similar").value(0.8))
+			.andExpect(jsonPath("$.averageMatch").value(63.4));
+	}
+
+	@Test
+	void returnsNullAverageMatchWithoutOtherGuests() throws Exception {
+		given(categoryService.overallResult("token"))
+			.willReturn(new OverallResultView(60, new Summary(1, 0, 0, 0, 0), null));
+
+		mockMvc.perform(get("/api/v1/categories/result").cookie(new Cookie("guest_token", "token")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.averageMatch").value(nullValue()));
 	}
 
 	@Test

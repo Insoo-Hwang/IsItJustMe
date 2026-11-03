@@ -78,6 +78,59 @@
   color: var(--ink-3);
 }
 
+/* everyone's average, unlike the "similar" share above which counts only 80%+ matches */
+.average {
+  margin-top: 12px;
+}
+.averageLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.averageValue {
+  margin-top: 6px;
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.05em;
+  color: var(--tier-deep);
+  font-variant-numeric: tabular-nums;
+}
+.averageValue small {
+  margin-left: 2px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.averageTrack {
+  margin-top: 12px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.averageTrack > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--tier-deep);
+}
+.averageText {
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.averageText b {
+  font-weight: 700;
+  color: var(--ink);
+}
+.averageEmpty {
+  margin-top: 8px;
+  font-size: 15px;
+  color: var(--ink-3);
+}
+
 .chartCard {
   margin-top: 12px;
   display: flex;

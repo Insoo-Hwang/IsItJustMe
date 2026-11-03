@@ -1,10 +1,14 @@
 package com.isitjustme.category;
 
+import java.sql.Array;
+import java.sql.SQLException;
+import java.time.Instant;
 import java.util.Optional;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
+import com.isitjustme.category.CategoryStatsCache.OverallBitStats;
 import com.isitjustme.category.RarityCalculator.Counts;
 
 import lombok.RequiredArgsConstructor;
@@ -34,6 +38,25 @@ public class OverallAnswerRepository {
 			.param("guestId", guestId)
 			.query(Long.class)
 			.optional();
+	}
+
+	/**
+	 * The per-bit counts kept by the {@code overall_stats} triggers, read as one row.
+	 */
+	OverallBitStats bitStats() {
+		Instant takenAt = Instant.now();
+		return jdbcClient.sql("SELECT participants, one_counts FROM overall_stats WHERE id = 1")
+			.query((rs, i) -> new OverallBitStats(takenAt, rs.getLong(1), longs(rs.getArray(2))))
+			.single();
+	}
+
+	private static long[] longs(Array array) throws SQLException {
+		Long[] boxed = (Long[]) array.getArray();
+		long[] values = new long[boxed.length];
+		for (int i = 0; i < boxed.length; i++) {
+			values[i] = boxed[i];
+		}
+		return values;
 	}
 
 	/**

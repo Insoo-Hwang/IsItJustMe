@@ -17,6 +17,8 @@ export type Summary = {
   tier: { tier: string; tone: Tone; headline: string }
   // all categories compared as one combination
   overall: SummaryDto
+  questions: number
+  averageMatch: number | null
 }
 
 export type SummaryState =
@@ -66,6 +68,14 @@ export function useSummary(): SummaryState {
   const minority = rows.reduce((sum, r) => sum + r.rarity.minority, 0)
   return {
     status: 'ready',
-    summary: { rows, picks, minority, tier: tierOf(minority, picks), overall: overallQuery.data!.overall },
+    summary: {
+      rows,
+      picks,
+      minority,
+      tier: tierOf(minority, picks),
+      overall: overallQuery.data!.overall,
+      questions: overallQuery.data!.questions,
+      averageMatch: overallQuery.data!.averageMatch,
+    },
   }
 }

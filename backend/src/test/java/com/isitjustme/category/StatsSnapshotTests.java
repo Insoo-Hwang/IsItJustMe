@@ -10,6 +10,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.redis.serializer.JacksonJsonRedisSerializer;
 
+import com.isitjustme.category.CategoryStatsCache.OverallBitStats;
 import com.isitjustme.category.CategoryStatsCache.StatsSnapshot;
 import com.isitjustme.category.CombinationStatsRepository.StatsRow;
 import com.isitjustme.guest.AgeGroup;
@@ -69,6 +70,16 @@ class StatsSnapshotTests {
 				""".getBytes(StandardCharsets.UTF_8);
 
 		assertThatThrownBy(() -> serializer.deserialize(old)).isInstanceOf(RuntimeException.class);
+	}
+
+	@Test
+	void overallCountsIncludeOnlyAnswersSavedWellBeforeThem() {
+		OverallBitStats stats = new OverallBitStats(TAKEN_AT, 3, new long[60]);
+
+		assertThat(stats.includes(TAKEN_AT.minusSeconds(60))).isTrue();
+		// may not have committed yet when the counts were read
+		assertThat(stats.includes(TAKEN_AT.minusSeconds(1))).isFalse();
+		assertThat(stats.includes(TAKEN_AT.plusSeconds(1))).isFalse();
 	}
 
 }
