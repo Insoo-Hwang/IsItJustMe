@@ -41,7 +41,7 @@
 | `categories` | 카테고리 · 질문 목록 | 없음 | `categories::SimpleKey []` | 모든 카테고리 API, 공유방 |
 | `participants` | 카테고리별 참여자 수 | 5분 | `participants::SimpleKey []` | 홈 |
 | `option0-rates` | 질문별 선택 비율 (60문항) | 30분 | `option0-rates::SimpleKey []` | 홈, 결과 |
-| `combination-stats` | 카테고리의 조합별 인원 + 캐시 시각 | 1시간 | `combination-stats::{카테고리 id}` | 결과 |
+| `combination-stats` | 카테고리의 성별 · 나이대별 조합 인원 배열(1024칸) + 캐시 시각 | 1시간 | `combination-stats::{카테고리 id}` | 결과 |
 | `question-stats` | 카테고리의 문항 × 성별 · 나이대별 선택 인원 | 1시간 | `question-stats::{카테고리 id}` | 자세한 결과 |
 | `rooms` | 공유방(방 id · 공유자 · 이름) + 공유자 답 | 30분 | `rooms::{공유 토큰}` | 초대장, 비교, 우주, 우주 등록 |
 
@@ -49,7 +49,7 @@
 - **저장 형식**: 캐시마다 정해진 record 하나를 JSON으로 저장한다 (`JacksonJsonRedisSerializer`). 값에 클래스 이름이 들어가지 않는다.
 - **쓰기**: 저장 · 삭제가 끝난 뒤에 응답한다 (`immediateWrites`, 기본값은 백그라운드 저장).
 - **갱신**: TTL이 지나면 다음 요청이 DB에서 다시 읽어 저장한다. 공유자 이름을 바꾸면 커밋 후 그 방의 캐시를 지운다.
-- **결과 보정**: 조합별 인원 캐시에는 만든 시각을 함께 저장한다. 내 답이 그 뒤에 저장됐으면(답 수정 · 프로필 변경 포함) 캐시에 나를 1명 더해서 계산한다. (`StatsSnapshot.rowsWith`)
+- **결과 보정**: 조합별 인원 캐시에는 만든 시각을 함께 저장한다. 내 답이 그 뒤에 저장됐으면(답 수정 · 프로필 변경 포함) 캐시에 나를 1명 더해서 계산한다. (`StatsSnapshot.allWith` · `peersWith`)
 - **Redis 장애**: 연결 · 명령 제한 시간을 0.5초로 두고, 캐시 오류는 로그만 남기고 DB에서 읽는다. 읽을 수 없는 값(코드 변경 전에 저장된 값 등)은 지운다.
 - **로컬 실행**: `compose.yaml`의 `redis:8` (포트 6379). 값 확인은 `docker exec -it <컨테이너> redis-cli`에서 `KEYS *`, `GET "participants::SimpleKey []"`, `TTL <key>`.
 - **캐시하지 않는 것**: 종합 결과(DB에서 직접 계산), 취향 우주 행성 목록, 게스트 세션.
@@ -387,3 +387,14 @@ Claude Design 시안을 React 화면으로 옮겼다. 테스트 · 결과 API가
 - 결과 · 자세한 결과 화면에 "바로 반영되지 않을 수 있어요" 안내 문구
 - API 응답 형식은 그대로
 - 테스트: 캐시 값이 Redis에서 그대로 읽히는지 · TTL · 공유자 이름 변경 시 캐시 삭제 (`CacheTests`), 캐시 이후 답 보정 (`StatsSnapshotTests`), Redis가 꺼져 있어도 DB에서 읽음 (`RedisDownTests`)
+
+### 19. 사용하지 않는 Kafka · 마지막 방문 시각 제거
+- Kafka 의존성 · compose 서비스 · 테스트 컨테이너 제거
+- `guest.last_seen_at` 컬럼 삭제 (Flyway V9), 세션 확인 시 방문 시각 갱신 제거
+
+### 20. 조합별 인원 캐시를 배열로 저장
+- `combination-stats` 캐시 값을 행 목록에서 성별 · 나이대별 1024칸 배열로 변경 (`StatsSnapshot.groups`)
+- `RarityCalculator.summarize`가 배열을 받아 계산
+- 예전 형태로 캐시된 값은 읽지 않고 지운 뒤 DB에서 다시 읽음
+- API 응답 형식은 그대로
+- 테스트: 배열 보정 · JSON 왕복 · 예전 형태 거부 (`StatsSnapshotTests`), `RarityCalculatorTests` 배열로 변경

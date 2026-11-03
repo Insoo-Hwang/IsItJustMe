@@ -2,33 +2,23 @@ package com.isitjustme.category;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import com.isitjustme.category.CombinationStatsRepository.StatsRow;
 import com.isitjustme.category.RarityCalculator.Summary;
-import com.isitjustme.guest.AgeGroup;
-import com.isitjustme.guest.Gender;
-import com.isitjustme.guest.GuestProfile;
 
 class RarityCalculatorTests {
-
-	private static final GuestProfile WOMAN_20S = new GuestProfile(Gender.FEMALE, AgeGroup.TWENTIES);
-
-	private static final GuestProfile MAN_30S = new GuestProfile(Gender.MALE, AgeGroup.THIRTIES);
 
 	@Test
 	void countsExactAndSimilarExcludingMe() {
 		int mine = 0b0000000000;
-		List<StatsRow> rows = List.of(
-				new StatsRow(WOMAN_20S, mine, 3), // me + 2 identical
-				new StatsRow(MAN_30S, mine, 1), // 1 identical in another group
-				new StatsRow(WOMAN_20S, 0b0000000011, 4), // 2 differences: similar
-				new StatsRow(MAN_30S, 0b0000000111, 2)); // 3 differences: not similar
+		long[] counts = counts(Map.of(
+				mine, 4L, // me + 3 identical
+				0b0000000011, 4L, // 2 differences: similar
+				0b0000000111, 2L)); // 3 differences: not similar
 
-		Summary summary = RarityCalculator.summarize(rows, mine);
+		Summary summary = RarityCalculator.summarize(counts, mine);
 
 		assertThat(summary.participants()).isEqualTo(10);
 		assertThat(summary.exact()).isEqualTo(3);
@@ -39,13 +29,13 @@ class RarityCalculatorTests {
 	@Test
 	void countsOppositeAndDifferent() {
 		int mine = 0b0000000000;
-		List<StatsRow> rows = List.of(
-				new StatsRow(WOMAN_20S, mine, 1), // me
-				new StatsRow(WOMAN_20S, 0b1111111111, 2), // 0 matches: opposite and different
-				new StatsRow(MAN_30S, 0b0011111111, 1), // 2 matches: opposite
-				new StatsRow(MAN_30S, 0b0001111111, 1)); // 3 matches: neither
+		long[] counts = counts(Map.of(
+				mine, 1L, // me
+				0b1111111111, 2L, // 0 matches: opposite and different
+				0b0011111111, 1L, // 2 matches: opposite
+				0b0001111111, 1L)); // 3 matches: neither
 
-		Summary summary = RarityCalculator.summarize(rows, mine);
+		Summary summary = RarityCalculator.summarize(counts, mine);
 
 		// 3 opposite / 4 others
 		assertThat(summary.opposite()).isEqualTo(75.0);
@@ -54,27 +44,23 @@ class RarityCalculatorTests {
 
 	@Test
 	void scalesThresholdsWithQuestionCount() {
-		long mine = 0L;
-		Map<Long, Long> byCombination = Map.of(
-				mine, 1L, // me
-				(1L << 12) - 1, 2L, // 12 of 60 differences: similar
-				(1L << 13) - 1, 1L, // 13 differences: not similar
-				(1L << 60) - 1, 1L); // every answer differs: opposite and different
-
-		Summary summary = RarityCalculator.summarize(byCombination, mine, 60);
-
-		assertThat(summary.participants()).isEqualTo(5);
-		// 2 similar / 4 others
-		assertThat(summary.similar()).isEqualTo(50.0);
-		assertThat(summary.opposite()).isEqualTo(25.0);
-		assertThat(summary.different()).isEqualTo(1);
+		assertThat(RarityCalculator.similarMaxDifferences(10)).isEqualTo(2);
+		assertThat(RarityCalculator.oppositeMinDifferences(10)).isEqualTo(8);
+		assertThat(RarityCalculator.similarMaxDifferences(60)).isEqualTo(12);
+		assertThat(RarityCalculator.oppositeMinDifferences(60)).isEqualTo(48);
 	}
 
 	@Test
 	void onlyParticipantHasNobodyToCompare() {
-		Summary summary = RarityCalculator.summarize(List.of(new StatsRow(WOMAN_20S, 5, 1)), 5);
+		Summary summary = RarityCalculator.summarize(counts(Map.of(5, 1L)), 5);
 
 		assertThat(summary).isEqualTo(new Summary(1, 0, 0, 0, 0));
+	}
+
+	private static long[] counts(Map<Integer, Long> byBits) {
+		long[] counts = new long[RarityCalculator.COMBINATIONS];
+		byBits.forEach((bits, count) -> counts[bits] = count);
+		return counts;
 	}
 
 }

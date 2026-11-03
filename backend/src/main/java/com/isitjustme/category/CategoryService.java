@@ -18,7 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.isitjustme.category.CategoryCatalog.CategoryInfo;
 import com.isitjustme.category.CategoryCatalog.QuestionInfo;
-import com.isitjustme.category.CombinationStatsRepository.StatsRow;
+import com.isitjustme.category.CategoryStatsCache.StatsSnapshot;
 import com.isitjustme.category.RarityCalculator.Summary;
 import com.isitjustme.guest.AgeGroup;
 import com.isitjustme.guest.Gender;
@@ -129,12 +129,11 @@ public class CategoryService {
 		CategoryAnswer answer = answerRepository.findByGuestIdAndCategoryId(guest.getId(), category.id())
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-		List<StatsRow> rows = statsCache.stats(category.id()).rowsWith(answer);
-		GuestProfile profile = answer.profile();
-		List<StatsRow> peerRows = rows.stream().filter((row) -> row.profile().equals(profile)).toList();
+		StatsSnapshot stats = statsCache.stats(category.id());
+		int myBits = answer.getAnswerBits();
 
-		return new ResultView(answer.getAnswerBits(), RarityCalculator.summarize(rows, answer.getAnswerBits()),
-				new PeerView(profile, RarityCalculator.summarize(peerRows, answer.getAnswerBits())),
+		return new ResultView(myBits, RarityCalculator.summarize(stats.allWith(answer), myBits),
+				new PeerView(answer.profile(), RarityCalculator.summarize(stats.peersWith(answer), myBits)),
 				questionViews(category.questions(), statsCache.option0Rates().byQuestion()));
 	}
 

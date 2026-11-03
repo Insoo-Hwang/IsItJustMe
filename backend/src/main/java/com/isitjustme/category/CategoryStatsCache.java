@@ -1,10 +1,12 @@
 package com.isitjustme.category;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
@@ -14,6 +16,7 @@ import com.isitjustme.category.CategoryCatalog.QuestionInfo;
 import com.isitjustme.category.CategoryService.GroupCount;
 import com.isitjustme.category.CombinationStatsRepository.StatsRow;
 import com.isitjustme.config.CacheConfig;
+import com.isitjustme.guest.GuestProfile;
 
 import lombok.RequiredArgsConstructor;
 
@@ -61,7 +64,7 @@ public class CategoryStatsCache {
 	@Cacheable(cacheNames = CacheConfig.COMBINATION_STATS, key = "#categoryId")
 	public StatsSnapshot stats(long categoryId) {
 		Instant takenAt = Instant.now();
-		return new StatsSnapshot(takenAt, statsRepository.findByCategory(categoryId));
+		return StatsSnapshot.of(takenAt, statsRepository.findByCategory(categoryId));
 	}
 
 	@Cacheable(cacheNames = CacheConfig.QUESTION_STATS, key = "#categoryId")
@@ -83,24 +86,64 @@ public class CategoryStatsCache {
 	}
 
 	/**
-	 * A category's combination counts as they were at {@code takenAt}.
+	 * A category's combination counts as they were at {@code takenAt}, one array per
+	 * group. Arrays instead of rows keep the cached value small and quick to read.
 	 */
-	public record StatsSnapshot(Instant takenAt, List<StatsRow> rows) {
+	public record StatsSnapshot(Instant takenAt, List<GroupCounts> groups) {
 
-		/**
-		 * The rows with the guest's answer added when it was saved after the snapshot,
-		 * since {@link RarityCalculator} expects the counts to include the guest. A guest
-		 * who changed an answer after the snapshot is also still counted under the old
-		 * one, so participants can be one too many until the snapshot expires.
-		 */
-		List<StatsRow> rowsWith(CategoryAnswer answer) {
-			if (!answer.getUpdatedAt().isAfter(takenAt)) {
-				return rows;
-			}
-			return Stream.concat(rows.stream(), Stream.of(new StatsRow(answer.profile(), answer.getAnswerBits(), 1)))
-				.toList();
+		public StatsSnapshot {
+			// a value cached in an older shape has no groups; failing here makes it re-read
+			Objects.requireNonNull(groups, "groups");
 		}
 
+		static StatsSnapshot of(Instant takenAt, List<StatsRow> rows) {
+			Map<GuestProfile, long[]> byProfile = new LinkedHashMap<>();
+			rows.forEach((row) -> byProfile.computeIfAbsent(row.profile(),
+					(profile) -> new long[RarityCalculator.COMBINATIONS])[row.answerBits()] += row.count());
+			return new StatsSnapshot(takenAt, byProfile.entrySet()
+				.stream()
+				.map((entry) -> new GroupCounts(entry.getKey(), entry.getValue()))
+				.toList());
+		}
+
+		/**
+		 * Every group's counts with the guest's answer added when it was saved after the
+		 * snapshot, since {@link RarityCalculator} expects the counts to include the guest.
+		 * A guest who changed an answer after the snapshot is also still counted under the
+		 * old one, so participants can be one too many until the snapshot expires.
+		 */
+		long[] allWith(CategoryAnswer answer) {
+			return countsWith(answer, (profile) -> true);
+		}
+
+		/**
+		 * Like {@link #allWith}, for the guest's own group only.
+		 */
+		long[] peersWith(CategoryAnswer answer) {
+			return countsWith(answer, answer.profile()::equals);
+		}
+
+		private long[] countsWith(CategoryAnswer answer, Predicate<GuestProfile> included) {
+			long[] counts = new long[RarityCalculator.COMBINATIONS];
+			for (GroupCounts group : groups) {
+				if (included.test(group.profile())) {
+					for (int bits = 0; bits < counts.length; bits++) {
+						counts[bits] += group.counts()[bits];
+					}
+				}
+			}
+			if (answer.getUpdatedAt().isAfter(takenAt)) {
+				counts[answer.getAnswerBits()]++;
+			}
+			return counts;
+		}
+
+	}
+
+	/**
+	 * @param counts participants per answer combination, indexed by answer bits
+	 */
+	public record GroupCounts(GuestProfile profile, long[] counts) {
 	}
 
 	/**

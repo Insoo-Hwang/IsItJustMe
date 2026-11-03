@@ -68,8 +68,8 @@ class CacheTests {
 		assertThat(statsCache.catalog()).isEqualTo(statsCache.catalog());
 		assertThat(statsCache.participants()).isEqualTo(statsCache.participants());
 		assertThat(statsCache.option0Rates()).isEqualTo(statsCache.option0Rates());
-		assertThat(statsCache.stats(categoryId)).isEqualTo(statsCache.stats(categoryId));
-		assertThat(statsCache.stats(categoryId).rows()).isNotEmpty();
+		assertThat(statsCache.stats(categoryId)).usingRecursiveComparison().isEqualTo(statsCache.stats(categoryId));
+		assertThat(statsCache.stats(categoryId).groups()).isNotEmpty();
 		assertThat(statsCache.questionStats(categoryId)).isEqualTo(statsCache.questionStats(categoryId));
 		assertThat(statsCache.questionStats(categoryId).byQuestion()).isNotEmpty();
 		assertThat(roomCards.find(shareToken)).isEqualTo(roomCards.find(shareToken));

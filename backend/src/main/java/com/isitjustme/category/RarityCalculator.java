@@ -1,11 +1,5 @@
 package com.isitjustme.category;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import com.isitjustme.category.CombinationStatsRepository.StatsRow;
-
 /**
  * Computes result numbers from combination counts. The counts already
  * include the requesting guest's own answer.
@@ -14,39 +8,38 @@ final class RarityCalculator {
 
 	static final int QUESTION_COUNT = 10;
 
-	private RarityCalculator() {
-	}
+	static final int COMBINATIONS = 1 << QUESTION_COUNT;
 
-	static Summary summarize(List<StatsRow> rows, int myBits) {
-		Map<Long, Long> byCombination = new HashMap<>();
-		rows.forEach((row) -> byCombination.merge((long) row.answerBits(), row.count(), Long::sum));
-		return summarize(byCombination, myBits, QUESTION_COUNT);
+	private RarityCalculator() {
 	}
 
 	/**
 	 * Similar means at least 80% of the answers match, opposite at most 20%.
-	 * @param byCombination participants per answer combination, one bit per question
+	 * @param byCombination participants per answer combination, indexed by answer bits
 	 */
-	static Summary summarize(Map<Long, Long> byCombination, long myBits, int questionCount) {
+	static Summary summarize(long[] byCombination, int myBits) {
 		long participants = 0;
 		long similar = 0;
 		long opposite = 0;
 		long different = 0;
-		for (Map.Entry<Long, Long> entry : byCombination.entrySet()) {
-			int differences = Long.bitCount(entry.getKey() ^ myBits);
-			participants += entry.getValue();
-			if (differences <= similarMaxDifferences(questionCount)) {
-				similar += entry.getValue();
+		for (int bits = 0; bits < byCombination.length; bits++) {
+			long count = byCombination[bits];
+			if (count == 0) {
+				continue;
 			}
-			if (differences >= oppositeMinDifferences(questionCount)) {
-				opposite += entry.getValue();
+			int differences = Integer.bitCount(bits ^ myBits);
+			participants += count;
+			if (differences <= similarMaxDifferences(QUESTION_COUNT)) {
+				similar += count;
 			}
-			if (differences == questionCount) {
-				different += entry.getValue();
+			if (differences >= oppositeMinDifferences(QUESTION_COUNT)) {
+				opposite += count;
+			}
+			if (differences == QUESTION_COUNT) {
+				different += count;
 			}
 		}
-		return summarize(
-				new Counts(participants, byCombination.getOrDefault(myBits, 0L), similar, opposite, different));
+		return summarize(new Counts(participants, byCombination[myBits], similar, opposite, different));
 	}
 
 	static Summary summarize(Counts counts) {
