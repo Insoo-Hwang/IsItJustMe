@@ -118,7 +118,7 @@ function DetailView({ category, data }: { category: Category; data: QuestionStat
           return (
             <li key={q.code} className={`${ui.card} ${styles.question}`}>
               <div className={styles.head}>
-                <span className={styles.n}>Q{i + 1}</span>
+                <span className={styles.n}>질문 {i + 1}</span>
                 <span className={styles.prompt}>{q.prompt}</span>
               </div>
               {total === 0 ? (

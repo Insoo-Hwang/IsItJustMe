@@ -26,13 +26,12 @@ const ANALYZE_MS = 1500
 function LoadingView({ category }: { category: Category }) {
   return (
     <div className={styles.loading} role="status">
-      <div className={styles.balls} aria-hidden>
-        <div className={styles.ball} style={{ background: 'var(--coral)' }} />
-        <div className={styles.ball} style={{ background: 'var(--blue)', animationDelay: '0.15s' }} />
-        <div className={styles.ball} style={{ background: 'var(--butter-deep)', animationDelay: '0.3s' }} />
+      <div className={styles.loadingIcon} style={{ background: category.tint.bg, color: category.tint.fg }} aria-hidden>
+        <Icon name={category.icon} size={34} filled />
+        <span className={styles.loadingRing} />
       </div>
       <div>
-        <div className={styles.loadingTitle}>취향 분석 중…</div>
+        <div className={styles.loadingTitle}>취향 분석 중</div>
         <div className={styles.loadingSub}>
           {category.participants.toLocaleString('ko-KR')}명의 답변과 비교하고 있어요
         </div>
@@ -158,25 +157,7 @@ function QuizPage() {
         left={{ icon: 'arrow_back', label: '이전 질문', onClick: prev }}
         right={{ icon: 'close', label: '그만하기', onClick: () => navigate('/main'), muted: true }}
       />
-      <div className={styles.counter}>
-        <div className={styles.count}>
-          <span className={styles.countNow}>{index + 1}</span> / {QUESTION_COUNT}
-        </div>
-        <div className={styles.remain}>
-          {answered === QUESTION_COUNT ? '모두 답했어요!' : `남은 질문 ${QUESTION_COUNT - answered}개`}
-        </div>
-      </div>
-      <div
-        className={styles.bar}
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={QUESTION_COUNT}
-        aria-valuenow={answered}
-        aria-label="진행률"
-      >
-        <div className={styles.barFill} style={{ width: `${(answered / QUESTION_COUNT) * 100}%` }} />
-      </div>
-      <div className={styles.dots}>
+      <nav className={styles.steps} aria-label="질문 이동">
         {category.questions.map((q, i) => (
           <button
             key={q.id}
@@ -184,14 +165,24 @@ function QuizPage() {
             aria-label={`${i + 1}번 질문`}
             aria-current={i === index ? 'step' : undefined}
             disabled={i > reachable}
-            className={`${styles.dot} ${current[i] != null ? styles.dotDone : ''} ${i === index ? styles.dotCurrent : ''}`}
+            className={`${styles.step} ${current[i] != null ? styles.stepDone : ''} ${i === index ? styles.stepCurrent : ''}`}
             onClick={() => navigate(`/test/${id}/q/${i + 1}`)}
           />
         ))}
+      </nav>
+      <div className={styles.counter}>
+        <span className={styles.count}>
+          <b>{index + 1}</b> / {QUESTION_COUNT}
+        </span>
+        <span className={styles.remain}>
+          {answered === QUESTION_COUNT ? '모두 답했어요' : `남은 질문 ${QUESTION_COUNT - answered}개`}
+        </span>
       </div>
 
       <div className={styles.body}>
-        <div className={styles.qLabel}>Q{index + 1}</div>
+        <div className={styles.qLabel} style={{ color: category.tint.fg }}>
+          질문 {index + 1}
+        </div>
         <h1 className={styles.prompt}>{question.prompt}</h1>
         <div className={styles.choices}>
           {(['a', 'b'] as const).map((side) => (
@@ -206,11 +197,11 @@ function QuizPage() {
             >
               <span className={styles.choiceBadge}>{side.toUpperCase()}</span>
               <span className={styles.choiceLabel}>{question[side]}</span>
-              {picked === side && <Icon name="check_circle" size={28} className={styles.choiceCheck} />}
+              {picked === side && <Icon name="check_circle" size={24} filled className={styles.choiceCheck} />}
             </button>
           ))}
           <div className={styles.vs} aria-hidden>
-            VS
+            or
           </div>
         </div>
         <div className={styles.hint}>
@@ -218,7 +209,7 @@ function QuizPage() {
         </div>
       </div>
 
-      <div className={`${ui.stickyBottom} ${styles.nav}`}>
+      <div className={ui.stickyBottom}>
         <button type="button" className={`${ui.secondary} ${styles.navPrev}`} onClick={prev}>
           이전
         </button>

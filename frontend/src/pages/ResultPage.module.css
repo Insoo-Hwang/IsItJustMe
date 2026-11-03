@@ -1,119 +1,122 @@
-/* muted blue for "same as me", muted coral for "apart from me" */
+/* accent for "same as me", warm for "apart from me" */
 .palette {
-  --same: oklch(0.7 0.09 250);
-  --same-soft: oklch(0.95 0.02 250);
-  --same-text: oklch(0.5 0.09 250);
-  --apart: oklch(0.74 0.1 30);
-  --apart-soft: oklch(0.95 0.025 30);
-  --apart-text: oklch(0.55 0.11 30);
+  --same: var(--accent);
+  --same-soft: var(--accent-soft);
+  --same-text: var(--accent-text);
+  --apart: var(--warm);
+  --apart-soft: var(--warm-soft);
+  --apart-text: var(--warm-text);
 }
 
 .resultCard {
   position: relative;
   margin-top: 8px;
-  border-radius: 32px;
-  background: var(--tier);
+  border-radius: 28px;
+  background:
+    radial-gradient(120% 90% at 100% 0%, var(--tier-light) 0%, transparent 55%),
+    linear-gradient(to bottom, var(--tier), var(--surface) 90%);
+  box-shadow: var(--shadow-card);
   color: var(--ink);
-  padding: 26px 24px 24px;
+  padding: 24px 22px 22px;
   overflow: hidden;
-  animation: popIn 0.6s cubic-bezier(0.34, 1.5, 0.5, 1);
-}
-.resultCard > * {
-  position: relative;
-}
-.resultCard > .deco {
-  position: absolute;
-  border-radius: 50%;
+  animation: rise 0.6s var(--ease-out);
 }
 
 .cardHead {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-}
-.ratio {
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: white;
-  color: var(--tier-deep);
-  font-size: 12px;
-  font-weight: 800;
-}
-.lead {
-  margin-top: 26px;
-  font-size: 16px;
-  font-weight: 700;
-}
-.tier {
-  margin-top: 2px;
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 76px;
-  line-height: 1.05;
-  color: var(--tier-deep);
-}
-.headline {
-  margin-top: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.45;
-}
-.rareBox {
-  margin-top: 20px;
-  padding: 14px 16px;
-  border-radius: 20px;
-  background: white;
-  color: var(--ink);
-}
-.rareLabel {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--tier-deep);
-}
-.rareRow {
-  margin-top: 4px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
 }
+.lead {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.ratio {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--surface) 75%, transparent);
+  color: var(--tier-deep);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.tier {
+  margin-top: 36px;
+  font-size: 64px;
+  font-weight: 850;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  color: var(--tier-deep);
+}
+.headline {
+  margin-top: 12px;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: -0.02em;
+}
+.rareBox {
+  margin-top: 24px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 0 0 1px var(--hairline);
+}
+.rareLabel {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--ink-3);
+}
+.rareRow {
+  margin-top: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
 .rareChoice {
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 .rareRate {
   font-size: 13px;
   font-weight: 700;
-  color: var(--mute);
+  color: var(--tier-deep);
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin-top: 14px;
+  margin-top: 12px;
 }
 .stat {
   padding: 18px 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 .statLabel {
   font-size: 13px;
-  font-weight: 700;
-  color: var(--mute);
+  font-weight: 600;
+  color: var(--ink-2);
+  line-height: 1.35;
 }
 .statNote {
   font-size: 12px;
-  color: var(--mute);
-  line-height: 1.4;
+  color: var(--ink-3);
+  line-height: 1.45;
 }
 .donut {
   position: relative;
-  width: 84px;
-  height: 84px;
+  width: 76px;
+  height: 76px;
 }
 .donut svg {
   transform: rotate(-90deg);
@@ -124,18 +127,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-display);
-  font-size: 19px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 .exact {
-  height: 84px;
+  height: 76px;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
+  padding-bottom: 6px;
 }
 .exactValue {
-  font-family: var(--font-display);
-  font-size: 44px;
+  font-size: 48px;
+  font-weight: 800;
   line-height: 1;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
 }
 .same {
   color: var(--same);
@@ -144,11 +152,10 @@
   color: var(--apart);
 }
 .exactUnit {
-  font-size: 18px;
-  font-weight: 800;
-  margin-left: 2px;
-  align-self: flex-end;
-  padding-bottom: 12px;
+  margin-left: 3px;
+  padding-bottom: 4px;
+  font-size: 17px;
+  font-weight: 700;
 }
 
 .top3 {
@@ -157,32 +164,32 @@
 .top3List {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin: 16px 0 0;
+  gap: 18px;
+  margin: 18px 0 0;
   padding: 0;
   list-style: none;
 }
 .top3Item {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: center;
 }
 .rank {
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   flex: none;
-  border-radius: 50%;
-  background: oklch(0.95 0.01 290);
-  color: var(--ink);
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--ink-3);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-display);
-  font-size: 17px;
+  font-size: 13px;
+  font-weight: 700;
 }
 .rankFirst {
-  background: var(--apart);
-  color: white;
+  background: var(--apart-soft);
+  color: var(--apart-text);
 }
 .top3Body {
   flex: 1;
@@ -196,23 +203,25 @@
 }
 .top3Choice {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 650;
+  letter-spacing: -0.02em;
 }
 .top3Rate {
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--apart-text);
+  font-variant-numeric: tabular-nums;
 }
 .top3Prompt {
   font-size: 12px;
-  color: var(--mute);
+  color: var(--ink-3);
   margin-top: 2px;
 }
 .track {
-  margin-top: 6px;
-  height: 6px;
+  margin-top: 8px;
+  height: 4px;
   border-radius: 999px;
-  background: var(--track);
+  background: var(--surface-2);
 }
 .trackFill {
   height: 100%;
@@ -220,7 +229,10 @@
   background: var(--apart);
 }
 
-.common .rankFirst,
+.common .rankFirst {
+  background: var(--same-soft);
+  color: var(--same-text);
+}
 .common .trackFill {
   background: var(--same);
 }
@@ -232,7 +244,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin: 20px 0 28px;
+  margin: 24px 0 32px;
 }
 /* the shared button style grows to fill a row; here they stack */
 .actions > button {
@@ -245,12 +257,12 @@
 }
 .subAction {
   height: 52px;
-  border-radius: 16px;
-  background: white;
-  box-shadow: 0 0 0 1px var(--line-strong);
+  border-radius: var(--radius-button);
+  background: var(--surface);
+  box-shadow: var(--shadow-card), inset 0 0 0 1px var(--hairline);
   color: var(--ink);
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -265,8 +277,8 @@
 }
 .peerLabel {
   font-size: 13px;
-  font-weight: 700;
-  color: var(--mute);
+  font-weight: 600;
+  color: var(--ink-2);
 }
 .peerValue {
   display: flex;
@@ -275,29 +287,28 @@
 }
 .peerCount {
   font-size: 14px;
-  font-weight: 700;
-  color: var(--ink-sub);
+  font-weight: 600;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
 }
 .peerValue b {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 34px;
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.05em;
   color: var(--same);
+  font-variant-numeric: tabular-nums;
 }
 
-.status {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  min-height: 60vh;
-  color: var(--ink-sub);
-  font-size: 15px;
-}
 .note {
-  margin: 12px 4px 0;
+  margin: 14px 4px 0;
   font-size: 12px;
   line-height: 1.5;
-  color: var(--mute);
+  color: var(--ink-3);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
 }

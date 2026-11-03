@@ -43,15 +43,15 @@ function EndingDialogue({ lines, choices, onDone }: Props) {
         <span className={styles.stage}>
           {system ? (
             <span className={styles.mystery} aria-hidden>
-              ?
+              <Icon name="question_mark" size={44} />
             </span>
           ) : (
             <>
               <span className={`${styles.actor} ${line.speaker === 'past' ? styles.speaking : ''}`} aria-hidden>
-                <Icon name="face" size={56} />
+                <Icon name="face" size={52} filled />
               </span>
               <span className={`${styles.actor} ${styles.now} ${line.speaker === 'now' ? styles.speaking : ''}`} aria-hidden>
-                <Icon name="person" size={56} />
+                <Icon name="person" size={52} filled />
               </span>
             </>
           )}

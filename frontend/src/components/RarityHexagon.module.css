@@ -7,38 +7,38 @@
 }
 .ring {
   fill: none;
-  stroke: var(--line-strong);
+  stroke: var(--hairline-strong);
   stroke-width: 1;
 }
 .spoke {
-  stroke: var(--line-strong);
+  stroke: var(--hairline);
   stroke-width: 1;
 }
 .area {
-  fill: var(--tier-light);
-  fill-opacity: 0.7;
+  fill: var(--tier-deep);
+  fill-opacity: 0.14;
   stroke: var(--tier-deep);
-  stroke-width: 2.5;
+  stroke-width: 2;
   stroke-linejoin: round;
 }
 .dot {
   fill: var(--tier-deep);
 }
 .label {
-  font-size: 13px;
-  font-weight: 700;
-  fill: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--ink-2);
 }
 .value {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   fill: var(--tier-deep);
 }
 .otherArea {
-  fill: var(--other-light);
-  fill-opacity: 0.45;
+  fill: var(--other-deep);
+  fill-opacity: 0.12;
   stroke: var(--other-deep);
-  stroke-width: 2.5;
+  stroke-width: 2;
   stroke-linejoin: round;
 }
 .otherDot {
@@ -46,10 +46,10 @@
 }
 .separator {
   font-size: 12px;
-  fill: var(--faint);
+  fill: var(--ink-4);
 }
 .otherValue {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   fill: var(--other-deep);
 }

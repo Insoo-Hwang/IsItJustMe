@@ -29,7 +29,7 @@ function ResultPage() {
   }
   if (query.isError) {
     return (
-      <div className={`${ui.page} ${styles.status}`} role="alert">
+      <div className={`${ui.page} ${ui.status}`} role="alert">
         결과를 불러오지 못했어요
         <button type="button" className={ui.secondary} onClick={() => void query.refetch()}>
           다시 시도
@@ -39,7 +39,7 @@ function ResultPage() {
   }
   if (!query.data) {
     return (
-      <div className={`${ui.page} ${styles.status}`} role="status">
+      <div className={`${ui.page} ${ui.status}`} role="status">
         결과를 불러오는 중…
       </div>
     )
@@ -50,8 +50,8 @@ function ResultPage() {
 function Donut({ value, color, track }: { value: number; color: string; track: string }) {
   return (
     <div className={styles.donut}>
-      <svg width="84" height="84" viewBox="0 0 84 84" aria-hidden>
-        <circle cx="42" cy="42" r="34" fill="none" stroke={track} strokeWidth="12" />
+      <svg width="76" height="76" viewBox="0 0 84 84" aria-hidden>
+        <circle cx="42" cy="42" r="34" fill="none" stroke={track} strokeWidth="9" />
         {value > 0 && (
           <circle
             cx="42"
@@ -59,7 +59,7 @@ function Donut({ value, color, track }: { value: number; color: string; track: s
             r="34"
             fill="none"
             stroke={color}
-            strokeWidth="12"
+            strokeWidth="9"
             strokeLinecap="round"
             strokeDasharray={`${(value / 100) * DONUT_LENGTH} ${DONUT_LENGTH}`}
           />
@@ -122,16 +122,10 @@ function ResultView({ category, data }: { category: Category; data: ResultDto })
       <TopBar title={`${category.name} 결과`} left={{ icon: 'home', label: '홈으로', onClick: () => navigate('/main') }} />
 
       <section className={`${styles.resultCard} ${tier[result.tone]}`} aria-label="결과 카드">
-        <span className={styles.deco} style={{ right: -50, top: -50, width: 180, height: 180, background: 'var(--tier-light)' }} />
-        <span className={styles.deco} style={{ right: 40, top: 96, width: 26, height: 26, background: 'var(--butter-deep)' }} />
-        <span
-          className={styles.deco}
-          style={{ left: -30, bottom: -60, width: 140, height: 140, boxShadow: 'inset 0 0 0 2px var(--tier-light)' }}
-        />
         <div className={styles.cardHead}>
+          <span className={styles.lead}>내 {withTopic(category.name)}</span>
           <span className={styles.ratio}>{sameRatioLabel(overall)}</span>
         </div>
-        <div className={styles.lead}>내 {withTopic(category.name)}</div>
         <h1 className={styles.tier}>{result.tier}</h1>
         <div className={styles.headline}>{result.headline}</div>
         <div className={styles.rareBox}>
@@ -213,7 +207,6 @@ function ResultView({ category, data }: { category: Category; data: ResultDto })
 
       <div className={styles.actions}>
         <button type="button" className={`${ui.primary} ${ui.large}`} onClick={() => navigate('/main')}>
-          <Icon name="home" size={22} />
           홈으로 가기
         </button>
         <div className={styles.subActions}>

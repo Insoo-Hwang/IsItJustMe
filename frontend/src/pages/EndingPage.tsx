@@ -73,7 +73,7 @@ function EndingPage() {
         <section className={styles.reveal} aria-label="마지막 비교 대상">
           <div className={styles.found}>LAST MATCH FOUND</div>
           <span className={styles.revealActor} aria-hidden>
-            <Icon name="face" size={72} />
+            <Icon name="face" size={68} filled />
           </span>
           <h1 className={styles.revealName}>몇 년 전의 나</h1>
           <p className={styles.revealText}>
@@ -114,7 +114,6 @@ function EndingPage() {
           </div>
           <div className={styles.letterActions}>
             <button type="button" className={`${ui.primary} ${ui.large}`} onClick={() => navigate('/summary')}>
-              <Icon name="auto_awesome" size={22} />
               종합 결과로 돌아가기
             </button>
             <div className={styles.subActions}>

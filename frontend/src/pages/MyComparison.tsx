@@ -115,7 +115,7 @@ function MyComparison({ token, ownerName: owner }: Props) {
       <section className={styles.versus} aria-label="나와의 취향 일치율">
         <div className={styles.versusNames}>
           <span className={styles.ownerName}>{owner}</span>
-          <Icon name="sync_alt" size={22} />
+          <span aria-hidden>vs</span>
           <span className={styles.otherName}>{data.planetName ? `${data.planetName}(나)` : '나'}</span>
         </div>
         <div className={styles.matchLabel}>취향 일치율</div>
@@ -126,7 +126,7 @@ function MyComparison({ token, ownerName: owner }: Props) {
         <p className={styles.matchLine}>{matchLine(data.match)}</p>
         {data.planetId == null && (
           <button type="button" className={`${ui.primary} ${styles.versusButton}`} onClick={() => setJoining(true)}>
-            <Icon name="add_circle" size={22} />
+            <Icon name="add" size={22} />
             {owner}의 취향 우주에 나 등록하기
           </button>
         )}

@@ -18,7 +18,7 @@ const MAX_ORBIT = 146
 const PLANET_RADIUS = 12
 // golden angle: each new planet lands in the widest gap, and positions never move
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
-const PLANET_COLORS = ['var(--blue)', 'var(--butter-deep)', 'oklch(0.7 0.13 165)', 'oklch(0.68 0.14 300)']
+const PLANET_COLORS = ['oklch(0.78 0.1 230)', 'oklch(0.84 0.1 85)', 'oklch(0.78 0.1 165)', 'oklch(0.76 0.11 300)', 'oklch(0.78 0.1 30)']
 
 // Fixed star field, the same on every visit.
 const STARS = Array.from({ length: 46 }, (_, i) => {
@@ -70,7 +70,8 @@ function TasteUniverse({ ownerName: owner, planets }: Props) {
               />
             )
           })}
-          <circle className={styles.sun} cx={CENTER} cy={CENTER} r={24} />
+          <circle className={styles.sunGlow} cx={CENTER} cy={CENTER} r={40} />
+          <circle className={styles.sun} cx={CENTER} cy={CENTER} r={26} />
           <text className={styles.sunLabel} x={CENTER} y={CENTER} textAnchor="middle" dominantBaseline="central">
             {owner}
           </text>
@@ -93,7 +94,7 @@ function TasteUniverse({ ownerName: owner, planets }: Props) {
                   cx={x}
                   cy={y}
                   r={PLANET_RADIUS}
-                  fill={p.me ? 'var(--coral)' : PLANET_COLORS[i % PLANET_COLORS.length]}
+                  fill={p.me ? 'var(--universe-me)' : PLANET_COLORS[i % PLANET_COLORS.length]}
                 />
                 <text className={styles.planetLabel} x={x} y={y + PLANET_RADIUS + 12} textAnchor="middle">
                   {label(p)}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { saveProfile } from '../api/guest.ts'
+import Icon from '../components/Icon.tsx'
 import TopBar from '../components/TopBar.tsx'
 import ui from '../components/ui.module.css'
 import { AGE_GROUPS, GENDERS, type AgeGroup, type Gender, type GuestProfile } from '../lib/profile.ts'
@@ -96,7 +97,10 @@ function ProfileStep({ title, backLabel, onBack, onDone, initial }: Props) {
         </div>
       </fieldset>
 
-      <p className={styles.note}>나이대·성별별 통계에만 쓰여요.</p>
+      <p className={styles.note}>
+        <Icon name="lock" size={14} />
+        나이대·성별별 통계에만 쓰여요
+      </p>
 
       <div className={ui.spacer} />
       <div className={ui.stickyBottom}>

@@ -1,6 +1,4 @@
-import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router'
-import { useScrollContainer } from '../app/scrollContainer.ts'
 import Icon from '../components/Icon.tsx'
 import { CATEGORIES, QUESTION_COUNT, totalTests } from '../data/categories.ts'
 import { withAnd } from '../lib/korean.ts'
@@ -9,30 +7,55 @@ import { showToast } from '../lib/toast.ts'
 import { answeredCount, firstUnanswered, useTestState } from '../store/testStore.ts'
 import styles from './LandingPage.module.css'
 
+// A crowd of people as dots, one of them the rare one.
+const COLUMNS = 10
+const ROWS = 6
+const GAP = 34
+const ME = { col: 7, row: 2 }
+// a few people close to "me", drawn a shade darker
+const NEAR = new Set(['6,2', '7,1', '8,3', '7,3', '6,1'])
+
+function CrowdField() {
+  return (
+    <svg className={styles.field} viewBox={`0 0 ${COLUMNS * GAP} ${ROWS * GAP}`} aria-hidden>
+      {Array.from({ length: ROWS }, (_, row) =>
+        Array.from({ length: COLUMNS }, (_, col) => {
+          const cx = GAP / 2 + col * GAP
+          const cy = GAP / 2 + row * GAP
+          if (col === ME.col && row === ME.row) {
+            return (
+              <g key={`${col},${row}`}>
+                <circle className={styles.pulse} cx={cx} cy={cy} r={8} />
+                <circle className={styles.me} cx={cx} cy={cy} r={8} />
+                <g className={styles.meTag}>
+                  <rect x={cx - 15} y={cy - 40} width={30} height={22} rx={11} />
+                  <text x={cx} y={cy - 29} textAnchor="middle" dominantBaseline="central">
+                    나
+                  </text>
+                </g>
+              </g>
+            )
+          }
+          return (
+            <circle
+              key={`${col},${row}`}
+              className={NEAR.has(`${col},${row}`) ? styles.near : styles.person}
+              cx={cx}
+              cy={cy}
+              r={6}
+              style={{ animationDelay: `${(col + row) * 40}ms` }}
+            />
+          )
+        }),
+      )}
+    </svg>
+  )
+}
+
 function LandingPage() {
   const navigate = useNavigate()
   const { answers, results } = useTestState()
   const invited = useInviteRoom()
-  const rootRef = useRef<HTMLDivElement>(null)
-  const scrollRef = useScrollContainer()
-
-  // Drive the hero fade and sheet curve from scroll without re-rendering.
-  useEffect(() => {
-    const container = scrollRef.current
-    const root = rootRef.current
-    if (!container || !root) return
-    let frame = 0
-    const onScroll = () => {
-      cancelAnimationFrame(frame)
-      frame = requestAnimationFrame(() => root.style.setProperty('--y', String(container.scrollTop)))
-    }
-    onScroll()
-    container.addEventListener('scroll', onScroll, { passive: true })
-    return () => {
-      cancelAnimationFrame(frame)
-      container.removeEventListener('scroll', onScroll)
-    }
-  }, [scrollRef])
 
   const inProgress = CATEGORIES.find((c) => answeredCount(answers[c.id]) > 0)
   const inProgressCount = answeredCount(inProgress && answers[inProgress.id])
@@ -57,75 +80,68 @@ function LandingPage() {
     navigate(`/test/${inProgress.id}/q/${(next < 0 ? QUESTION_COUNT - 1 : next) + 1}`)
   }
 
+  const start = () => document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })
+
   return (
-    <div ref={rootRef} className={styles.landing}>
-      <section className={styles.hero}>
-        <div className={styles.header}>
-          <div className={styles.logo}>
-            <span className={styles.logoMark} />
-            나만 그래?
-          </div>
-          <button type="button" className={styles.meButton} onClick={() => navigate('/me')}>
-            <Icon name="person" size={18} />
-            나의 정보
-          </button>
+    <div className={styles.landing}>
+      <header className={styles.header}>
+        <div className={styles.logo}>
+          <span className={styles.logoMark} aria-hidden>
+            <span />
+          </span>
+          나만 그래?
         </div>
-        <div className={styles.badge}>나의 취향 희귀도 확인하기</div>
+        <button type="button" className={styles.meButton} onClick={() => navigate('/me')}>
+          <Icon name="person" size={18} />
+          나의 정보
+        </button>
+      </header>
+
+      <section className={styles.hero}>
+        <p className={styles.eyebrow}>취향 희귀도 테스트</p>
         <h1 className={styles.headline}>
           내 취향, 나랑 똑같은
           <br />
           사람이 있을까?
         </h1>
-        <div className={styles.bubbles} aria-hidden>
-          <div className={`${styles.bubble} ${styles.bubbleCoral}`}>
-            탕수육은
-            <br />
-            찍먹?
-          </div>
-          <div className={`${styles.bubble} ${styles.bubbleBlue}`}>
-            민트초코는
-            <br />
-            호?
-          </div>
-          <div className={`${styles.bubble} ${styles.bubbleButter}`}>부먹!</div>
-          <div className={`${styles.bubble} ${styles.bubblePill}`}>아침형?</div>
-          <div className={styles.speech}>
-            나의 취향은
-            <br />
-            얼마나 특이할까?
-          </div>
-          <span className={styles.dot} style={{ left: 178, top: 150, width: 16, height: 16, background: 'var(--ink)' }} />
-          <span className={styles.dot} style={{ right: 120, top: 270, width: 12, height: 12, background: 'var(--coral)' }} />
-          <span
-            className={styles.dot}
-            style={{ right: 8, top: 262, width: 22, height: 22, boxShadow: 'inset 0 0 0 2px var(--blue)' }}
-          />
-        </div>
-        <div className={styles.participants}>
-          <span>
-            지금까지 <b>{totalTests().toLocaleString('ko-KR')}건</b>의 테스트가 진행되었어요
+        <p className={styles.lede}>
+          {CATEGORIES.length}가지 주제, {CATEGORIES.length * QUESTION_COUNT}개의 질문으로 다른 사람들 사이에서 내 취향이
+          얼마나 드문지 알려드려요.
+        </p>
+        <CrowdField />
+        <div className={styles.heroFoot}>
+          <span className={styles.total}>
+            <b>{totalTests().toLocaleString('ko-KR')}</b>건의 테스트가 진행됐어요
           </span>
-          <Icon name="keyboard_double_arrow_down" size={26} className={styles.scrollHint} />
+          {doneCount === 0 && (
+            <button type="button" className={styles.start} onClick={start}>
+              시작하기
+              <Icon name="arrow_downward" size={18} />
+            </button>
+          )}
         </div>
       </section>
 
-      <section id="categories" className={styles.sheet}>
-        <div className={styles.sheetHead}>
-          <h2 className={styles.sheetTitle}>어떤 취향부터 볼까요?</h2>
-          <p className={styles.sheetSub}>카테고리마다 {QUESTION_COUNT}문항, 1분이면 끝나요</p>
+      <section id="categories" className={styles.section}>
+        <div className={styles.sectionHead}>
+          <h2 className={styles.sectionTitle}>어떤 취향부터 볼까요?</h2>
+          <p className={styles.sectionSub}>
+            카테고리마다 {QUESTION_COUNT}문항, 1분이면 끝나요
+          </p>
         </div>
-
 
         {inProgress && (
           <button type="button" className={styles.resume} onClick={resume}>
-            <Icon name="play_circle" />
+            <span className={styles.resumeIcon} style={{ background: inProgress.tint.bg, color: inProgress.tint.fg }}>
+              <Icon name={inProgress.icon} size={22} filled />
+            </span>
             <span className={styles.resumeText}>
               <span className={styles.resumeTitle}>{inProgress.name} 이어하기</span>
               <span className={styles.resumeSub}>
                 {inProgressCount}/{QUESTION_COUNT} · 남은 질문 {QUESTION_COUNT - inProgressCount}개
               </span>
             </span>
-            <Icon name="chevron_right" size={22} />
+            <Icon name="play_arrow" size={22} filled className={styles.resumePlay} />
           </button>
         )}
 
@@ -137,18 +153,18 @@ function LandingPage() {
                 key={c.id}
                 type="button"
                 className={styles.catCard}
-                style={{ background: c.tint.bg }}
                 onClick={() => navigate(result ? `/result/${c.id}` : `/test/${c.id}`)}
                 aria-label={result ? `${c.name} 결과 보기` : undefined}
               >
+                <span className={styles.catIcon} style={{ background: c.tint.bg, color: c.tint.fg }}>
+                  <Icon name={c.icon} size={24} filled />
+                </span>
                 {result && (
                   <span className={styles.doneBadge} aria-hidden>
-                    <Icon name="check" size={20} />
+                    <Icon name="check" size={14} />
+                    완료
                   </span>
                 )}
-                <span className={styles.catIcon} style={{ color: c.tint.fg }}>
-                  <Icon name={c.icon} size={30} />
-                </span>
                 <span className={styles.catText}>
                   <span className={styles.catName}>{c.name}</span>
                   <span className={styles.catDesc}>{c.desc}</span>
@@ -164,29 +180,32 @@ function LandingPage() {
           aria-disabled={!allDone}
           onClick={openSummary}
         >
-          <Icon name={allDone ? 'auto_awesome' : 'lock'} size={22} />
-          <span className={styles.summaryText}>종합 결과 보기</span>
-          <span className={styles.summaryCount}>
-            {doneCount}/{CATEGORIES.length}
+          <span className={styles.summaryMain}>
+            <span className={styles.summaryText}>
+              <Icon name={allDone ? 'auto_awesome' : 'lock'} size={20} filled={allDone} />
+              종합 결과 보기
+            </span>
+            <span className={styles.summaryCount}>
+              {doneCount}/{CATEGORIES.length}
+            </span>
+          </span>
+          <span className={styles.summaryTrack} aria-hidden>
+            <span style={{ width: `${(doneCount / CATEGORIES.length) * 100}%` }} />
           </span>
         </button>
 
         {invited && (
           <button
             type="button"
-            className={`${styles.summary} ${allDone ? styles.compare : styles.summaryLocked}`}
+            className={`${styles.compare} ${allDone ? '' : styles.compareLocked}`}
             aria-disabled={!allDone}
             onClick={openInvite}
           >
-            <Icon name={allDone ? 'public' : 'lock'} size={22} />
-            <span className={styles.summaryText}>{withAnd(invited.room.ownerName)} 비교하기</span>
-            <span className={styles.summaryCount}>
-              {doneCount}/{CATEGORIES.length}
-            </span>
+            <Icon name={allDone ? 'public' : 'lock'} size={20} />
+            <span className={styles.compareText}>{withAnd(invited.room.ownerName)} 비교하기</span>
+            <Icon name="chevron_right" size={20} />
           </button>
         )}
-
-        <div style={{ height: 24 }} />
       </section>
     </div>
   )

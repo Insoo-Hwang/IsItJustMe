@@ -1,21 +1,44 @@
-/* pastel colors per result tier */
+/* hue per result tier: --tier is the soft fill, --tier-light the mid tone, --tier-deep the text */
 .common {
-  --tier: oklch(0.93 0.035 250);
-  --tier-light: oklch(0.87 0.05 250);
-  --tier-deep: oklch(0.48 0.09 250);
+  --tier: oklch(0.95 0.03 255);
+  --tier-light: oklch(0.86 0.07 255);
+  --tier-deep: oklch(0.5 0.15 260);
 }
 .firm {
-  --tier: oklch(0.93 0.04 165);
-  --tier-light: oklch(0.87 0.055 165);
-  --tier-deep: oklch(0.46 0.08 165);
+  --tier: oklch(0.95 0.035 170);
+  --tier-light: oklch(0.85 0.07 170);
+  --tier-deep: oklch(0.48 0.1 170);
 }
 .unique {
-  --tier: oklch(0.93 0.04 35);
-  --tier-light: oklch(0.87 0.06 35);
-  --tier-deep: oklch(0.52 0.11 35);
+  --tier: oklch(0.955 0.03 45);
+  --tier-light: oklch(0.86 0.08 45);
+  --tier-deep: oklch(0.55 0.16 38);
 }
 .rare {
-  --tier: oklch(0.92 0.04 300);
-  --tier-light: oklch(0.86 0.06 300);
-  --tier-deep: oklch(0.47 0.11 300);
+  --tier: oklch(0.95 0.035 300);
+  --tier-light: oklch(0.85 0.08 300);
+  --tier-deep: oklch(0.5 0.17 300);
+}
+
+@media (prefers-color-scheme: dark) {
+  .common {
+    --tier: oklch(0.27 0.05 260);
+    --tier-light: oklch(0.45 0.1 260);
+    --tier-deep: oklch(0.8 0.1 255);
+  }
+  .firm {
+    --tier: oklch(0.27 0.04 170);
+    --tier-light: oklch(0.45 0.08 170);
+    --tier-deep: oklch(0.82 0.1 170);
+  }
+  .unique {
+    --tier: oklch(0.28 0.05 40);
+    --tier-light: oklch(0.47 0.1 40);
+    --tier-deep: oklch(0.82 0.11 45);
+  }
+  .rare {
+    --tier: oklch(0.27 0.06 300);
+    --tier-light: oklch(0.46 0.12 300);
+    --tier-deep: oklch(0.82 0.11 300);
+  }
 }

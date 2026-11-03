@@ -5,49 +5,68 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: oklch(0.2 0.02 290 / 0.45);
-  animation: fadeIn 0.2s ease-out;
+  background: oklch(0 0 0 / 0.4);
+  animation: appear 0.2s ease-out;
 }
 .sheet {
+  position: relative;
   width: 100%;
   max-width: 440px;
-  padding: 26px 20px 28px;
+  padding: 28px 20px calc(24px + env(safe-area-inset-bottom));
   border-radius: 28px 28px 0 0;
-  background: var(--paper);
-  animation: sheetUp 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+  background: var(--surface);
+  box-shadow: var(--shadow-float);
+  animation: sheetUp 0.35s var(--ease-out);
+}
+/* grabber */
+.sheet::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  translate: -50% 0;
+  width: 36px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--surface-3);
 }
 .title {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 24px;
+  font-size: 22px;
+  font-weight: 750;
+  letter-spacing: -0.035em;
 }
 .description {
   margin-top: 8px;
   font-size: 14px;
-  line-height: 1.5;
-  color: var(--ink-sub);
+  line-height: 1.55;
+  color: var(--ink-2);
 }
 .input {
   width: 100%;
   height: 56px;
-  margin-top: 18px;
+  margin-top: 20px;
   padding: 0 16px;
   border: none;
-  border-radius: 16px;
-  background: white;
-  box-shadow: 0 0 0 2px var(--ink);
+  border-radius: var(--radius-button);
+  background: var(--surface-2);
   font-size: 17px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink);
+  transition: box-shadow 0.2s;
+}
+.input::placeholder {
+  color: var(--ink-4);
 }
 .input:focus-visible {
-  outline-offset: 3px;
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 .count {
   margin-top: 6px;
   text-align: right;
   font-size: 12px;
-  color: var(--mute);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
 }
 .actions {
   display: flex;
@@ -55,7 +74,17 @@
   margin-top: 14px;
 }
 .actions button:disabled {
-  background: var(--disabled);
-  color: var(--disabled-text);
+  opacity: 0.3;
   cursor: default;
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes sheetUp {
+  from {
+    transform: translateY(100%);
+  }
 }

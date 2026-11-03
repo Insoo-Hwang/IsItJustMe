@@ -13,7 +13,7 @@ type Props = {
 function ActionButton({ icon, label, onClick, muted }: Action) {
   return (
     <button type="button" className={styles.iconButton} onClick={onClick} aria-label={label}>
-      <Icon name={icon} size={muted ? 24 : 26} style={muted ? { color: 'var(--mute)' } : undefined} />
+      <Icon name={icon} size={24} style={muted ? { color: 'var(--ink-3)' } : undefined} />
     </button>
   )
 }

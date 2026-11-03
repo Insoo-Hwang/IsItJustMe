@@ -26,17 +26,16 @@ export type Category = {
 
 export const QUESTION_COUNT = 10
 
-// Card colors are part of the design, so they stay here instead of the DB.
-const TINTS: Record<string, Category['tint']> = {
-  food: { bg: 'oklch(0.94 0.045 28)', fg: 'oklch(0.58 0.17 28)' },
-  love: { bg: 'oklch(0.94 0.04 0)', fg: 'oklch(0.58 0.17 0)' },
-  life: { bg: 'oklch(0.95 0.06 90)', fg: 'oklch(0.55 0.12 75)' },
-  travel: { bg: 'oklch(0.94 0.035 230)', fg: 'oklch(0.55 0.13 230)' },
-  spending: { bg: 'oklch(0.94 0.045 150)', fg: 'oklch(0.52 0.12 150)' },
-  people: { bg: 'oklch(0.94 0.04 300)', fg: 'oklch(0.55 0.15 300)' },
-}
+// Card colors are part of the design, so they stay here instead of the DB. The values
+// live in index.css so they can change with the color scheme.
+const TINTS: Record<string, Category['tint']> = Object.fromEntries(
+  ['food', 'love', 'life', 'travel', 'spending', 'people'].map((code) => [
+    code,
+    { bg: `var(--cat-${code}-bg)`, fg: `var(--cat-${code}-fg)` },
+  ]),
+)
 
-const DEFAULT_TINT: Category['tint'] = { bg: 'oklch(0.95 0.01 250)', fg: 'oklch(0.45 0.02 250)' }
+const DEFAULT_TINT: Category['tint'] = { bg: 'var(--surface-2)', fg: 'var(--ink-2)' }
 
 export function toQuestion(dto: QuestionDto): Question {
   return { id: dto.code, prompt: dto.prompt, a: dto.option0, b: dto.option1, aRate: dto.option0Rate }

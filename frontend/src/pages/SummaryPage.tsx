@@ -55,8 +55,7 @@ function SummaryPage() {
       {top}
 
       <section className={styles.hero} aria-label="종합 결과">
-        <div className={styles.eyebrow}>FINAL RARITY REPORT</div>
-        <div className={styles.lead}>나의 희귀도 보고서</div>
+        <div className={styles.lead}>나의 취향 보고서</div>
         <h1 className={styles.tier}>{overall.tier}</h1>
         <div className={styles.headline}>{overall.headline}</div>
         <div className={styles.count}>
@@ -100,9 +99,9 @@ function SummaryPage() {
       <ul className={styles.list}>
         {rows.map(({ category, rarity, ratio }) => (
           <li key={category.id}>
-            <button type="button" className={`${ui.card} ${styles.row}`} onClick={() => navigate(`/result/${category.id}`)}>
+            <button type="button" className={styles.row} onClick={() => navigate(`/result/${category.id}`)}>
               <span className={styles.icon} style={{ background: category.tint.bg, color: category.tint.fg }}>
-                <Icon name={category.icon} size={24} />
+                <Icon name={category.icon} size={22} filled />
               </span>
               <span className={styles.rowText}>
                 <span className={styles.rowName}>{category.name}</span>
@@ -124,7 +123,7 @@ function SummaryPage() {
 
       <section className={styles.teaser} aria-label="마지막 비교 대상">
         <div className={styles.teaserMark} aria-hidden>
-          ?
+          <Icon name="question_mark" size={26} />
         </div>
         <p className={styles.teaserText}>
           그런데 아직 비교하지 못한 사람이

@@ -36,7 +36,7 @@ function IntroPage() {
 
       <div className={styles.head}>
         <div className={styles.icon} style={{ background: category.tint.bg, color: category.tint.fg }}>
-          <Icon name={category.icon} size={54} />
+          <Icon name={category.icon} size={36} filled />
         </div>
         <div className={styles.name} style={{ color: category.tint.fg }}>
           {category.name} 테스트
@@ -54,7 +54,7 @@ function IntroPage() {
         <ul className={styles.recList}>
           {category.recommend.map((r) => (
             <li key={r} className={styles.recItem}>
-              <Icon name="check_circle" size={18} className={styles.check} />
+              <Icon name="check" size={20} className={styles.check} />
               {r}
             </li>
           ))}
@@ -62,7 +62,7 @@ function IntroPage() {
       </div>
 
       <div className={`${ui.card} ${styles.preview}`}>
-        <div className={styles.previewLabel}>미리보기 · Q1</div>
+        <div className={styles.previewLabel}>미리보기 · 질문 1</div>
         <div className={styles.previewPrompt}>{first.prompt}</div>
         <div className={styles.vsRow}>
           <span className={styles.optA}>{first.a}</span>

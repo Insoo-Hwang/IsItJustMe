@@ -1,40 +1,111 @@
 :root {
-  --paper: oklch(0.978 0.008 80);
-  --paper-dim: oklch(0.94 0.012 80);
-  --ink: oklch(0.27 0.02 290);
-  --ink-soft: oklch(0.4 0.02 290);
-  --ink-sub: oklch(0.45 0.02 290);
-  --mute: oklch(0.52 0.015 290);
-  --faint: oklch(0.7 0.01 290);
-  --coral: oklch(0.66 0.17 28);
-  --coral-light: oklch(0.72 0.15 28);
-  --coral-text: oklch(0.55 0.17 28);
-  --coral-deep: oklch(0.5 0.17 28);
-  --coral-soft: oklch(0.94 0.04 28);
-  --blue: oklch(0.62 0.15 258);
-  --blue-text: oklch(0.48 0.15 258);
-  --blue-soft: oklch(0.94 0.035 258);
-  --butter: oklch(0.95 0.06 90);
-  --butter-deep: oklch(0.85 0.12 90);
-  --line: oklch(0.92 0.01 290);
-  --line-strong: oklch(0.9 0.01 290);
-  --chip: oklch(0.97 0.006 290);
-  --soft: oklch(0.93 0.01 290);
-  --track: oklch(0.94 0.01 290);
-  --disabled: oklch(0.9 0.01 290);
-  --disabled-text: oklch(0.62 0.01 290);
+  color-scheme: light dark;
 
-  --font-display: 'Jua', sans-serif;
-  --font-body: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+  /* surfaces */
+  --outer: oklch(0.93 0.003 286);
+  --bg: oklch(0.973 0.002 286);
+  --surface: oklch(1 0 0);
+  --surface-2: oklch(0.955 0.003 286);
+  --surface-3: oklch(0.92 0.004 286);
+  --hairline: oklch(0.2 0.01 286 / 0.08);
+  --hairline-strong: oklch(0.2 0.01 286 / 0.14);
+
+  /* text */
+  --ink: oklch(0.2 0.006 286);
+  --ink-2: oklch(0.44 0.008 286);
+  --ink-3: oklch(0.6 0.008 286);
+  --ink-4: oklch(0.76 0.006 286);
+  --on-ink: oklch(1 0 0);
+
+  /* one accent, plus a warm counterpart for "rare" and "apart" */
+  --accent: oklch(0.56 0.21 266);
+  --accent-text: oklch(0.5 0.2 266);
+  --accent-soft: oklch(0.95 0.028 266);
+  /* light blue fill for buttons, picked options and highlighted cards */
+  --fill: oklch(0.93 0.045 258);
+  --fill-strong: oklch(0.85 0.085 258);
+  --on-fill: oklch(0.4 0.16 263);
+
+  --warm: oklch(0.66 0.17 38);
+  --warm-text: oklch(0.55 0.16 38);
+  --warm-soft: oklch(0.955 0.025 45);
+
+  --shadow-card: 0 1px 2px oklch(0.2 0.01 286 / 0.04), 0 6px 24px -12px oklch(0.2 0.01 286 / 0.1);
+  --shadow-float: 0 12px 40px -12px oklch(0.2 0.01 286 / 0.28);
+
+  /* category icon tiles */
+  --cat-food-bg: oklch(0.95 0.035 40);
+  --cat-food-fg: oklch(0.58 0.16 38);
+  --cat-love-bg: oklch(0.95 0.035 10);
+  --cat-love-fg: oklch(0.57 0.18 10);
+  --cat-life-bg: oklch(0.96 0.045 90);
+  --cat-life-fg: oklch(0.58 0.12 75);
+  --cat-travel-bg: oklch(0.95 0.03 230);
+  --cat-travel-fg: oklch(0.55 0.13 235);
+  --cat-spending-bg: oklch(0.95 0.035 155);
+  --cat-spending-fg: oklch(0.55 0.12 155);
+  --cat-people-bg: oklch(0.95 0.035 300);
+  --cat-people-fg: oklch(0.55 0.15 300);
+
+  --font-body: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-icon: 'Material Symbols Rounded';
-  --spring: cubic-bezier(0.34, 1.7, 0.5, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --radius-card: 22px;
+  --radius-button: 16px;
 
   font-family: var(--font-body);
   color: var(--ink);
-  background: var(--paper-dim);
+  background: var(--outer);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  word-break: keep-all;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --outer: oklch(0.1 0 0);
+    --bg: oklch(0 0 0);
+    --surface: oklch(0.21 0.004 286);
+    --surface-2: oklch(0.27 0.005 286);
+    --surface-3: oklch(0.33 0.006 286);
+    --hairline: oklch(1 0 0 / 0.08);
+    --hairline-strong: oklch(1 0 0 / 0.14);
+
+    --ink: oklch(0.97 0.002 286);
+    --ink-2: oklch(0.74 0.006 286);
+    --ink-3: oklch(0.58 0.006 286);
+    --ink-4: oklch(0.42 0.006 286);
+    --on-ink: oklch(0.16 0.004 286);
+
+    --accent: oklch(0.68 0.17 266);
+    --accent-text: oklch(0.76 0.13 266);
+    --accent-soft: oklch(0.3 0.07 266);
+    --fill: oklch(0.33 0.08 263);
+    --fill-strong: oklch(0.45 0.12 263);
+    --on-fill: oklch(0.93 0.05 258);
+
+    --warm: oklch(0.72 0.15 40);
+    --warm-text: oklch(0.79 0.12 45);
+    --warm-soft: oklch(0.3 0.06 40);
+
+    --shadow-card: none;
+    --shadow-float: 0 12px 40px -12px oklch(0 0 0 / 0.6);
+
+    --cat-food-bg: oklch(0.3 0.06 40);
+    --cat-food-fg: oklch(0.8 0.12 45);
+    --cat-love-bg: oklch(0.3 0.06 10);
+    --cat-love-fg: oklch(0.8 0.12 10);
+    --cat-life-bg: oklch(0.32 0.05 85);
+    --cat-life-fg: oklch(0.86 0.12 88);
+    --cat-travel-bg: oklch(0.3 0.05 235);
+    --cat-travel-fg: oklch(0.8 0.1 230);
+    --cat-spending-bg: oklch(0.3 0.05 155);
+    --cat-spending-fg: oklch(0.8 0.11 155);
+    --cat-people-bg: oklch(0.3 0.06 300);
+    --cat-people-fg: oklch(0.8 0.11 300);
+  }
 }
 
 *,
@@ -60,7 +131,7 @@ button {
 button:focus-visible,
 a:focus-visible,
 input:focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -79,39 +150,13 @@ p {
   margin: 0;
 }
 
+::selection {
+  background: var(--accent-soft);
+}
+
 ::-webkit-scrollbar {
   width: 0;
   height: 0;
-}
-
-@keyframes floatA {
-  0% { transform: translateY(0) rotate(-2deg); }
-  100% { transform: translateY(-10px) rotate(2deg); }
-}
-@keyframes floatB {
-  0% { transform: translateY(-6px); }
-  100% { transform: translateY(6px); }
-}
-@keyframes hop {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-14px); }
-}
-@keyframes nudge {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(5px); }
-}
-@keyframes popIn {
-  0% { transform: scale(0.6); opacity: 0; }
-  70% { transform: scale(1.06); opacity: 1; }
-  100% { transform: scale(1); }
-}
-@keyframes sheetUp {
-  0% { transform: translateY(100%); }
-  100% { transform: translateY(0); }
-}
-@keyframes fadeIn {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

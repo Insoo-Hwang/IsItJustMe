@@ -13,25 +13,26 @@
 }
 .chip {
   height: 32px;
-  padding: 0 12px;
+  padding: 0 13px;
   border-radius: 999px;
-  background: var(--chip);
-  color: var(--ink-sub);
-  box-shadow: 0 0 0 1px var(--line);
+  background: var(--surface-2);
+  color: var(--ink-2);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 .chip[aria-pressed='true'] {
-  background: var(--ink);
-  color: white;
-  box-shadow: none;
+  background: var(--fill);
+  color: var(--on-fill);
 }
 
 .list {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin: 12px 0 28px;
+  margin: 14px 0 32px;
   padding: 0;
   list-style: none;
 }
@@ -39,21 +40,22 @@
 .question {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 .head {
   display: flex;
-  gap: 8px;
-  align-items: baseline;
+  flex-direction: column;
+  gap: 4px;
 }
 .n {
-  font-family: var(--font-display);
-  font-size: 15px;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--category);
 }
 .prompt {
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .optionRow {
@@ -67,34 +69,35 @@
   align-items: center;
   gap: 6px;
   font-size: 14px;
-  font-weight: 700;
-  color: var(--ink-sub);
+  font-weight: 600;
+  color: var(--ink-2);
 }
 .optionRate {
   font-size: 14px;
-  font-weight: 800;
-  color: var(--mute);
+  font-weight: 700;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
 }
 .myTag {
   padding: 2px 7px;
-  border-radius: 999px;
+  border-radius: 6px;
   background: var(--category-soft);
   color: var(--category);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .track {
-  margin-top: 6px;
-  height: 8px;
+  margin-top: 8px;
+  height: 6px;
   border-radius: 999px;
-  background: var(--track);
+  background: var(--surface-2);
   overflow: hidden;
 }
 .fill {
   height: 100%;
   border-radius: 999px;
-  background: var(--faint);
-  transition: width 0.3s;
+  background: var(--ink-4);
+  transition: width 0.4s var(--ease-out);
 }
 .mine .optionLabel {
   color: var(--ink);
@@ -102,22 +105,21 @@
 .mine .optionRate {
   color: var(--category);
 }
-/* category color only as an accent, so it never reads as the same/apart colors */
 .mine .fill {
   background: var(--category);
-  opacity: 0.7;
 }
 
 .total {
   font-size: 12px;
-  color: var(--mute);
+  color: var(--ink-3);
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .empty {
   padding: 10px 0;
   font-size: 13px;
-  color: var(--mute);
+  color: var(--ink-3);
 }
 
 .status {
@@ -127,12 +129,12 @@
   justify-content: center;
   gap: 16px;
   min-height: 60vh;
-  color: var(--ink-sub);
+  color: var(--ink-2);
   font-size: 15px;
 }
 .note {
   margin: 10px 4px 0;
   font-size: 12px;
   line-height: 1.5;
-  color: var(--mute);
+  color: var(--ink-3);
 }
