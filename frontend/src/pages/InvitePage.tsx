@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { HttpError } from '../api/categories.ts'
 import { fetchUniverse, type RoomDto } from '../api/rooms.ts'
@@ -12,7 +13,7 @@ import { CATEGORIES, shortName } from '../data/categories.ts'
 import { withAnd, withTopic } from '../lib/korean.ts'
 import { minorityShare, tierOf } from '../lib/rarity.ts'
 import { roomQuery, roomRetry, rowsOf } from '../lib/room.ts'
-import { setInvite } from '../store/testStore.ts'
+import { clearInvite, setInvite } from '../store/testStore.ts'
 import MyComparison from './MyComparison.tsx'
 import RoomStatus from './RoomStatus.tsx'
 import styles from './RoomPage.module.css'
@@ -61,7 +62,15 @@ function InvitePage() {
   const universe = useQuery({ queryKey: ['universe', token], queryFn: () => fetchUniverse(token), retry: roomRetry })
 
   const queries = [room, universe]
-  if (queries.some((q) => q.error instanceof HttpError && q.error.status === 404)) return <RoomStatus kind="missing" />
+  const missing = queries.some((q) => q.error instanceof HttpError && q.error.status === 404)
+  // The home page shows the way back here only until it is no longer needed: the viewer
+  // turned out to be the owner, finished every test and sees the comparison, or the room is gone.
+  const settled = missing || room.data?.viewer.role === 'OWNER' || room.data?.viewer.complete === true
+  useEffect(() => {
+    if (settled) clearInvite(token)
+  }, [settled, token])
+
+  if (missing) return <RoomStatus kind="missing" />
   if (queries.some((q) => q.isError)) {
     return <RoomStatus kind="error" retry={() => queries.forEach((q) => q.isError && void q.refetch())} />
   }

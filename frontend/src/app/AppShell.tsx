@@ -21,7 +21,9 @@ function AppShell() {
 
   // An invited friend keeps ?invite=<token> on every page: a tagged link remembers the
   // invite, and an untagged page gets the remembered tag back.
+  // The invite page carries the token in its path, so it needs no tag.
   useEffect(() => {
+    if (pathname.startsWith('/invite/')) return
     const params = new URLSearchParams(search)
     const tagged = params.get(INVITE_PARAM)
     if (tagged) {

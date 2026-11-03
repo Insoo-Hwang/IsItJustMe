@@ -121,6 +121,11 @@ export function setInvite(invite: Invite) {
   setState((s) => ({ ...s, invite }))
 }
 
+// Forgets the invite once it is no longer needed, but only if it is still this one.
+export function clearInvite(token: string) {
+  setState((s) => (s.invite?.token === token ? { ...s, invite: null } : s))
+}
+
 export function setLastName(lastName: string) {
   setState((s) => ({ ...s, lastName }))
 }
