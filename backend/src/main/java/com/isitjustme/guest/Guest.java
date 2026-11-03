@@ -33,9 +33,6 @@ public class Guest {
 	@Column(nullable = false, updatable = false)
 	private Instant createdAt;
 
-	@Column(nullable = false)
-	private Instant lastSeenAt;
-
 	@Enumerated(EnumType.STRING)
 	@Column(length = 10)
 	private @Nullable Gender gender;
@@ -47,11 +44,6 @@ public class Guest {
 	public Guest(String tokenHash, Instant now) {
 		this.tokenHash = tokenHash;
 		this.createdAt = now;
-		this.lastSeenAt = now;
-	}
-
-	public void touch(Instant now) {
-		this.lastSeenAt = now;
 	}
 
 	public void updateProfile(GuestProfile profile) {

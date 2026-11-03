@@ -32,16 +32,14 @@ public class GuestService {
 	 */
 	@Transactional
 	public GuestSession resolveOrIssue(@Nullable String rawToken) {
-		Instant now = Instant.now();
 		if (rawToken != null && !rawToken.isBlank()) {
 			Optional<Guest> found = guestRepository.findByTokenHash(GuestTokens.hash(rawToken));
 			if (found.isPresent()) {
-				found.get().touch(now);
 				return new GuestSession(rawToken, false, found.get().profile());
 			}
 		}
 		String token = GuestTokens.generate();
-		guestRepository.save(new Guest(GuestTokens.hash(token), now));
+		guestRepository.save(new Guest(GuestTokens.hash(token), Instant.now()));
 		return new GuestSession(token, true, null);
 	}
 
