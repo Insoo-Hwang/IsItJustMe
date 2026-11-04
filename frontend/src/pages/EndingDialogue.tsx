@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import Icon from '../components/Icon.tsx'
-import { SPEAKER_NAMES, type Line } from '../data/ending.ts'
+import { SPEAKER_NAMES, type Face, type Line } from '../data/ending.ts'
+import { spriteOf } from '../data/endingArt.ts'
 import styles from './EndingPage.module.css'
 
 type Props = {
@@ -12,6 +13,15 @@ type Props = {
 
 const TYPE_MS = 45
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+// Each character keeps the face of their latest line so far.
+function facesAt(lines: Line[], index: number): Record<'past' | 'now', Face> {
+  const faces: Record<'past' | 'now', Face> = { past: 'default', now: 'default' }
+  for (const l of lines.slice(0, index + 1)) {
+    if (l.speaker !== 'system') faces[l.speaker] = l.face
+  }
+  return faces
+}
 
 // Visual novel style: one line at a time, typed out. Tap to finish the line, tap again for the next.
 function EndingDialogue({ lines, choices, onDone }: Props) {
@@ -37,6 +47,7 @@ function EndingDialogue({ lines, choices, onDone }: Props) {
 
   const waiting = !typing && !(last && choices)
   const system = line.speaker === 'system'
+  const faces = facesAt(lines, index)
   return (
     <div className={styles.dialogue}>
       <button type="button" className={styles.tap} onClick={advance}>
@@ -47,12 +58,18 @@ function EndingDialogue({ lines, choices, onDone }: Props) {
             </span>
           ) : (
             <>
-              <span className={`${styles.actor} ${line.speaker === 'past' ? styles.speaking : ''}`} aria-hidden>
-                <Icon name="face" size={52} filled />
-              </span>
-              <span className={`${styles.actor} ${styles.now} ${line.speaker === 'now' ? styles.speaking : ''}`} aria-hidden>
-                <Icon name="person" size={52} filled />
-              </span>
+              <img
+                className={`${styles.sprite} ${styles.spritePast} ${line.speaker === 'past' ? styles.speaking : ''}`}
+                src={spriteOf('past', faces.past)}
+                alt=""
+                draggable={false}
+              />
+              <img
+                className={`${styles.sprite} ${styles.spriteNow} ${line.speaker === 'now' ? styles.speaking : ''}`}
+                src={spriteOf('now', faces.now)}
+                alt=""
+                draggable={false}
+              />
             </>
           )}
         </span>

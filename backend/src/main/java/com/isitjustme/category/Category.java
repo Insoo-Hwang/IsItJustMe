@@ -2,6 +2,7 @@ package com.isitjustme.category;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,7 +17,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * A test topic such as food or love. Rows are managed with SQL migrations.
+ * A test topic such as food or love. Rows are added with SQL migrations; the texts
+ * follow STORY.md ({@link StorySync}).
  */
 @Entity
 @Table(name = "category")
@@ -54,5 +56,21 @@ public class Category {
 
 	@Column(nullable = false, updatable = false)
 	private Instant createdAt;
+
+	/**
+	 * @return whether anything changed
+	 */
+	boolean updateTexts(String name, String icon, String description, String tagline, int minutes,
+			List<String> recommend) {
+		boolean changed = !(this.name.equals(name) && this.icon.equals(icon) && this.description.equals(description)
+				&& this.tagline.equals(tagline) && this.minutes == minutes && Objects.equals(this.recommend, recommend));
+		this.name = name;
+		this.icon = icon;
+		this.description = description;
+		this.tagline = tagline;
+		this.minutes = minutes;
+		this.recommend = recommend;
+		return changed;
+	}
 
 }

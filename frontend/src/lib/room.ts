@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { HttpError } from '../api/categories.ts'
 import { fetchRoom, type RoomDto } from '../api/rooms.ts'
 import { CATEGORIES, findCategory, fromAnswerBits, type Category } from '../data/categories.ts'
+import story from '../data/story.ts'
 import { useTestState, type TestState } from '../store/testStore.ts'
 import { rarityOf, type RarityResult } from './rarity.ts'
 
@@ -37,11 +38,9 @@ export function useInviteRoom(): { token: string; room: RoomDto } | null {
   return { token: invite.token, room: query.data }
 }
 
+// From STORY.md chapter 3-3.
 export function matchLine(match: number): string {
-  if (match >= 80) return '거의 같은 행성 출신인데?'
-  if (match >= 60) return '생각보다 취향이 비슷한 편!'
-  if (match >= 40) return '반은 통하고 반은 갈리는 사이'
-  return '취향 우주의 반대편에 살고 있네'
+  return story.matchLines.find((l) => match >= l.min)!.text
 }
 
 export type BitsRow = { category: Category; rarity: RarityResult }

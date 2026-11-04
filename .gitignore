@@ -37,3 +37,7 @@ frontend/dist-ssr/
 ### Logs ###
 logs/
 *.log
+
+### Design sources ###
+# original ending art (large PNGs); the app uses the WebP copies in frontend/src/assets/ending
+design/

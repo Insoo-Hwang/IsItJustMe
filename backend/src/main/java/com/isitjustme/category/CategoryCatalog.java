@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Every category with its questions, in display order. Categories and questions never
- * change, so this is cached without expiry.
+ * Every category with its questions, in display order. Cached without expiry; the cache
+ * is cleared when STORY.md changes the texts ({@link StorySync}).
  */
 public record CategoryCatalog(List<CategoryInfo> categories) {
 

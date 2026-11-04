@@ -49,7 +49,7 @@
 - **설정**: `CacheConfig` (`@EnableCaching`, 캐시별 TTL · 저장 타입). 캐시하는 메서드는 `CategoryStatsCache`, `RoomCards`에 모았다.
 - **저장 형식**: 캐시마다 정해진 record 하나를 JSON으로 저장한다 (`JacksonJsonRedisSerializer`). 값에 클래스 이름이 들어가지 않는다.
 - **쓰기**: 저장 · 삭제가 끝난 뒤에 응답한다 (`immediateWrites`, 기본값은 백그라운드 저장).
-- **갱신**: TTL이 지나면 다음 요청이 DB에서 다시 읽어 저장한다. 공유자 이름을 바꾸면 커밋 후 그 방의 캐시를 지운다.
+- **갱신**: TTL이 지나면 다음 요청이 DB에서 다시 읽어 저장한다. 공유자 이름을 바꾸면 커밋 후 그 방의 캐시를 지운다. `STORY.md`로 카테고리 · 문항이 바뀌면 `categories` 캐시를 지운다.
 - **결과 보정**: 조합별 인원 캐시에는 만든 시각을 함께 저장한다. 내 답이 그 뒤에 저장됐으면(답 수정 · 프로필 변경 포함) 캐시에 나를 1명 더해서 계산한다. (`StatsSnapshot.allWith` · `peersWith`)
 - **Redis 장애**: 연결 · 명령 제한 시간을 0.5초로 두고, 캐시 오류는 로그만 남기고 DB에서 읽는다. 읽을 수 없는 값(코드 변경 전에 저장된 값 등)은 지운다.
 - **로컬 실행**: `compose.yaml`의 `redis:8` (포트 6379). 값 확인은 `docker exec -it <컨테이너> redis-cli`에서 `KEYS *`, `GET "participants::SimpleKey []"`, `TTL <key>`.
@@ -408,3 +408,17 @@ Claude Design 시안을 React 화면으로 옮겼다. 테스트 · 결과 API가
 - 종합 결과 API에 `averageMatch` 추가, 종합 결과 화면에 카드 추가 (비교할 사람이 없으면 안내 문구)
 - 기존 종합 결과 계산은 그대로
 - 테스트: 1명 · 2명 · 모두 같음 · 모두 반대 · 전부 0 · 전부 1 · 직접 XOR 비교 (`RarityCalculatorTests`), 추가 · 수정 · 삭제 · 게스트 삭제 · 재집계 · 동시 저장 · DB XOR 비교 (`OverallStatsTests`), 재응답 전후 · 혼자일 때 (`CategoryServiceTests`), 캐시 이후 답 · TTL (`CacheTests`), Redis 장애 (`RedisDownTests`), 응답 형식 (`CategoryControllerTests`)
+
+### 22. STORY.md
+- `STORY.md`: 사용자 유형 · 흐름 · 등급 · 엔딩 스토리 · 카테고리와 문항 정리
+- 등급표 · 우주 멘트 · 엔딩 대사 · 편지를 `STORY.md`에서 읽음 (`frontend/story/plugin.ts`, 개발 서버는 저장 시 바로 반영, 형식 오류 시 빌드 실패)
+- 카테고리 · 문항 문구를 서버 시작 시 `STORY.md`에서 DB로 반영하고 카테고리 캐시 삭제 (`StorySync`). 로컬 실행 중에는 저장하면 바로 반영
+- `STORY.md`를 jar에 포함, 프론트 빌드 입력에 추가 (`build.gradle`)
+- 등급 헤드라인 · 우주 멘트 · 엔딩 대사 · 편지 · 카테고리 소개 · 문항 문구 수정
+- 테스트: 문서 읽기 · 형식 오류 (`StoryCategoriesTests`), DB · 캐시 반영 · 순서 변경 거부 (`StorySyncTests`)
+
+### 23. 엔딩 대화 이미지
+- 대화 화면: 등급별 배경, 어릴 적 나 · 지금의 나 캐릭터 이미지 (말하는 쪽 강조, 지금의 나는 좌우 반전), 공개 화면에 어릴 적 나 이미지
+- 표정: `STORY.md` 대사에 `화자(표정)` 형식 추가 (어릴 적 나 웃음 · 놀람 · 시무룩, 지금의 나 미소), 다음 대사까지 유지
+- 이미지는 WebP로 변환해 `frontend/src/assets/ending`에 두고 (19MB → 704KB), 원본 PNG는 `design/ending-original` (git 제외)
+- 엔딩 진입 시 캐릭터 · 배경 이미지 미리 불러오기 (`data/endingArt.ts`)

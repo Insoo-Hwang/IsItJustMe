@@ -1,10 +1,11 @@
-import { useLayoutEffect, useState } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useState, type CSSProperties } from 'react'
 import { Navigate, useNavigate } from 'react-router'
 import { useScrollContainer } from '../app/scrollContainer.ts'
 import Icon from '../components/Icon.tsx'
 import tier from '../components/tier.module.css'
 import ui from '../components/ui.module.css'
-import { ENDINGS, GREETINGS, GUESSES, INTRO, type Guess } from '../data/ending.ts'
+import { ENDINGS, GREETINGS, GUESSES, INTRO, REVEAL, type Guess } from '../data/ending.ts'
+import { BACKGROUNDS, preloadArt, spriteOf } from '../data/endingArt.ts'
 import { useSummary } from '../lib/summary.ts'
 import EndingDialogue from './EndingDialogue.tsx'
 import styles from './EndingPage.module.css'
@@ -22,6 +23,11 @@ function EndingPage() {
   useLayoutEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = 0
   }, [phase, scrollRef])
+
+  const tone = state.status === 'ready' ? state.summary.tier.tone : null
+  useEffect(() => {
+    if (tone) preloadArt(tone)
+  }, [tone])
 
   if (state.status === 'locked') return <Navigate to="/main" replace />
   if (state.status === 'missing') return <Navigate to={`/test/${state.categoryId}`} replace />
@@ -52,7 +58,10 @@ function EndingPage() {
   }
 
   return (
-    <div className={`${styles.page} ${tier[overall.tone]} ${phase === 'letter' ? styles.letterPage : ''}`}>
+    <div
+      className={`${styles.page} ${tier[overall.tone]} ${phase === 'letter' ? styles.letterPage : ''} ${phase === 'talk' ? styles.talkPage : ''}`}
+      style={phase === 'talk' ? ({ '--ending-bg': `url(${BACKGROUNDS[overall.tone]})` } as CSSProperties) : undefined}
+    >
       {phase === 'intro' && (
         <EndingDialogue
           key="intro"
@@ -73,16 +82,19 @@ function EndingPage() {
         <section className={styles.reveal} aria-label="마지막 비교 대상">
           <div className={styles.found}>LAST MATCH FOUND</div>
           <span className={styles.revealActor} aria-hidden>
-            <Icon name="face" size={68} filled />
+            <img className={styles.revealSprite} src={spriteOf('past', 'default')} alt="" draggable={false} />
           </span>
-          <h1 className={styles.revealName}>몇 년 전의 나</h1>
+          <h1 className={styles.revealName}>{REVEAL.name}</h1>
           <p className={styles.revealText}>
-            지금까지 다른 사람들과 비교하려고 했잖아.
-            <br />
-            마지막에는 예전의 나를 한번 만나보자.
+            {REVEAL.text.map((line, i) => (
+              <Fragment key={i}>
+                {i > 0 && <br />}
+                {line}
+              </Fragment>
+            ))}
           </p>
           <button type="button" className={`${ui.dark} ${ui.large} ${styles.revealButton}`} onClick={() => setPhase('talk')}>
-            만나러 가기
+            {REVEAL.button}
           </button>
         </section>
       )}

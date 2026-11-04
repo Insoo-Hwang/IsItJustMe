@@ -44,4 +44,15 @@ public class Question {
 	@Column(name = "option_1", nullable = false, length = 100)
 	private String option1;
 
+	/**
+	 * @return whether anything changed
+	 */
+	boolean updateTexts(String prompt, String option0, String option1) {
+		boolean changed = !(this.prompt.equals(prompt) && this.option0.equals(option0) && this.option1.equals(option1));
+		this.prompt = prompt;
+		this.option0 = option0;
+		this.option1 = option1;
+		return changed;
+	}
+
 }

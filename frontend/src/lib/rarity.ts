@@ -1,5 +1,9 @@
 import type { SummaryDto } from '../api/categories.ts'
 import type { Choice, Question } from '../data/categories.ts'
+import story from '../data/story.ts'
+import type { Tone } from '../../story/parse.ts'
+
+export type { Tone }
 
 export type PickedChoice = {
   n: number
@@ -8,8 +12,6 @@ export type PickedChoice = {
   // % of participants who made the same pick
   rate: number
 }
-
-export type Tone = 'rare' | 'unique' | 'firm' | 'common'
 
 export type RarityResult = {
   tier: string
@@ -23,17 +25,10 @@ export type RarityResult = {
   commonTop3: PickedChoice[]
 }
 
-// Tiers by the share of my picks that went with the minority (7+ of 10 → 희귀종).
-const TIERS: { min: number; tier: string; tone: Tone; headline: string }[] = [
-  { min: 0.7, tier: '희귀종', tone: 'rare', headline: '흔치 않은 조합 그래서 더 특별한 취향' },
-  { min: 0.5, tier: '개성파', tone: 'unique', headline: '나만의 길을 가는 취향' },
-  { min: 0.3, tier: '소신파', tone: 'firm', headline: '대세 속에서도 소신 있는 취향' },
-  { min: 0, tier: '국룰러', tone: 'common', headline: '누구나 끄덕일 취향' },
-]
-
+// Tiers by the share of my picks that went with the minority, from STORY.md chapter 2.
 export function tierOf(minority: number, picks: number): { tier: string; tone: Tone; headline: string } {
   const share = picks > 0 ? minority / picks : 0
-  const { tier, tone, headline } = TIERS.find((t) => share >= t.min)!
+  const { tier, tone, headline } = story.tiers.find((t) => share >= t.min)!
   return { tier, tone, headline }
 }
 

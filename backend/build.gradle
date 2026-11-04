@@ -77,9 +77,15 @@ def npmBuild = tasks.register('npmBuild', Exec) {
 	inputs.dir(frontendDir.dir('src'))
 	inputs.dir(frontendDir.dir('public'))
 	inputs.files(fileTree(frontendDir) {
-		include 'index.html', 'package.json', 'package-lock.json', 'vite.config.ts', 'tsconfig*.json'
+		include 'index.html', 'package.json', 'package-lock.json', 'vite.config.ts', 'tsconfig*.json', 'story/**'
 	})
+	inputs.file(layout.projectDirectory.file('../STORY.md'))
 	outputs.dir(frontendDir.dir('dist'))
+}
+
+// STORY.md holds the category and question texts (StorySync), so it ships in the jar.
+tasks.named('processResources') {
+	from(layout.projectDirectory.file('../STORY.md'))
 }
 
 tasks.named('bootJar') {
