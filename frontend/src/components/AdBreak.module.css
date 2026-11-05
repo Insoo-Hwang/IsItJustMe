@@ -1,0 +1,57 @@
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+  padding-bottom: 20px;
+  animation: rise 0.45s var(--ease-out);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+}
+.badge {
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--surface-3);
+  color: var(--ink-3);
+  font-size: 12px;
+  font-weight: 650;
+}
+.skip {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--on-fill);
+  font-size: 13px;
+  font-weight: 650;
+}
+.skip:active {
+  opacity: 0.7;
+}
+
+.link {
+  display: block;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  max-height: calc(100dvh - 170px);
+  object-fit: contain;
+  border-radius: 20px;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}

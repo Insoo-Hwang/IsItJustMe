@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router'
 import { HttpError, submitAnswer } from '../api/categories.ts'
 import { ensureGuestSession } from '../api/guest.ts'
+import AdBreak from '../components/AdBreak.tsx'
 import Icon from '../components/Icon.tsx'
 import TopBar from '../components/TopBar.tsx'
 import ui from '../components/ui.module.css'
@@ -22,6 +23,9 @@ import styles from './QuizPage.module.css'
 
 const AUTO_ADVANCE_MS = 520
 const ANALYZE_MS = 1500
+// an ad, once per category per visit, between questions 5 and 6
+const AD_AFTER_INDEX = 4
+const adShown = new Set<string>()
 
 function LoadingView({ category }: { category: Category }) {
   return (
@@ -45,7 +49,7 @@ function QuizPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { answers } = useTestState()
-  const [phase, setPhase] = useState<'quiz' | 'profile' | 'loading'>('quiz')
+  const [phase, setPhase] = useState<'quiz' | 'profile' | 'loading' | 'ad'>('quiz')
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   // A pending auto-advance belongs to the question it was set on.
@@ -74,6 +78,11 @@ function QuizPage() {
     const latest = getTestState().answers[id] ?? []
     if (latest[from] == null) {
       showToast('하나를 골라주세요')
+      return
+    }
+    if (from === AD_AFTER_INDEX && !adShown.has(id)) {
+      adShown.add(id)
+      setPhase('ad')
       return
     }
     if (from < QUESTION_COUNT - 1) {
@@ -148,13 +157,20 @@ function QuizPage() {
     navigate(index === 0 ? `/test/${id}` : `/test/${id}/q/${index}`)
   }
 
+  // the break sits on question 5's URL; any other question means it was left
+  const onBreak = phase === 'ad' && index === AD_AFTER_INDEX
+  const resume = () => {
+    setPhase('quiz')
+    navigate(`/test/${id}/q/${AD_AFTER_INDEX + 2}`)
+  }
+
   const choiceState = (side: Choice) => (picked == null ? 'idle' : picked === side ? 'selected' : 'dimmed')
 
   return (
     <div className={`${ui.page} ${styles.quiz}`}>
       <TopBar
         title={category.name}
-        left={{ icon: 'arrow_back', label: '이전 질문', onClick: prev }}
+        left={{ icon: 'arrow_back', label: '이전 질문', onClick: onBreak ? () => setPhase('quiz') : prev }}
         right={{ icon: 'close', label: '그만하기', onClick: () => navigate('/main'), muted: true }}
       />
       <nav className={styles.steps} aria-label="질문 이동">
@@ -163,10 +179,13 @@ function QuizPage() {
             key={q.id}
             type="button"
             aria-label={`${i + 1}번 질문`}
-            aria-current={i === index ? 'step' : undefined}
+            aria-current={!onBreak && i === index ? 'step' : undefined}
             disabled={i > reachable}
-            className={`${styles.step} ${current[i] != null ? styles.stepDone : ''} ${i === index ? styles.stepCurrent : ''}`}
-            onClick={() => navigate(`/test/${id}/q/${i + 1}`)}
+            className={`${styles.step} ${current[i] != null ? styles.stepDone : ''} ${!onBreak && i === index ? styles.stepCurrent : ''}`}
+            onClick={() => {
+              setPhase('quiz')
+              navigate(`/test/${id}/q/${i + 1}`)
+            }}
           />
         ))}
       </nav>
@@ -179,52 +198,58 @@ function QuizPage() {
         </span>
       </div>
 
-      <div className={styles.body}>
-        <div className={styles.qLabel} style={{ color: category.tint.fg }}>
-          질문 {index + 1}
-        </div>
-        <h1 className={styles.prompt}>{question.prompt}</h1>
-        <div className={styles.choices}>
-          {(['a', 'b'] as const).map((side) => (
-            <button
-              key={side}
-              type="button"
-              className={styles.choice}
-              data-side={side}
-              data-state={choiceState(side)}
-              aria-pressed={picked === side}
-              onClick={() => pick(side)}
-            >
-              <span className={styles.choiceBadge}>{side.toUpperCase()}</span>
-              <span className={styles.choiceLabel}>{question[side]}</span>
-              {picked === side && <Icon name="check_circle" size={24} filled className={styles.choiceCheck} />}
-            </button>
-          ))}
-          <div className={styles.vs} aria-hidden>
-            or
+      {onBreak ? (
+        <AdBreak onClose={resume} />
+      ) : (
+        <>
+          <div className={styles.body}>
+            <div className={styles.qLabel} style={{ color: category.tint.fg }}>
+              질문 {index + 1}
+            </div>
+            <h1 className={styles.prompt}>{question.prompt}</h1>
+            <div className={styles.choices}>
+              {(['a', 'b'] as const).map((side) => (
+                <button
+                  key={side}
+                  type="button"
+                  className={styles.choice}
+                  data-side={side}
+                  data-state={choiceState(side)}
+                  aria-pressed={picked === side}
+                  onClick={() => pick(side)}
+                >
+                  <span className={styles.choiceBadge}>{side.toUpperCase()}</span>
+                  <span className={styles.choiceLabel}>{question[side]}</span>
+                  {picked === side && <Icon name="check_circle" size={24} filled className={styles.choiceCheck} />}
+                </button>
+              ))}
+              <div className={styles.vs} aria-hidden>
+                or
+              </div>
+            </div>
+            <div className={styles.hint}>
+              {picked == null ? '고르면 바로 다음 질문으로 넘어가요' : '다른 쪽을 누르면 답을 바꿀 수 있어요'}
+            </div>
           </div>
-        </div>
-        <div className={styles.hint}>
-          {picked == null ? '고르면 바로 다음 질문으로 넘어가요' : '다른 쪽을 누르면 답을 바꿀 수 있어요'}
-        </div>
-      </div>
 
-      <div className={ui.stickyBottom}>
-        <button type="button" className={`${ui.secondary} ${styles.navPrev}`} onClick={prev}>
-          이전
-        </button>
-        <button
-          type="button"
-          className={`${ui.dark} ${picked == null ? styles.navNextEmpty : ''}`}
-          aria-disabled={picked == null}
-          onClick={() => {
-            clearTimeout(timer.current)
-            goNext(index)
-          }}
-        >
-          {isLast ? '결과 보기' : '다음'}
-        </button>
-      </div>
+          <div className={ui.stickyBottom}>
+            <button type="button" className={`${ui.secondary} ${styles.navPrev}`} onClick={prev}>
+              이전
+            </button>
+            <button
+              type="button"
+              className={`${ui.dark} ${picked == null ? styles.navNextEmpty : ''}`}
+              aria-disabled={picked == null}
+              onClick={() => {
+                clearTimeout(timer.current)
+                goNext(index)
+              }}
+            >
+              {isLast ? '결과 보기' : '다음'}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   )
 }

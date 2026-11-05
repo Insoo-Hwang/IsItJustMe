@@ -444,3 +444,7 @@ Claude Design 시안을 React 화면으로 옮겼다. 테스트 · 결과 API가
 
 ### 28. 테스트 수정
 - `StoryCategoriesTests`: Windows(`core.autocrlf`)에서 `STORY.md`가 CRLF로 읽혀 문항 삭제가 적용되지 않던 문제. 읽을 때 LF로 맞춤
+
+### 29. 질문 중간 광고
+- 카테고리 질문 5 → 6 사이에 광고 (`AdBreak`). 질문 화면 틀(상단바 · 진행 바) 안에서 질문 자리에 표시, 바로 건너뛰기 가능, 이미지를 누르면 상품 페이지(새 탭). 카테고리마다 방문당 한 번
+- 광고 이미지는 WebP로 변환해 `frontend/src/assets/ad/ad-quiz.webp` (2.3MB → 107KB)
