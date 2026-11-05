@@ -3,7 +3,9 @@ package com.isitjustme.category;
 import java.sql.Array;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
@@ -57,6 +59,24 @@ public class OverallAnswerRepository {
 			values[i] = boxed[i];
 		}
 		return values;
+	}
+
+	/**
+	 * Guests whose {@link RarityCalculator#rarityScore} is below {@code myScore}, scored
+	 * inside the database with the same weights.
+	 */
+	long countRarer(long[] weights, long myScore) {
+		return jdbcClient.sql("""
+				SELECT COUNT(*)
+				FROM overall_answer o
+				WHERE COALESCE((SELECT SUM(w.weight)
+				                FROM unnest(CAST(:weights AS BIGINT[])) WITH ORDINALITY AS w (weight, i)
+				                WHERE (o.overall_bits >> (w.i - 1)::INT) & 1 = 1), 0) < :myScore
+				""")
+			.param("weights", Arrays.stream(weights).mapToObj(Long::toString).collect(Collectors.joining(",", "{", "}")))
+			.param("myScore", myScore)
+			.query(Long.class)
+			.single();
 	}
 
 	/**

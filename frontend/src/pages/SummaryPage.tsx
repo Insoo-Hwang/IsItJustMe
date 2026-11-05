@@ -1,12 +1,14 @@
+import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
 import Icon from '../components/Icon.tsx'
 import RarityHexagon from '../components/RarityHexagon.tsx'
 import ShareUniverseButton from '../components/ShareUniverseButton.tsx'
+import TasteCard from '../components/TasteCard.tsx'
 import tier from '../components/tier.module.css'
 import TopBar from '../components/TopBar.tsx'
 import ui from '../components/ui.module.css'
 import { shortName } from '../data/categories.ts'
-import { minorityShare } from '../lib/rarity.ts'
+import { minorityShare, rankLineOf } from '../lib/rarity.ts'
 import { useSummary } from '../lib/summary.ts'
 import styles from './SummaryPage.module.css'
 
@@ -16,6 +18,15 @@ const fmt = (n: number) => n.toLocaleString('ko-KR')
 function SummaryPage() {
   const navigate = useNavigate()
   const state = useSummary()
+  const [help, setHelp] = useState<number | null>(null)
+
+  // tapping anywhere else closes the metric popover
+  useEffect(() => {
+    if (help == null) return
+    const close = () => setHelp(null)
+    document.addEventListener('pointerdown', close)
+    return () => document.removeEventListener('pointerdown', close)
+  }, [help])
   if (state.status === 'locked') return <Navigate to="/main" replace />
   if (state.status === 'missing') return <Navigate to={`/test/${state.categoryId}`} replace />
 
@@ -44,11 +55,33 @@ function SummaryPage() {
     )
   }
 
-  const { rows, picks, minority, tier: overall, overall: summary, questions, averageMatch } = state.summary
+  const { rows, picks, minority, tier: overall, overall: summary, questions, averageMatch, topPercent } = state.summary
   const axes = rows.map(({ category, rarity }) => ({
     label: shortName(category),
     value: minorityShare(rarity),
   }))
+  const rarest = rows
+    .flatMap(({ rarity }) => rarity.picks)
+    .reduce((min, p) => (p.rate < min.rate ? p : min))
+  const card = {
+    tier: overall.tier,
+    tone: overall.tone,
+    headline: overall.headline,
+    topPercent,
+    rankLine: topPercent == null ? null : rankLineOf(topPercent),
+    minority,
+    picks,
+    averageMatch,
+    exact: summary.exact,
+    axes,
+    categories: rows.map(({ category, rarity }) => ({ name: category.name, tier: rarity.tier })),
+    rarest: { prompt: rarest.prompt, choice: rarest.choice, rate: Math.round(rarest.rate) },
+  }
+  const metrics = [
+    { label: '유사 취향 비율', value: summary.similar, unit: '%', help: `유사 취향은 ${picks}문항 중 80% 이상 같은 사람이에요.` },
+    { label: '완전 일치', value: fmt(summary.exact), unit: '명', help: `${picks}문항 답이 모두 나와 같은 사람 수예요.` },
+    { label: '소수 선택', value: minority, unit: '개', help: `${picks}문항 중 더 적은 사람이 고른 쪽을 고른 수예요.` },
+  ]
 
   return (
     <div className={`${ui.page} ${tier[overall.tone]}`}>
@@ -63,33 +96,50 @@ function SummaryPage() {
         </div>
       </section>
 
-      <div className={styles.metrics}>
-        <div className={`${ui.card} ${styles.metric}`}>
-          <div className={styles.metricValue}>
-            {summary.similar}
-            <small>%</small>
+      {topPercent != null && (
+        <section className={`${ui.card} ${styles.rank}`} aria-label="소수파 순위">
+          <div className={styles.rankLead}>내 희귀도는</div>
+          <div className={styles.rankValue}>
+            상위 <b>{topPercent}%</b>
           </div>
-          <div className={styles.metricLabel}>유사 취향 비율</div>
-        </div>
-        <div className={`${ui.card} ${styles.metric}`}>
-          <div className={styles.metricValue}>
-            {fmt(summary.exact)}
-            <small>명</small>
+          <p className={styles.rankText}>{rankLineOf(topPercent)}</p>
+          <div className={styles.rankTrack} aria-hidden>
+            <span style={{ left: `${topPercent}%` }} />
           </div>
-          <div className={styles.metricLabel}>완전 일치</div>
-        </div>
-        <div className={`${ui.card} ${styles.metric}`}>
-          <div className={styles.metricValue}>
-            {minority}
-            <small>개</small>
+          <div className={styles.rankEnds} aria-hidden>
+            <span>더 희귀한 편</span>
+            <span>더 흔한 편</span>
           </div>
-          <div className={styles.metricLabel}>소수 선택</div>
+        </section>
+      )}
+
+      <section className={styles.compare} aria-label={`${fmt(summary.participants)}명과 비교해본 나`}>
+        <h2 className={styles.compareTitle}>{fmt(summary.participants)}명과 비교해본 나</h2>
+        <div className={styles.metrics}>
+          {metrics.map((metric, i) => (
+            <div key={metric.label} className={`${ui.card} ${styles.metric}`}>
+              <div className={styles.metricValue}>
+                {metric.value}
+                <small>{metric.unit}</small>
+              </div>
+              <button
+                type="button"
+                className={styles.metricLabel}
+                aria-expanded={help === i}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => setHelp(help === i ? null : i)}
+              >
+                {metric.label}
+              </button>
+              {help === i && (
+                <p className={styles.popover} role="tooltip" onPointerDown={(e) => e.stopPropagation()}>
+                  {metric.help}
+                </p>
+              )}
+            </div>
+          ))}
         </div>
-      </div>
-      <p className={styles.note}>
-        유사 취향은 {picks}문항 중 80% 이상 같은 사람이에요. 6개 테스트를 모두 끝낸 {fmt(summary.participants)}명 기준
-        잠정 결과예요.
-      </p>
+      </section>
 
       <section className={`${ui.card} ${styles.average}`} aria-label="다른 사람들과 평균 취향 일치율">
         <div className={styles.averageLabel}>다른 사람들과 평균 취향 일치율</div>
@@ -135,8 +185,13 @@ function SummaryPage() {
         ))}
       </ul>
 
+      <TasteCard data={card} />
+
       <section className={`${ui.card} ${styles.share}`} aria-label="친구와 비교">
-        <p className={styles.shareText}>친구들은 나랑 얼마나 다를까?</p>
+        <div>
+          <p className={styles.shareText}>친구들은 나랑 얼마나 다를까?</p>
+          <p className={styles.shareSub}>공유하면 친구들이 모인 내 취향 우주를 볼 수 있어.</p>
+        </div>
         <ShareUniverseButton className={`${ui.primary} ${ui.large} ${styles.shareButton}`}>
           공유하기
         </ShareUniverseButton>

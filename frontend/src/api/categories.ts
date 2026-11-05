@@ -49,6 +49,8 @@ export type OverallResultDto = {
   overall: SummaryDto
   // % of answers other guests share with mine on average, null when nobody else finished
   averageMatch: number | null
+  // where I stand from the rarest by averageMatch, as "top n%", null when nobody else finished
+  topPercent: number | null
 }
 
 export type GroupCountDto = {

@@ -19,6 +19,7 @@ export type Summary = {
   overall: SummaryDto
   questions: number
   averageMatch: number | null
+  topPercent: number | null
 }
 
 export type SummaryState =
@@ -76,6 +77,7 @@ export function useSummary(): SummaryState {
       overall: overallQuery.data!.overall,
       questions: overallQuery.data!.questions,
       averageMatch: overallQuery.data!.averageMatch,
+      topPercent: overallQuery.data!.topPercent,
     },
   }
 }

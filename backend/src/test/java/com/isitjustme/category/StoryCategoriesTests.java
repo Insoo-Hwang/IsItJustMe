@@ -15,8 +15,9 @@ import com.isitjustme.category.StoryCategories.StoryException;
 
 class StoryCategoriesTests {
 
+	// LF line endings, so the edits below match on a Windows checkout too (core.autocrlf)
 	private static String story() throws IOException {
-		return Files.readString(Path.of("../STORY.md"));
+		return Files.readString(Path.of("../STORY.md")).replace("\r\n", "\n");
 	}
 
 	@Test

@@ -35,9 +35,27 @@ export type MatchLine = {
   text: string
 }
 
+export type RankLine = {
+  // highest "top n%" the line covers
+  max: number
+  text: string
+}
+
+export type Debate = {
+  title: string
+  taunt: string
+  question: string
+  same: string
+  different: string
+  testButton: string
+  shareText: string
+}
+
 export type Story = {
   tiers: Tier[]
   matchLines: MatchLine[]
+  rankLines: RankLine[]
+  debate: Debate
   intro: Line[]
   guesses: { id: Guess; label: string }[]
   reveal: { name: string; text: string[]; button: string }
@@ -217,7 +235,36 @@ function matchLinesOf(section: Section): MatchLine[] {
   return rows.map((row, i) => ({ min: mins[i], text: row.cells[1] }))
 }
 
-function endingOf(section: Section): Omit<Story, 'tiers' | 'matchLines'> {
+// "상위 N% 이내" from low to high, then "그 외" last.
+function rankLinesOf(section: Section): RankLine[] {
+  const rows = table(section)
+  let previous = 0
+  return rows.map((row, i) => {
+    const cell = row.cells[0]
+    if (i === rows.length - 1) {
+      return cell === '그 외' ? { max: 100, text: row.cells[1] } : fail(row.line, '마지막 줄의 순위는 "그 외"여야 해요')
+    }
+    const max = Number(/^상위 (\d+)% 이내$/.exec(cell)?.[1] ?? fail(row.line, `${cell}: "상위 N% 이내" 형식이어야 해요`))
+    if (max <= previous) fail(row.line, '순위는 위에서부터 낮은 순이어야 해요')
+    previous = max
+    return { max, text: row.cells[1] }
+  })
+}
+
+function debateOf(section: Section): Debate {
+  const f = fields(section, ['제목', '도발', '질문', '같은 편', '다른 편', '테스트 버튼', '공유 문구'])
+  return {
+    title: f['제목'][0],
+    taunt: f['도발'][0],
+    question: f['질문'][0],
+    same: f['같은 편'][0],
+    different: f['다른 편'][0],
+    testButton: f['테스트 버튼'][0],
+    shareText: f['공유 문구'][0],
+  }
+}
+
+function endingOf(section: Section): Omit<Story, 'tiers' | 'matchLines' | 'rankLines' | 'debate'> {
   const guessRows = table(child(section, '마지막 질문'))
   const guesses = new Map<string, string>()
   for (const row of guessRows) once(guesses, code(row.cells[0], row.line), row.cells[1], row.line, GUESSES)
@@ -265,6 +312,8 @@ export function parseStory(md: string): Story {
   return {
     tiers: tiersOf(child(root, '2. 취향 등급')),
     matchLines: matchLinesOf(child(child(root, '3. 사용자 흐름'), '3-3. 취향 우주')),
+    rankLines: rankLinesOf(child(child(root, '3. 사용자 흐름'), '3-4. 소수파 순위')),
+    debate: debateOf(child(child(root, '3. 사용자 흐름'), '3-5. 취향 논쟁')),
     ...endingOf(child(root, '4. 엔딩 스토리')),
   }
 }

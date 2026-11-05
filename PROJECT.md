@@ -136,7 +136,7 @@
 | 역할 | 모든 카테고리의 답을 하나의 조합으로 묶어, 모든 카테고리를 완료한 참여자와 비교한 결과를 내려준다 |
 | 호출 시점 | 종합 결과 화면 · 엔딩 화면 진입 시 |
 | Request | 쿠키 `guest_token` 필수 |
-| Response Body | `{ "questions", "overall": Summary, "averageMatch" }` — `questions`는 비교한 문항 수(카테고리 6개 = 60), Summary는 결과 조회와 같은 형식 (유사 = 80% 이상 일치, 갈림 = 20% 이하 일치). `averageMatch`는 다른 종합 완료자들과 같은 답을 고른 문항 비율의 평균(%, 소수 첫째 자리), 나 말고 완료한 사람이 없으면 `null` |
+| Response Body | `{ "questions", "overall": Summary, "averageMatch", "topPercent" }` — `questions`는 비교한 문항 수(카테고리 6개 = 60), Summary는 결과 조회와 같은 형식 (유사 = 80% 이상 일치, 갈림 = 20% 이하 일치). `averageMatch`는 다른 종합 완료자들과 같은 답을 고른 문항 비율의 평균(%, 소수 첫째 자리), 나 말고 완료한 사람이 없으면 `null`. `topPercent`는 종합 완료자를 평균 취향 일치율이 낮은(희귀한) 순으로 세웠을 때 내 위치(상위 %, 소수 첫째 자리, 최소 0.1), 나 말고 완료한 사람이 없으면 `null` |
 
 | 상황 | 상태 코드 | 동작 |
 |---|---|---|
@@ -422,3 +422,25 @@ Claude Design 시안을 React 화면으로 옮겼다. 테스트 · 결과 API가
 - 표정: `STORY.md` 대사에 `화자(표정)` 형식 추가 (어릴 적 나 웃음 · 놀람 · 시무룩, 지금의 나 미소), 다음 대사까지 유지
 - 이미지는 WebP로 변환해 `frontend/src/assets/ending`에 두고 (19MB → 704KB), 원본 PNG는 `design/ending-original` (git 제외)
 - 엔딩 진입 시 캐릭터 · 배경 이미지 미리 불러오기 (`data/endingArt.ts`)
+
+### 24. 종합 결과 지표 설명
+- "n명과 비교해본 나" 제목 아래 유사 취향 비율 · 완전 일치 · 소수 선택. 이름에 밑줄, 누르면 설명 팝오버
+- "n명 기준 잠정 결과" 문구 제거
+- 공유 카드에 취향 우주 안내 문구 추가
+
+### 25. 소수파 순위
+- 종합 결과에 "내 희귀도는 상위 n%" 카드(막대 · 순위 멘트), 순위 멘트는 `STORY.md` 3-4
+- 종합 결과 API에 `topPercent` 추가. 평균 취향 일치율 순서를 문항별 인원 가중치 합으로 DB에서 계산 (`RarityCalculator.rarityWeights` · `rarityScore` · `topPercent`, `OverallAnswerRepository.countRarer`)
+- 테스트: 순서가 평균 일치율과 같음 · 상위 % 계산 (`RarityCalculatorTests`), DB 계산 = 직접 계산 (`OverallStatsTests`), 동점 · 혼자일 때 (`CategoryServiceTests`), 응답 형식 (`CategoryControllerTests`)
+
+### 26. 취향 카드 이미지
+- 종합 결과에 캡처용 취향 카드 미리보기 · 저장 · 크게 보기 (`TasteCard`, `lib/tasteCard.ts`). 크게 보기는 화면 맞춤 ↔ 원본 크기(눌러서 전환)
+- 카드 내용: 등급 · 헤드라인, 희귀도 상위 %, 소수 선택 · 평균 일치율 · 완전 일치, 육각형, 카테고리별 등급, 가장 적은 사람이 고른 내 선택
+
+### 27. 취향 논쟁 링크 (보류: 결과 화면 버튼 · `/vs` 경로를 빼 둠)
+- 카테고리 결과에 "가장 희귀한 내 선택"으로 논쟁 링크 보내기 (`DebateShareButton`)
+- 논쟁 화면 `/vs/:catId/:n`: 공유자 선택을 보고 편 고르기 → 선택 비율 · 같은 편 / 다른 편 결과 → 테스트 또는 내 결과로 (`DebatePage`)
+- 문구는 `STORY.md` 3-5
+
+### 28. 테스트 수정
+- `StoryCategoriesTests`: Windows(`core.autocrlf`)에서 `STORY.md`가 CRLF로 읽혀 문항 삭제가 적용되지 않던 문제. 읽을 때 LF로 맞춤

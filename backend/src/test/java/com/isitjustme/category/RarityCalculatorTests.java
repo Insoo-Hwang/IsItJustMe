@@ -111,6 +111,40 @@ class RarityCalculatorTests {
 		}
 	}
 
+	@Test
+	void rarityScoreOrdersGuestsLikeAverageMatch() {
+		Random random = new Random(3);
+		long[] guests = new long[300];
+		for (int i = 0; i < guests.length; i++) {
+			for (int bit = 0; bit < 60; bit++) {
+				if (random.nextDouble() < 0.1 + bit / 70.0) {
+					guests[i] |= 1L << bit;
+				}
+			}
+		}
+		long[] counts = oneCounts(guests);
+		long[] weights = RarityCalculator.rarityWeights(guests.length, counts, 60);
+
+		for (int a = 0; a < 30; a++) {
+			for (int b = 0; b < 30; b++) {
+				double matchA = RarityCalculator.averageMatch(guests[a], guests.length, counts, 60);
+				double matchB = RarityCalculator.averageMatch(guests[b], guests.length, counts, 60);
+				if (matchA < matchB - 0.05) {
+					assertThat(RarityCalculator.rarityScore(guests[a], weights))
+						.isLessThan(RarityCalculator.rarityScore(guests[b], weights));
+				}
+			}
+		}
+	}
+
+	@Test
+	void topPercentCountsFromTheRarest() {
+		assertThat(RarityCalculator.topPercent(0, 1)).isNull();
+		assertThat(RarityCalculator.topPercent(0, 4)).isEqualTo(25.0);
+		assertThat(RarityCalculator.topPercent(3, 4)).isEqualTo(100.0);
+		assertThat(RarityCalculator.topPercent(0, 5000)).isEqualTo(0.1);
+	}
+
 	private static long[] oneCounts(long... guests) {
 		long[] counts = new long[60];
 		for (long bits : guests) {

@@ -169,6 +169,8 @@ class CategoryServiceTests {
 		assertThat(result.overall().different()).isEqualTo(1);
 		// (60 same + 48 close + 0 opposite) / 180, the unfinished guest left out
 		assertThat(result.averageMatch()).isEqualTo(60.0);
+		// only opposite shares less with the rest; same and close tie with me at 60%
+		assertThat(result.topPercent()).isEqualTo(50.0);
 		assertThatThrownBy(() -> categoryService.overallResult(unfinished)).isInstanceOf(ResponseStatusException.class)
 			.hasMessageContaining("404");
 	}
@@ -199,6 +201,7 @@ class CategoryServiceTests {
 		CATEGORY_CODES.forEach((code) -> categoryService.submit(me, code, 0b101));
 
 		assertThat(categoryService.overallResult(me).averageMatch()).isNull();
+		assertThat(categoryService.overallResult(me).topPercent()).isNull();
 	}
 
 	@Test

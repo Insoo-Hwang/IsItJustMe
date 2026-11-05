@@ -75,6 +75,46 @@ final class RarityCalculator {
 		return round1(matches * 100.0 / (questionCount * (participants - 1)));
 	}
 
+	/**
+	 * Per-question weights whose sum over a guest's option 1 picks orders guests the same
+	 * way as their {@link #averageMatch}: the matches a guest has with everyone are
+	 * {@code sum(participants - oneCounts)} plus {@code 2 * oneCounts - participants} for
+	 * each option 1 pick, and the first part is the same for all.
+	 */
+	static long[] rarityWeights(long participants, long[] oneCounts, int questionCount) {
+		long[] weights = new long[questionCount];
+		for (int bit = 0; bit < questionCount; bit++) {
+			weights[bit] = 2 * oneCounts[bit] - participants;
+		}
+		return weights;
+	}
+
+	/**
+	 * Lower is rarer. Compares guests only against weights from the same counts.
+	 */
+	static long rarityScore(long bits, long[] weights) {
+		long score = 0;
+		for (int bit = 0; bit < weights.length; bit++) {
+			if (((bits >>> bit) & 1) == 1) {
+				score += weights[bit];
+			}
+		}
+		return score;
+	}
+
+	/**
+	 * Where I stand from the rarest guest, as "top n%".
+	 * @param rarer guests with a lower {@link #rarityScore} than mine
+	 * @param participants guests ranked, including me
+	 * @return % rounded to one decimal, at least 0.1, or null when nobody else is ranked
+	 */
+	static @Nullable Double topPercent(long rarer, long participants) {
+		if (participants <= 1) {
+			return null;
+		}
+		return Math.max(0.1, round1((rarer + 1) * 100.0 / participants));
+	}
+
 	static int similarMaxDifferences(int questionCount) {
 		return questionCount / 5;
 	}

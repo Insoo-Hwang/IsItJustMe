@@ -131,6 +131,26 @@ class OverallStatsTests {
 	}
 
 	@Test
+	void countRarerMatchesScoringEveryGuest() {
+		Random random = new Random(11);
+		List<Long> bits = new ArrayList<>();
+		for (int i = 0; i < 60; i++) {
+			long b = random.nextLong() & ALL;
+			overallRepository.save(guest(), b);
+			bits.add(b);
+		}
+		OverallBitStats stats = overallRepository.bitStats();
+		long[] weights = RarityCalculator.rarityWeights(stats.participants(), stats.oneCounts(), 60);
+
+		for (long mine : bits.subList(0, 10)) {
+			long myScore = RarityCalculator.rarityScore(mine, weights);
+			long direct = bits.stream().filter((b) -> RarityCalculator.rarityScore(b, weights) < myScore).count();
+
+			assertThat(overallRepository.countRarer(weights, myScore)).isEqualTo(direct);
+		}
+	}
+
+	@Test
 	void rebuildCountsExistingAnswers() {
 		overallRepository.save(guest(), 0b1001);
 		overallRepository.save(guest(), ALL);

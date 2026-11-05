@@ -56,6 +56,11 @@ export function rarityOf(questions: Question[], answers: Choice[]): RarityResult
   }
 }
 
+// Line for a "top n%" rank, from STORY.md 3-4.
+export function rankLineOf(topPercent: number): string {
+  return story.rankLines.find((l) => topPercent <= l.max)!.text
+}
+
 // "n명 중 1명꼴": how often my exact combination shows up, counting me.
 export function sameRatioLabel(summary: SummaryDto): string {
   if (summary.participants <= 1) return '1호 참여자'

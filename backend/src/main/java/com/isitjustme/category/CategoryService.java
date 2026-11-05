@@ -171,9 +171,12 @@ public class CategoryService {
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 		int questionCount = statsCache.catalog().categories().size() * RarityCalculator.QUESTION_COUNT;
 		OverallBitStats bitStats = bitStatsWith(guest.getId());
+		long[] weights = RarityCalculator.rarityWeights(bitStats.participants(), bitStats.oneCounts(), questionCount);
+		long rarer = overallRepository.countRarer(weights, RarityCalculator.rarityScore(myBits, weights));
 		return new OverallResultView(questionCount,
 				RarityCalculator.summarize(overallRepository.count(myBits, questionCount)),
-				RarityCalculator.averageMatch(myBits, bitStats.participants(), bitStats.oneCounts(), questionCount));
+				RarityCalculator.averageMatch(myBits, bitStats.participants(), bitStats.oneCounts(), questionCount),
+				RarityCalculator.topPercent(rarer, bitStats.participants()));
 	}
 
 	/**
@@ -261,8 +264,11 @@ public class CategoryService {
 	 * @param questions questions compared across all categories
 	 * @param averageMatch % of answers other guests have in common with mine on average, null
 	 * when nobody else answered every category
+	 * @param topPercent my rank from the rarest guest by {@code averageMatch}, as "top n%",
+	 * null when nobody else answered every category
 	 */
-	public record OverallResultView(int questions, Summary overall, @Nullable Double averageMatch) {
+	public record OverallResultView(int questions, Summary overall, @Nullable Double averageMatch,
+			@Nullable Double topPercent) {
 	}
 
 	/**

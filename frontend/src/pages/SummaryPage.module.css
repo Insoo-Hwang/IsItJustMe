@@ -42,13 +42,76 @@
   font-weight: 700;
 }
 
+.rank {
+  margin-top: 12px;
+  text-align: center;
+}
+.rankLead {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.rankValue {
+  margin-top: 4px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.rankValue b {
+  font-size: 44px;
+  font-weight: 850;
+  letter-spacing: -0.05em;
+  color: var(--tier-deep);
+  font-variant-numeric: tabular-nums;
+}
+.rankText {
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 600;
+}
+/* rarest on the left, a dot where I stand */
+.rankTrack {
+  position: relative;
+  margin-top: 20px;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--tier-deep), var(--surface-2) 70%);
+}
+.rankTrack > span {
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 4px solid var(--tier-deep);
+  box-shadow: var(--shadow-float);
+  transform: translate(-50%, -50%);
+}
+.rankEnds {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.compare {
+  margin-top: 24px;
+}
+.compareTitle {
+  margin: 0 4px 10px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
 .metrics {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
-  margin-top: 12px;
 }
 .metric {
+  position: relative;
   padding: 16px 14px 14px;
 }
 .metricValue {
@@ -67,15 +130,57 @@
 }
 .metricLabel {
   margin-top: 6px;
+  padding: 0;
+  background: transparent;
   font-size: 12px;
   font-weight: 600;
   color: var(--ink-3);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
 }
-.note {
-  margin: 12px 4px 0;
-  font-size: 12px;
+.metricLabel[aria-expanded='true'] {
+  color: var(--ink);
+}
+/* hangs under the tapped card; edge cards align to their outer side so it stays on screen */
+.popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  z-index: 10;
+  width: 200px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--fill);
+  color: var(--on-fill);
+  box-shadow: var(--shadow-float);
+  font-size: 13px;
   line-height: 1.5;
-  color: var(--ink-3);
+  transform: translateX(-50%);
+  animation: pop 0.18s var(--ease-out);
+}
+.popover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: calc(50% - 22px);
+  border: 6px solid transparent;
+  border-bottom-color: var(--fill);
+}
+.metric:first-child .popover {
+  left: 0;
+  transform: none;
+}
+.metric:first-child .popover::before {
+  left: 24px;
+}
+.metric:last-child .popover {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+.metric:last-child .popover::before {
+  left: auto;
+  right: 64px;
 }
 
 /* everyone's average, unlike the "similar" share above which counts only 80%+ matches */
@@ -209,6 +314,12 @@
   font-weight: 700;
   letter-spacing: -0.02em;
 }
+.shareSub {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
 .shareButton {
   width: 100%;
   flex: none;
@@ -265,6 +376,12 @@
 @keyframes appear {
   from {
     opacity: 0;
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    translate: 0 -4px;
   }
 }
 @keyframes rise {
