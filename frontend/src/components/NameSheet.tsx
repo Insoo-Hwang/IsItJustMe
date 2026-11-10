@@ -9,12 +9,14 @@ type Props = {
   description: ReactNode
   confirmLabel: string
   busy?: boolean
+  // paints the confirm button like the other share buttons
+  share?: boolean
   onSubmit: (name: string) => void
   onClose: () => void
 }
 
 // Bottom sheet asking for a display name. Remembers the last one on this device.
-function NameSheet({ title, description, confirmLabel, busy, onSubmit, onClose }: Props) {
+function NameSheet({ title, description, confirmLabel, busy, share, onSubmit, onClose }: Props) {
   const [name, setName] = useState(() => getTestState().lastName)
   const trimmed = name.trim()
 
@@ -61,7 +63,7 @@ function NameSheet({ title, description, confirmLabel, busy, onSubmit, onClose }
           <button type="button" className={ui.secondary} onClick={onClose}>
             취소
           </button>
-          <button type="submit" className={ui.primary} disabled={!trimmed || busy}>
+          <button type="submit" className={`${ui.primary} ${share ? ui.share : ''}`} disabled={!trimmed || busy}>
             {confirmLabel}
           </button>
         </div>

@@ -5,6 +5,7 @@ import { invitePath } from '../lib/room.ts'
 import { showToast } from '../lib/toast.ts'
 import Icon from './Icon.tsx'
 import NameSheet from './NameSheet.tsx'
+import ui from './ui.module.css'
 
 type Props = {
   className: string
@@ -52,7 +53,7 @@ function ShareUniverseButton({ className, children }: Props) {
 
   return (
     <>
-      <button type="button" className={className} onClick={() => setOpen(true)}>
+      <button type="button" className={`${className} ${ui.share}`} onClick={() => setOpen(true)}>
         <Icon name="ios_share" size={22} />
         {children}
       </button>
@@ -61,6 +62,7 @@ function ShareUniverseButton({ className, children }: Props) {
           title="친구에게 보여줄 이름"
           description="초대장과 취향 우주에 이 이름으로 보여요. 다시 공유하면 이름을 바꿀 수 있어요."
           confirmLabel="링크 공유하기"
+          share
           busy={busy}
           onSubmit={(name) => void submit(name)}
           onClose={() => setOpen(false)}

@@ -5,6 +5,7 @@ import { debatePath, fillDebate } from '../lib/debate.ts'
 import { showToast } from '../lib/toast.ts'
 import Icon from './Icon.tsx'
 import NameSheet from './NameSheet.tsx'
+import ui from './ui.module.css'
 
 type Props = {
   className: string
@@ -43,7 +44,7 @@ function DebateShareButton({ className, categoryId, n, pick, prompt, choice, rat
 
   return (
     <>
-      <button type="button" className={className} onClick={() => setOpen(true)}>
+      <button type="button" className={`${className} ${ui.share}`} onClick={() => setOpen(true)}>
         <Icon name="ios_share" size={22} />
         공유하기
       </button>
@@ -52,6 +53,7 @@ function DebateShareButton({ className, categoryId, n, pick, prompt, choice, rat
           title="친구에게 보여줄 이름"
           description="논쟁 화면에 이 이름과 내 선택이 보여요."
           confirmLabel="링크 공유하기"
+          share
           onSubmit={(name) => void share(name)}
           onClose={() => setOpen(false)}
         />

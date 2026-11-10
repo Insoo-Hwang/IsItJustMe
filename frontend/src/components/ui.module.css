@@ -137,6 +137,9 @@
   background: var(--cta);
   color: var(--on-cta);
 }
+.share {
+  background: var(--share);
+}
 .primary:disabled,
 .dark:disabled {
   opacity: 0.4;
