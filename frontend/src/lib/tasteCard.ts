@@ -12,7 +12,7 @@ export type TasteCardData = {
   exact: number
   // 0 ~ 1 per category, clockwise from the top
   axes: { label: string; value: number }[]
-  categories: { name: string; tier: string }[]
+  categories: { name: string; tier: string; tone: Tone }[]
   rarest: { prompt: string; choice: string; rate: number }
 }
 
@@ -212,8 +212,10 @@ export function drawTasteCard(canvas: HTMLCanvasElement, data: TasteCardData) {
     text(ctx, c.name, listX, rowY + 10)
     font(ctx, 24, 700)
     const chipW = ctx.measureText(c.tier).width + 28
-    box(ctx, RIGHT - chipW, rowY - 20, chipW, 40, 12, tone.soft)
-    ctx.fillStyle = tone.deep
+    // each category in its own tier's color, like the list on the summary page
+    const chip = TONES[c.tone]
+    box(ctx, RIGHT - chipW, rowY - 20, chipW, 40, 12, chip.soft)
+    ctx.fillStyle = chip.deep
     text(ctx, c.tier, RIGHT - chipW / 2, rowY + 8, 'center')
   })
 

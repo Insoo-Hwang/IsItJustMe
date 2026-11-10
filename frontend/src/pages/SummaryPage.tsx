@@ -74,7 +74,7 @@ function SummaryPage() {
     averageMatch,
     exact: summary.exact,
     axes,
-    categories: rows.map(({ category, rarity }) => ({ name: category.name, tier: rarity.tier })),
+    categories: rows.map(({ category, rarity }) => ({ name: category.name, tier: rarity.tier, tone: rarity.tone })),
     rarest: { prompt: rarest.prompt, choice: rarest.choice, rate: Math.round(rarest.rate) },
   }
   const metrics = [
