@@ -26,8 +26,8 @@
   height: 36px;
   padding: 0 14px;
   border-radius: 999px;
-  background: var(--fill);
-  color: var(--on-fill);
+  background: var(--surface-3);
+  color: var(--ink-2);
   font-size: 13px;
   font-weight: 650;
 }

@@ -134,8 +134,13 @@
 .primary,
 .dark {
   flex: 1;
-  background: var(--fill);
-  color: var(--on-fill);
+  background: var(--cta);
+  color: var(--on-cta);
+}
+.primary:disabled,
+.dark:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 .secondary {
   width: 104px;
@@ -147,8 +152,8 @@
   font-size: 17px;
 }
 .accent {
-  background: var(--accent);
-  color: white;
+  background: var(--cta);
+  color: var(--on-cta);
 }
 
 .empty {

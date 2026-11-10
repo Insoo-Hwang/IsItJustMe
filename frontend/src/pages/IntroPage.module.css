@@ -111,6 +111,12 @@
   font-weight: 600;
   font-size: 15px;
 }
+.optA {
+  background: var(--side-a-soft);
+}
+.optB {
+  background: var(--side-b-soft);
+}
 
 .vs {
   font-size: 11px;

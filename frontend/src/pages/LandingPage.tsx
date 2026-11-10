@@ -28,12 +28,6 @@ function CrowdField() {
               <g key={`${col},${row}`}>
                 <circle className={styles.pulse} cx={cx} cy={cy} r={8} />
                 <circle className={styles.me} cx={cx} cy={cy} r={8} />
-                <g className={styles.meTag}>
-                  <rect x={cx - 15} y={cy - 40} width={30} height={22} rx={11} />
-                  <text x={cx} y={cy - 29} textAnchor="middle" dominantBaseline="central">
-                    나
-                  </text>
-                </g>
               </g>
             )
           }
@@ -61,9 +55,6 @@ function LandingPage() {
   // a retake left without a clean exit (closed tab, reload) is dropped here
   useEffect(() => dropRetakes(), [results])
 
-  const inProgress = CATEGORIES.find((c) => answeredCount(answers[c.id]) > 0)
-  const inProgressCount = answeredCount(inProgress && answers[inProgress.id])
-
   const doneCount = CATEGORIES.filter((c) => results[c.id]).length
   const allDone = doneCount === CATEGORIES.length
 
@@ -82,10 +73,6 @@ function LandingPage() {
   const questionPath = (catId: string) => {
     const next = firstUnanswered(answers[catId])
     return `/test/${catId}/q/${(next < 0 ? QUESTION_COUNT - 1 : next) + 1}`
-  }
-
-  const resume = () => {
-    if (inProgress) navigate(questionPath(inProgress.id))
   }
 
   const start = () => document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })
@@ -137,21 +124,6 @@ function LandingPage() {
             카테고리마다 {QUESTION_COUNT}문항, 1분이면 끝나요
           </p>
         </div>
-
-        {inProgress && (
-          <button type="button" className={styles.resume} onClick={resume}>
-            <span className={styles.resumeIcon} style={{ background: inProgress.tint.bg, color: inProgress.tint.fg }}>
-              <Icon name={inProgress.icon} size={22} filled />
-            </span>
-            <span className={styles.resumeText}>
-              <span className={styles.resumeTitle}>{inProgress.name} 이어하기</span>
-              <span className={styles.resumeSub}>
-                {inProgressCount}/{QUESTION_COUNT} · 남은 질문 {QUESTION_COUNT - inProgressCount}개
-              </span>
-            </span>
-            <Icon name="play_arrow" size={22} filled className={styles.resumePlay} />
-          </button>
-        )}
 
         <div className={styles.grid}>
           {CATEGORIES.map((c) => {
