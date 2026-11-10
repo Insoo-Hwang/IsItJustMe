@@ -36,12 +36,12 @@ class StoryCategoriesTests {
 		assertThat(food.recommend()).containsExactly("메뉴 하나 고르다 토론한 분", "민초 논쟁에 참전해 본 분", "친구의 음식 취향이 궁금한 분");
 		assertThat(food.questions().getFirst()).isEqualTo(new QuestionText("탕수육 소스, 어떻게 먹어?", "끝까지 찍먹", "처음부터 부먹"));
 		assertThat(story.categories().getLast().questions().getLast())
-			.isEqualTo(new QuestionText("모임이 길어지면?", "끝까지 같이 있어", "적당할 때 먼저 가"));
+			.isEqualTo(new QuestionText("사람을 사귈 때?", "먼저 다가간다", "천천히 가까워진다"));
 	}
 
 	@Test
 	void rejectsMissingQuestion() throws IOException {
-		String broken = story().replace("| 10 | 평소 아침밥은? | 챙겨 먹는 편 | 거르는 편 |\n", "");
+		String broken = story().replace("| 10 | 좋아하는 음식을 고를 때? | 늘 먹던 익숙한 맛 | 새로운 맛에 도전 |\n", "");
 
 		assertThatThrownBy(() -> StoryCategories.parse(broken)).isInstanceOf(StoryException.class)
 			.hasMessageContaining("`food` 문항은 10개여야 해요");
