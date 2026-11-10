@@ -3,6 +3,7 @@ package com.isitjustme.room;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,6 +30,18 @@ public class RoomController {
 	public OpenResponse open(@CookieValue(name = GuestController.COOKIE_NAME, required = false) String token,
 			@Valid @RequestBody NameRequest request) {
 		return new OpenResponse(roomService.open(token, request.name()));
+	}
+
+	/**
+	 * The guest's own room, so their universe can be shown before they open the link.
+	 * 204 when they have not shared yet.
+	 */
+	@GetMapping("/mine")
+	public ResponseEntity<MineResponse> mine(
+			@CookieValue(name = GuestController.COOKIE_NAME, required = false) String token) {
+		return roomService.mine(token)
+			.map((room) -> ResponseEntity.ok(new MineResponse(room.getShareToken(), room.getOwnerName())))
+			.orElseGet(() -> ResponseEntity.noContent().build());
 	}
 
 	@GetMapping("/{shareToken}")
@@ -59,6 +72,9 @@ public class RoomController {
 	}
 
 	public record OpenResponse(String shareToken) {
+	}
+
+	public record MineResponse(String shareToken, String ownerName) {
 	}
 
 	/**

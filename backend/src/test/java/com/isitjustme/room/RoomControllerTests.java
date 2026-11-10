@@ -9,7 +9,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import jakarta.servlet.http.Cookie;
 
@@ -73,6 +75,24 @@ class RoomControllerTests {
 			.andExpect(status().isBadRequest());
 
 		then(roomService).should(never()).open(any(), any());
+	}
+
+	@Test
+	void returnsMyRoom() throws Exception {
+		given(roomService.mine("token")).willReturn(Optional.of(new ShareRoom(1L, "share", "철수", Instant.now())));
+
+		mockMvc.perform(get("/api/v1/rooms/mine").cookie(new Cookie("guest_token", "token")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.shareToken").value("share"))
+			.andExpect(jsonPath("$.ownerName").value("철수"));
+	}
+
+	@Test
+	void myRoomIsEmptyBeforeSharing() throws Exception {
+		given(roomService.mine("token")).willReturn(Optional.empty());
+
+		mockMvc.perform(get("/api/v1/rooms/mine").cookie(new Cookie("guest_token", "token")))
+			.andExpect(status().isNoContent());
 	}
 
 	@Test

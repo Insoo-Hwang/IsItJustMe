@@ -74,6 +74,14 @@ public class RoomService {
 	}
 
 	/**
+	 * The room the guest owns, if they have shared one.
+	 */
+	@Transactional(readOnly = true)
+	public Optional<ShareRoom> mine(@Nullable String rawToken) {
+		return guestService.findByToken(rawToken).flatMap((guest) -> roomRepository.findByOwnerGuestId(guest.getId()));
+	}
+
+	/**
 	 * The owner's name and answers for the invite page, and how the viewer relates to the
 	 * room.
 	 */

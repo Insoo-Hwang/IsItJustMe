@@ -93,7 +93,7 @@ function LandingPage() {
       </header>
 
       <section className={styles.hero}>
-        <p className={styles.eyebrow}>취향 희귀도 테스트</p>
+        <p className={styles.eyebrow}>취향 테스트</p>
         <h1 className={styles.headline}>
           내 취향, 나랑 똑같은
           <br />

@@ -8,6 +8,8 @@ import ui from './ui.module.css'
 type Props = {
   ownerName: string
   planets: PlanetDto[]
+  // only the map: planets cannot be picked and the match card is left out
+  preview?: boolean
 }
 
 const SIZE = 340
@@ -37,7 +39,7 @@ const label = (p: PlanetDto) => (p.me ? `${p.name}(나)` : p.name)
 // The owner in the middle and every planet around them by match. Only owner-planet
 // pairs mean anything; distances between planets do not. A picked planet shows only
 // its match, never the answers behind it.
-function TasteUniverse({ ownerName: owner, planets }: Props) {
+function TasteUniverse({ ownerName: owner, planets, preview = false }: Props) {
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const selected = planets.find((p) => p.id === (selectedId ?? planets.find((m) => m.me)?.id))
 
@@ -49,7 +51,7 @@ function TasteUniverse({ ownerName: owner, planets }: Props) {
 
   return (
     <>
-      <section className={styles.space} aria-label={`${owner}의 취향 우주`}>
+      <section className={`${styles.space} ${preview ? styles.preview : ''}`} aria-label={`${owner}의 취향 우주`}>
         <svg className={styles.chart} viewBox={`0 0 ${SIZE} ${SIZE}`}>
           {STARS.map((s, i) => (
             <circle key={i} className={styles.star} cx={s.x} cy={s.y} r={s.size} />
@@ -82,12 +84,16 @@ function TasteUniverse({ ownerName: owner, planets }: Props) {
               <g
                 key={p.id}
                 className={styles.planet}
-                role="button"
-                tabIndex={0}
-                aria-label={`${label(p)}, 일치율 ${p.match}%`}
-                aria-pressed={active}
-                onClick={() => setSelectedId(p.id)}
-                onKeyDown={(e) => onKey(e, p)}
+                {...(preview
+                  ? {}
+                  : {
+                      role: 'button',
+                      tabIndex: 0,
+                      'aria-label': `${label(p)}, 일치율 ${p.match}%`,
+                      'aria-pressed': active,
+                      onClick: () => setSelectedId(p.id),
+                      onKeyDown: (e: KeyboardEvent) => onKey(e, p),
+                    })}
               >
                 {active && <circle className={styles.halo} cx={x} cy={y} r={PLANET_RADIUS + 6} />}
                 <circle
@@ -103,9 +109,10 @@ function TasteUniverse({ ownerName: owner, planets }: Props) {
             )
           })}
         </svg>
-        <p className={styles.note}>가운데에 가까울수록 {withRang(owner)} 취향이 비슷해요</p>
+        {!preview && <p className={styles.note}>가운데에 가까울수록 {withRang(owner)} 취향이 비슷해요</p>}
       </section>
 
+      {!preview && (
       <div className={`${ui.card} ${styles.pick}`} aria-live="polite">
         {planets.length === 0 ? (
           <p className={styles.pickEmpty}>아직 놀러 온 친구가 없어요</p>
@@ -123,6 +130,7 @@ function TasteUniverse({ ownerName: owner, planets }: Props) {
           <p className={styles.pickEmpty}>행성을 눌러 {withAnd(owner)}의 일치율을 확인해보세요</p>
         )}
       </div>
+      )}
     </>
   )
 }

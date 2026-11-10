@@ -66,6 +66,16 @@ export async function openRoom(ownerName: string): Promise<string> {
   return body.shareToken
 }
 
+export type MyRoomDto = { shareToken: string; ownerName: string }
+
+// The guest's own room, or null before they share for the first time.
+export async function fetchMyRoom(): Promise<MyRoomDto | null> {
+  const res = await withGuest(() => fetch('/api/v1/rooms/mine', { credentials: 'same-origin' }))
+  if (res.status === 204) return null
+  if (!res.ok) throw new HttpError(res.status, `my room failed: ${res.status}`)
+  return res.json() as Promise<MyRoomDto>
+}
+
 export async function fetchRoom(token: string): Promise<RoomDto> {
   const res = await withGuest(() => fetch(`/api/v1/rooms/${token}`, { credentials: 'same-origin' }))
   if (!res.ok) throw new HttpError(res.status, `room failed: ${res.status}`)

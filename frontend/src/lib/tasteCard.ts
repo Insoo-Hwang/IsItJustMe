@@ -148,7 +148,7 @@ export function drawTasteCard(canvas: HTMLCanvasElement, data: TasteCardData) {
   box(ctx, LEFT, y, WIDTH, 200, 32, tone.soft)
   font(ctx, 28, 600)
   ctx.fillStyle = INK_2
-  text(ctx, '내 희귀도는', LEFT + 40, y + 56)
+  text(ctx, '내 소수 선택 비율은', LEFT + 40, y + 56)
   if (data.topPercent != null) {
     font(ctx, 72, 850)
     ctx.fillStyle = tone.deep

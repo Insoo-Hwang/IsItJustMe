@@ -1,13 +1,17 @@
+import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
 import Icon from '../components/Icon.tsx'
+import { fetchMyRoom, fetchUniverse } from '../api/rooms.ts'
 import RarityHexagon from '../components/RarityHexagon.tsx'
 import ShareUniverseButton from '../components/ShareUniverseButton.tsx'
 import TasteCard from '../components/TasteCard.tsx'
+import TasteUniverse from '../components/TasteUniverse.tsx'
 import tier from '../components/tier.module.css'
 import TopBar from '../components/TopBar.tsx'
 import ui from '../components/ui.module.css'
 import { shortName } from '../data/categories.ts'
+import { invitePath } from '../lib/room.ts'
 import { minorityShare, rankLineOf } from '../lib/rarity.ts'
 import { useSummary } from '../lib/summary.ts'
 import styles from './SummaryPage.module.css'
@@ -19,6 +23,14 @@ function SummaryPage() {
   const navigate = useNavigate()
   const state = useSummary()
   const [help, setHelp] = useState<number | null>(null)
+  // my universe, once I have shared it
+  const myRoom = useQuery({ queryKey: ['room', 'mine'], queryFn: fetchMyRoom })
+  const shareToken = myRoom.data?.shareToken
+  const universe = useQuery({
+    queryKey: ['universe', shareToken],
+    queryFn: () => fetchUniverse(shareToken!),
+    enabled: shareToken != null,
+  })
 
   // tapping anywhere else closes the metric popover
   useEffect(() => {
@@ -60,9 +72,17 @@ function SummaryPage() {
     label: shortName(category),
     value: minorityShare(rarity),
   }))
-  const rarest = rows
-    .flatMap(({ rarity }) => rarity.picks)
-    .reduce((min, p) => (p.rate < min.rate ? p : min))
+  const allPicks = rows.flatMap(({ category, rarity }) => rarity.picks.map((pick) => ({ ...pick, category })))
+  const rarest = allPicks.reduce((min, p) => (p.rate < min.rate ? p : min))
+  // how many people picked the same as me, on average per question, by category
+  const areas = rows
+    .map(({ category, rarity }) => ({
+      category,
+      match: rarity.picks.reduce((sum, p) => sum + p.rate, 0) / Math.max(1, rarity.picks.length),
+    }))
+    .sort((x, y) => y.match - x.match)
+  const commonArea = areas[0]
+  const uniqueArea = areas[areas.length - 1]
   const card = {
     tier: overall.tier,
     tone: overall.tone,
@@ -91,14 +111,28 @@ function SummaryPage() {
         <div className={styles.lead}>나의 취향 보고서</div>
         <h1 className={styles.tier}>{overall.tier}</h1>
         <div className={styles.headline}>{overall.headline}</div>
-        <div className={styles.count}>
-          {picks}문항 중 <b>{minority}개</b>를 소수 쪽으로 골랐어요
+        <div className={styles.dotBox}>
+          <div className={styles.dotLabel}>
+            {picks}문항 중 <b>{minority}개</b>는 소수 쪽 선택
+          </div>
+          <ul className={styles.dotRows} aria-hidden>
+            {rows.map(({ category, rarity }) => (
+              <li key={category.id} className={styles.dotRow}>
+                <Icon name={category.icon} size={14} filled style={{ color: category.tint.fg }} />
+                <span className={styles.dots}>
+                  {rarity.picks.map((p) => (
+                    <span key={p.n} className={p.rate < 50 ? styles.dotMinority : styles.dot} />
+                  ))}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
       {topPercent != null && (
         <section className={`${ui.card} ${styles.rank}`} aria-label="소수파 순위">
-          <div className={styles.rankLead}>내 희귀도는</div>
+          <div className={styles.rankLead}>내 소수 선택 비율은</div>
           <div className={styles.rankValue}>
             상위 <b>{topPercent}%</b>
           </div>
@@ -162,9 +196,28 @@ function SummaryPage() {
         )}
       </section>
 
-      <section className={`${ui.card} ${styles.chartCard}`} aria-label="카테고리별 희귀도">
+      <section className={`${ui.card} ${styles.chartCard}`} aria-label="카테고리별 소수 선택 비율">
         <h2 className={ui.cardTitle}>카테고리별 소수 선택 비율</h2>
         <RarityHexagon axes={axes} />
+        {commonArea.category.id !== uniqueArea.category.id && (
+          <>
+            <div className={styles.areas}>
+              {[
+                { label: '가장 평범한 영역', area: commonArea },
+                { label: '가장 독특한 영역', area: uniqueArea },
+              ].map(({ label, area }) => (
+                <div key={label} className={styles.area}>
+                  <span className={styles.areaLabel}>{label}</span>
+                  <span className={styles.areaName}>
+                    <Icon name={area.category.icon} size={18} filled style={{ color: area.category.tint.fg }} />
+                    {shortName(area.category)}
+                  </span>
+                  <span className={styles.areaValue}>평균 {Math.round(area.match)}%와 같은 선택</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </section>
 
       <ul className={styles.list}>
@@ -192,6 +245,24 @@ function SummaryPage() {
           <p className={styles.shareText}>친구들은 나랑 얼마나 다를까?</p>
           <p className={styles.shareSub}>공유하면 친구들이 모인 내 취향 우주를 볼 수 있어.</p>
         </div>
+        {myRoom.data && universe.data ? (
+          <button
+            type="button"
+            className={styles.universeLink}
+            onClick={() => navigate(invitePath(myRoom.data!.shareToken))}
+            aria-label="내 취향 우주 크게 보기"
+          >
+            <TasteUniverse ownerName={myRoom.data.ownerName} planets={universe.data} preview />
+            <span className={styles.universeMore}>
+              {universe.data.length > 0 ? `친구 ${universe.data.length}명이 놀러 왔어요` : '아직 놀러 온 친구가 없어요'}
+              <Icon name="chevron_right" size={18} />
+            </span>
+          </button>
+        ) : (
+          <div className={styles.universeEmpty} aria-hidden>
+            <TasteUniverse ownerName="나" planets={[]} preview />
+          </div>
+        )}
         <ShareUniverseButton className={`${ui.primary} ${ui.large} ${styles.shareButton}`}>
           공유하기
         </ShareUniverseButton>

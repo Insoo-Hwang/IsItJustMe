@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
 import { HttpError } from '../api/categories.ts'
 import { openRoom } from '../api/rooms.ts'
@@ -33,12 +34,14 @@ async function share(name: string) {
 function ShareUniverseButton({ className, children }: Props) {
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  const queryClient = useQueryClient()
 
   const submit = async (name: string) => {
     setBusy(true)
     try {
       await share(name)
       setOpen(false)
+      void queryClient.invalidateQueries({ queryKey: ['room', 'mine'] })
     } catch (err) {
       console.error(err)
       showToast(
