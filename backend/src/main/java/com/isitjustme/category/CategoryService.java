@@ -20,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.isitjustme.category.CategoryCatalog.CategoryInfo;
 import com.isitjustme.category.CategoryCatalog.QuestionInfo;
 import com.isitjustme.category.CategoryStatsCache.OverallBitStats;
+import com.isitjustme.category.CategoryStatsCache.OverallRanks;
 import com.isitjustme.category.CategoryStatsCache.StatsSnapshot;
 import com.isitjustme.category.RarityCalculator.Summary;
 import com.isitjustme.guest.AgeGroup;
@@ -170,29 +171,44 @@ public class CategoryService {
 		long myBits = overallRepository.findBits(guest.getId())
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 		int questionCount = statsCache.catalog().categories().size() * RarityCalculator.QUESTION_COUNT;
-		OverallBitStats bitStats = bitStatsWith(guest.getId());
-		long[] weights = RarityCalculator.rarityWeights(bitStats.participants(), bitStats.oneCounts(), questionCount);
-		long rarer = overallRepository.countRarer(weights, RarityCalculator.rarityScore(myBits, weights));
+		// Answers change only through submit, which also moves updated_at; a profile change
+		// moves it too, costing only a fresh read below.
+		Instant changedAt = answerRepository.findByGuestId(guest.getId())
+			.stream()
+			.map(CategoryAnswer::getUpdatedAt)
+			.max(Comparator.naturalOrder())
+			.orElseThrow();
+		OverallBitStats bitStats = bitStatsWith(changedAt);
 		return new OverallResultView(questionCount,
 				RarityCalculator.summarize(overallRepository.count(myBits, questionCount)),
 				RarityCalculator.averageMatch(myBits, bitStats.participants(), bitStats.oneCounts(), questionCount),
-				RarityCalculator.topPercent(rarer, bitStats.participants()));
+				topPercent(myBits, changedAt));
 	}
 
 	/**
 	 * The cached per-bit counts when they surely hold the guest's current answers, otherwise
 	 * a fresh read, since {@link RarityCalculator#averageMatch} takes the guest back out of
-	 * them. Answers change only through {@link #submit}, which also moves
-	 * {@code updated_at}; a profile change moves it too, costing only a fresh read.
+	 * them.
 	 */
-	private OverallBitStats bitStatsWith(Long guestId) {
+	private OverallBitStats bitStatsWith(Instant changedAt) {
 		OverallBitStats cached = statsCache.overallBitStats();
-		Instant changedAt = answerRepository.findByGuestId(guestId)
-			.stream()
-			.map(CategoryAnswer::getUpdatedAt)
-			.max(Comparator.naturalOrder())
-			.orElseThrow();
 		return cached.includes(changedAt) ? cached : overallRepository.bitStats();
+	}
+
+	/**
+	 * My rank among the scores computed ahead of time. While they still hold every guest,
+	 * scoring again is cheap, so a guest they may miss gets a fresh, exact rank. Once they
+	 * are a sample, that guest is ranked against the others and counted in as one more; if
+	 * they were in under older answers this counts them twice, which no longer shows.
+	 */
+	private @Nullable Double topPercent(long myBits, Instant changedAt) {
+		OverallRanks ranks = statsCache.overallRanks();
+		boolean counted = ranks.includes(changedAt);
+		if (!counted && ranks.exact()) {
+			ranks = overallRepository.ranks();
+			counted = true;
+		}
+		return RarityCalculator.topPercent(ranks.rarer(myBits), ranks.participants() + (counted ? 0 : 1));
 	}
 
 	/**

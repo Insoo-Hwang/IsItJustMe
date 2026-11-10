@@ -103,6 +103,34 @@ final class RarityCalculator {
 	}
 
 	/**
+	 * Guests with a lower {@link #rarityScore} than {@code myScore}, from every {@code step}th
+	 * score in ascending order. Exact when {@code step} is 1; otherwise the middle of the
+	 * range the two neighboring samples leave open, so off by at most half a step.
+	 * @param samples the scores at ranks 0, step, 2 * step, ...
+	 * @param participants guests the samples were taken from
+	 */
+	static long rarer(long[] samples, int step, long participants, long myScore) {
+		int below = 0;
+		int end = samples.length;
+		while (below < end) {
+			int middle = (below + end) >>> 1;
+			if (samples[middle] < myScore) {
+				below = middle + 1;
+			}
+			else {
+				end = middle;
+			}
+		}
+		if (step == 1 || below == 0) {
+			return below;
+		}
+		// the sample at rank (below - 1) * step is rarer than me, the one at below * step is not
+		long least = (long) (below - 1) * step + 1;
+		long most = Math.min((long) below * step, participants);
+		return (least + most) / 2;
+	}
+
+	/**
 	 * Where I stand from the rarest guest, as "top n%".
 	 * @param rarer guests with a lower {@link #rarityScore} than mine
 	 * @param participants guests ranked, including me

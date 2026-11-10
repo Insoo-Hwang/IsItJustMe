@@ -138,6 +138,29 @@ class RarityCalculatorTests {
 	}
 
 	@Test
+	void rarerCountsLowerScores() {
+		long[] scores = { -5, -5, 0, 3, 3, 8 };
+
+		assertThat(RarityCalculator.rarer(scores, 1, 6, -9)).isZero();
+		// ties with me are not rarer
+		assertThat(RarityCalculator.rarer(scores, 1, 6, -5)).isZero();
+		assertThat(RarityCalculator.rarer(scores, 1, 6, 3)).isEqualTo(3);
+		assertThat(RarityCalculator.rarer(scores, 1, 6, 9)).isEqualTo(6);
+	}
+
+	@Test
+	void rarerEstimatesBetweenSamples() {
+		// ranks 0, 100, 200 of 250 guests
+		long[] samples = { -40, 0, 40 };
+
+		assertThat(RarityCalculator.rarer(samples, 100, 250, -50)).isZero();
+		// after rank 0 and before rank 100: 1 to 100 guests are rarer
+		assertThat(RarityCalculator.rarer(samples, 100, 250, -10)).isEqualTo(50);
+		// after rank 200: 201 to 250
+		assertThat(RarityCalculator.rarer(samples, 100, 250, 99)).isEqualTo(225);
+	}
+
+	@Test
 	void topPercentCountsFromTheRarest() {
 		assertThat(RarityCalculator.topPercent(0, 1)).isNull();
 		assertThat(RarityCalculator.topPercent(0, 4)).isEqualTo(25.0);

@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
@@ -78,6 +79,20 @@ public class CategoryStatsCache {
 	@Cacheable(CacheConfig.OVERALL_BIT_STATS)
 	public OverallBitStats overallBitStats() {
 		return overallRepository.bitStats();
+	}
+
+	/**
+	 * Read on a request only when nothing is cached yet; {@link OverallRanksRefresher}
+	 * replaces the value before it expires.
+	 */
+	@Cacheable(CacheConfig.OVERALL_RANKS)
+	public OverallRanks overallRanks() {
+		return overallRepository.ranks();
+	}
+
+	@CachePut(CacheConfig.OVERALL_RANKS)
+	public OverallRanks refreshOverallRanks() {
+		return overallRepository.ranks();
 	}
 
 	/**
@@ -173,6 +188,41 @@ public class CategoryStatsCache {
 		 */
 		boolean includes(Instant changedAt) {
 			return changedAt.isBefore(takenAt.minus(COMMIT_MARGIN));
+		}
+
+	}
+
+	/**
+	 * Every complete guest's {@link RarityCalculator#rarityScore} as it was at
+	 * {@code takenAt}, for ranking one guest without scoring everyone again. Scores only
+	 * compare under the weights they were made with, so the weights travel with them.
+	 * @param participants guests scored
+	 * @param step 1 when {@code scores} holds every guest; otherwise only every
+	 * {@code step}th score is kept, which bounds the size however many guests there are
+	 * @param scores ascending
+	 */
+	public record OverallRanks(Instant takenAt, long participants, long[] weights, int step, long[] scores) {
+
+		/** Enough for a rank shown to one decimal: a sampled rank is off by at most 0.025%. */
+		static final int MAX_SAMPLES = 2000;
+
+		static int stepFor(long participants, int maxSamples) {
+			return (int) Math.max(1, (participants + maxSamples - 1) / maxSamples);
+		}
+
+		/** Whether every guest's score is here, so a rank from it is exact. */
+		boolean exact() {
+			return step == 1;
+		}
+
+		/** Like {@link OverallBitStats#includes}. */
+		boolean includes(Instant changedAt) {
+			return changedAt.isBefore(takenAt.minus(OverallBitStats.COMMIT_MARGIN));
+		}
+
+		/** Guests rarer than one with these answers. */
+		long rarer(long bits) {
+			return RarityCalculator.rarer(scores, step, participants, RarityCalculator.rarityScore(bits, weights));
 		}
 
 	}

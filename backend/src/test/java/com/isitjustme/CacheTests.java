@@ -79,6 +79,8 @@ class CacheTests {
 		assertThat(statsCache.questionStats(categoryId).byQuestion()).isNotEmpty();
 		assertThat(roomCards.find(shareToken)).isEqualTo(roomCards.find(shareToken));
 		assertThat(statsCache.overallBitStats()).usingRecursiveComparison().isEqualTo(statsCache.overallBitStats());
+		assertThat(statsCache.overallRanks()).usingRecursiveComparison().isEqualTo(statsCache.overallRanks());
+		assertThat(statsCache.overallRanks().scores()).isNotEmpty();
 
 		assertThat(ttlOf("categories")).isEqualTo(-1);
 		assertThat(ttlOf("participants")).isBetween(1L, 5 * 60L);
@@ -87,6 +89,7 @@ class CacheTests {
 		assertThat(ttlOf("question-stats")).isBetween(1L, 60 * 60L);
 		assertThat(ttlOf("rooms")).isBetween(1L, 30 * 60L);
 		assertThat(ttlOf("overall-bit-stats")).isBetween(1L, 30 * 60L);
+		assertThat(ttlOf("overall-ranks")).isBetween(1L, 30 * 60L);
 	}
 
 	@Test

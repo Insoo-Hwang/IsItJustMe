@@ -3,14 +3,16 @@ package com.isitjustme.category;
 import java.sql.Array;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 import com.isitjustme.category.CategoryStatsCache.OverallBitStats;
+import com.isitjustme.category.CategoryStatsCache.OverallRanks;
 import com.isitjustme.category.RarityCalculator.Counts;
 
 import lombok.RequiredArgsConstructor;
@@ -62,21 +64,45 @@ public class OverallAnswerRepository {
 	}
 
 	/**
-	 * Guests whose {@link RarityCalculator#rarityScore} is below {@code myScore}, scored
-	 * inside the database with the same weights.
+	 * Scores every guest inside the database and reads back the sorted scores, or an even
+	 * sample of them once there are more than {@link OverallRanks#MAX_SAMPLES}.
 	 */
-	long countRarer(long[] weights, long myScore) {
-		return jdbcClient.sql("""
-				SELECT COUNT(*)
-				FROM overall_answer o
-				WHERE COALESCE((SELECT SUM(w.weight)
-				                FROM unnest(CAST(:weights AS BIGINT[])) WITH ORDINALITY AS w (weight, i)
-				                WHERE (o.overall_bits >> (w.i - 1)::INT) & 1 = 1), 0) < :myScore
-				""")
-			.param("weights", Arrays.stream(weights).mapToObj(Long::toString).collect(Collectors.joining(",", "{", "}")))
-			.param("myScore", myScore)
-			.query(Long.class)
-			.single();
+	OverallRanks ranks() {
+		return ranks(OverallRanks.MAX_SAMPLES);
+	}
+
+	OverallRanks ranks(int maxSamples) {
+		OverallBitStats stats = bitStats();
+		long[] weights = RarityCalculator.rarityWeights(stats.participants(), stats.oneCounts(),
+				stats.oneCounts().length);
+		int step = OverallRanks.stepFor(stats.participants(), maxSamples);
+		// the total comes from the same scan as the scores, so the two always agree
+		List<long[]> rows = jdbcClient.sql("""
+				SELECT score, total
+				FROM (SELECT score, ROW_NUMBER() OVER (ORDER BY score) - 1 AS position, COUNT(*) OVER () AS total
+				      FROM (SELECT %s AS score FROM overall_answer) s) r
+				WHERE position %% :step = 0
+				ORDER BY position
+				""".formatted(scoreExpression(weights)))
+			.param("step", step)
+			.query((rs, i) -> new long[] { rs.getLong(1), rs.getLong(2) })
+			.list();
+		long participants = rows.isEmpty() ? 0 : rows.getFirst()[1];
+		return new OverallRanks(stats.takenAt(), participants, weights, step,
+				rows.stream().mapToLong((row) -> row[0]).toArray());
+	}
+
+	/**
+	 * {@link RarityCalculator#rarityScore} as one flat BIGINT sum over {@code overall_bits}.
+	 * The weights are numbers computed here, never input, so they go in as literals: a
+	 * per-row subquery over an array parameter cost about 35 times as much.
+	 */
+	private static String scoreExpression(long[] weights) {
+		String sum = IntStream.range(0, weights.length)
+			.filter((bit) -> weights[bit] != 0)
+			.mapToObj((bit) -> "((overall_bits >> %d) & 1) * (%d)".formatted(bit, weights[bit]))
+			.collect(Collectors.joining(" + "));
+		return sum.isEmpty() ? "0::BIGINT" : sum;
 	}
 
 	/**

@@ -28,6 +28,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import com.isitjustme.category.CategoryStatsCache.OverallBitStats;
+import com.isitjustme.category.CategoryStatsCache.OverallRanks;
 
 /**
  * The {@code overall_stats} row follows every write to {@code overall_answer}, and the
@@ -131,7 +132,7 @@ class OverallStatsTests {
 	}
 
 	@Test
-	void countRarerMatchesScoringEveryGuest() {
+	void ranksMatchScoringEveryGuest() {
 		Random random = new Random(11);
 		List<Long> bits = new ArrayList<>();
 		for (int i = 0; i < 60; i++) {
@@ -139,15 +140,51 @@ class OverallStatsTests {
 			overallRepository.save(guest(), b);
 			bits.add(b);
 		}
-		OverallBitStats stats = overallRepository.bitStats();
-		long[] weights = RarityCalculator.rarityWeights(stats.participants(), stats.oneCounts(), 60);
 
+		OverallRanks ranks = overallRepository.ranks();
+
+		assertThat(ranks.exact()).isTrue();
+		assertThat(ranks.participants()).isEqualTo(60);
+		assertThat(ranks.scores()).hasSize(60).isSorted();
 		for (long mine : bits.subList(0, 10)) {
-			long myScore = RarityCalculator.rarityScore(mine, weights);
-			long direct = bits.stream().filter((b) -> RarityCalculator.rarityScore(b, weights) < myScore).count();
+			long myScore = RarityCalculator.rarityScore(mine, ranks.weights());
+			long direct = bits.stream().filter((b) -> RarityCalculator.rarityScore(b, ranks.weights()) < myScore).count();
 
-			assertThat(overallRepository.countRarer(weights, myScore)).isEqualTo(direct);
+			assertThat(ranks.rarer(mine)).isEqualTo(direct);
 		}
+	}
+
+	@Test
+	void sampledRanksStayWithinHalfAStep() {
+		Random random = new Random(12);
+		List<Long> bits = new ArrayList<>();
+		for (int i = 0; i < 60; i++) {
+			long b = random.nextLong() & ALL;
+			overallRepository.save(guest(), b);
+			bits.add(b);
+		}
+
+		// room for 10 of the 60 scores: every 6th is kept
+		OverallRanks ranks = overallRepository.ranks(10);
+
+		assertThat(ranks.step()).isEqualTo(6);
+		assertThat(ranks.participants()).isEqualTo(60);
+		assertThat(ranks.scores()).hasSize(10).isSorted();
+		for (long mine : bits) {
+			long myScore = RarityCalculator.rarityScore(mine, ranks.weights());
+			long direct = bits.stream().filter((b) -> RarityCalculator.rarityScore(b, ranks.weights()) < myScore).count();
+
+			assertThat(ranks.rarer(mine)).isCloseTo(direct, within(3L));
+		}
+	}
+
+	@Test
+	void ranksAreEmptyWithoutGuests() {
+		OverallRanks ranks = overallRepository.ranks();
+
+		assertThat(ranks.participants()).isZero();
+		assertThat(ranks.scores()).isEmpty();
+		assertThat(ranks.rarer(0b1)).isZero();
 	}
 
 	@Test

@@ -20,6 +20,7 @@ import org.springframework.data.redis.serializer.RedisSerializationContext.Seria
 import com.isitjustme.category.CategoryCatalog;
 import com.isitjustme.category.CategoryStatsCache.Option0Rates;
 import com.isitjustme.category.CategoryStatsCache.OverallBitStats;
+import com.isitjustme.category.CategoryStatsCache.OverallRanks;
 import com.isitjustme.category.CategoryStatsCache.ParticipantCounts;
 import com.isitjustme.category.CategoryStatsCache.QuestionGroupCounts;
 import com.isitjustme.category.CategoryStatsCache.StatsSnapshot;
@@ -50,6 +51,8 @@ public class CacheConfig implements CachingConfigurer {
 
 	public static final String OVERALL_BIT_STATS = "overall-bit-stats";
 
+	public static final String OVERALL_RANKS = "overall-ranks";
+
 	/** Cache name → stored type and TTL (null = never expires). */
 	static final Map<String, Entry> CACHES = Map.of(
 			CATEGORIES, new Entry(CategoryCatalog.class, null),
@@ -58,7 +61,9 @@ public class CacheConfig implements CachingConfigurer {
 			COMBINATION_STATS, new Entry(StatsSnapshot.class, Duration.ofHours(1)),
 			QUESTION_STATS, new Entry(QuestionGroupCounts.class, Duration.ofHours(1)),
 			ROOMS, new Entry(RoomCard.class, Duration.ofMinutes(30)),
-			OVERALL_BIT_STATS, new Entry(OverallBitStats.class, Duration.ofMinutes(30)));
+			OVERALL_BIT_STATS, new Entry(OverallBitStats.class, Duration.ofMinutes(30)),
+			// refreshed every few minutes; the TTL only matters if the refresh stops
+			OVERALL_RANKS, new Entry(OverallRanks.class, Duration.ofMinutes(30)));
 
 	@Bean
 	RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
