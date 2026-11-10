@@ -58,36 +58,46 @@
   line-height: 1.45;
   letter-spacing: -0.02em;
 }
-.rareBox {
+.minorityBox {
   margin-top: 24px;
-  padding: 14px 16px;
+  padding: 14px 16px 16px;
   border-radius: 18px;
   background: var(--surface);
   box-shadow: 0 0 0 1px var(--hairline);
 }
-.rareLabel {
-  font-size: 12px;
-  font-weight: 650;
-  color: var(--ink-3);
+.minorityText {
+  font-size: 14px;
+  color: var(--ink-2);
 }
-.rareRow {
-  margin-top: 4px;
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-}
-.rareChoice {
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-.rareRate {
-  font-size: 13px;
-  font-weight: 700;
+.minorityText b {
   color: var(--tier-deep);
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+}
+/* one dot per question, filled where I went with the minority */
+.dots {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 6px;
+}
+.dots > li {
+  aspect-ratio: 1;
+  max-width: 22px;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--tier-light) 45%, transparent);
+  animation: pop 0.4s var(--ease-out) both;
+}
+.dots > .dotMinority {
+  background: var(--tier-deep);
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
 }
 
 .stats {

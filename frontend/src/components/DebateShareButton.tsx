@@ -44,8 +44,8 @@ function DebateShareButton({ className, categoryId, n, pick, prompt, choice, rat
   return (
     <>
       <button type="button" className={className} onClick={() => setOpen(true)}>
-        <Icon name="local_fire_department" size={22} />
-        논쟁 링크 보내기
+        <Icon name="ios_share" size={22} />
+        공유하기
       </button>
       {open && (
         <NameSheet

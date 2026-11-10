@@ -7,6 +7,8 @@ export type { Tone }
 
 export type PickedChoice = {
   n: number
+  // which option I picked
+  side: Choice
   prompt: string
   choice: string
   // % of participants who made the same pick
@@ -35,6 +37,7 @@ export function tierOf(minority: number, picks: number): { tier: string; tone: T
 function picksOf(questions: Question[], answers: Choice[]): PickedChoice[] {
   return questions.map((q, i) => ({
     n: i + 1,
+    side: answers[i],
     prompt: q.prompt,
     choice: answers[i] === 'a' ? q.a : q.b,
     rate: answers[i] === 'a' ? q.aRate : 100 - q.aRate,

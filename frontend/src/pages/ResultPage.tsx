@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Navigate, useNavigate, useParams } from 'react-router'
 import { fetchResult, HttpError, type ResultDto } from '../api/categories.ts'
 import Icon from '../components/Icon.tsx'
+import ResultHighlights from '../components/ResultHighlights.tsx'
 import tier from '../components/tier.module.css'
 import TopBar from '../components/TopBar.tsx'
 import ui from '../components/ui.module.css'
@@ -104,7 +105,6 @@ function ResultView({ category, data }: { category: Category; data: ResultDto })
   const questions = data.questions.map(toQuestion)
   const answers = fromAnswerBits(data.answerBits)
   const result = rarityOf(questions, answers)
-  const rare = result.rareTop3[0]
   const { overall } = data
   const profile = data.peer.profile
   const peer = data.peer.summary
@@ -128,14 +128,15 @@ function ResultView({ category, data }: { category: Category; data: ResultDto })
         </div>
         <h1 className={styles.tier}>{result.tier}</h1>
         <div className={styles.headline}>{result.headline}</div>
-        <div className={styles.rareBox}>
-          <div className={styles.rareLabel}>가장 희귀한 내 선택</div>
-          <div className={styles.rareRow}>
-            <span className={styles.rareChoice}>
-              {rare.prompt} {rare.choice}
-            </span>
-            <span className={styles.rareRate}>{rare.rate}%만 선택</span>
+        <div className={styles.minorityBox}>
+          <div className={styles.minorityText}>
+            {result.picks.length}문항 중 <b>{result.minority}개</b>는 소수 쪽 선택
           </div>
+          <ol className={styles.dots} aria-hidden>
+            {result.picks.map((p) => (
+              <li key={p.n} className={p.rate < 50 ? styles.dotMinority : undefined} />
+            ))}
+          </ol>
         </div>
       </section>
 
@@ -203,6 +204,7 @@ function ResultView({ category, data }: { category: Category; data: ResultDto })
 
       <PickList title="가장 흔한 내 선택 TOP 3" picks={result.commonTop3} tone="common" />
       <PickList title="가장 희귀한 내 선택 TOP 3" picks={result.rareTop3} tone="rare" />
+      <ResultHighlights categoryId={id} questions={questions} picks={result.picks} />
       <p className={styles.note}>다른 참여자의 답은 결과에 바로 반영되지 않을 수 있어요.</p>
 
       <div className={styles.actions}>

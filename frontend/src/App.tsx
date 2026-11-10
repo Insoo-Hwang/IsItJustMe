@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import AppShell from './app/AppShell.tsx'
+import DebatePage from './pages/DebatePage.tsx'
 import EndingPage from './pages/EndingPage.tsx'
 import IntroPage from './pages/IntroPage.tsx'
 import InvitePage from './pages/InvitePage.tsx'
@@ -23,6 +24,7 @@ function App() {
           <Route path="/result/:catId/detail" element={<ResultDetailPage />} />
           <Route path="/me" element={<ProfilePage />} />
           <Route path="/summary" element={<SummaryPage />} />
+          <Route path="/vs/:catId/:n" element={<DebatePage />} />
           <Route path="/ending" element={<EndingPage />} />
           <Route path="/invite/:token" element={<InvitePage />} />
           <Route path="*" element={<Navigate to="/main" replace />} />
