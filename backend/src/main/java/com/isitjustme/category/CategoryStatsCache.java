@@ -82,10 +82,10 @@ public class CategoryStatsCache {
 	}
 
 	/**
-	 * Read on a request only when nothing is cached yet; {@link OverallRanksRefresher}
-	 * replaces the value before it expires.
+	 * Seeds {@link OverallRanksHolder} from Redis, computing a table on a cache miss.
+	 * The holder serializes initial loads and refreshes, including when Redis is down.
 	 */
-	@Cacheable(CacheConfig.OVERALL_RANKS)
+	@Cacheable(cacheNames = CacheConfig.OVERALL_RANKS, sync = true)
 	public OverallRanks overallRanks() {
 		return overallRepository.ranks();
 	}

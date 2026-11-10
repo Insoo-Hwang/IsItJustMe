@@ -22,6 +22,7 @@ import com.isitjustme.category.CategoryService.CategoryBits;
 import com.isitjustme.category.CategoryStatsCache;
 import com.isitjustme.category.CombinationStatsRepository;
 import com.isitjustme.category.OverallAnswerRepository;
+import com.isitjustme.category.OverallRanksHolder;
 import com.isitjustme.guest.AgeGroup;
 import com.isitjustme.guest.Gender;
 import com.isitjustme.guest.GuestProfile;
@@ -36,7 +37,7 @@ import com.isitjustme.room.RoomService.UniverseView;
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({ RoomService.class, RoomCards.class, CategoryService.class, CategoryStatsCache.class,
-		CombinationStatsRepository.class, OverallAnswerRepository.class, GuestService.class })
+		CombinationStatsRepository.class, OverallAnswerRepository.class, OverallRanksHolder.class, GuestService.class })
 class RoomServiceTests {
 
 	@Container

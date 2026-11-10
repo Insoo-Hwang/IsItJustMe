@@ -46,6 +46,7 @@ class RedisDownTests {
 		assertThat(statsCache.catalog().categories()).hasSize(6);
 		assertThat(statsCache.participants().byCategory()).containsEntry("food", 0L);
 		assertThat(statsCache.overallBitStats().participants()).isZero();
+		assertThat(statsCache.overallRanks().participants()).isZero();
 
 		assertThat(Duration.between(start, Instant.now())).isLessThan(Duration.ofSeconds(5));
 	}

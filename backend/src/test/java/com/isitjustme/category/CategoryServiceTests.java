@@ -32,7 +32,7 @@ import com.isitjustme.guest.GuestService;
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({ CategoryService.class, CategoryStatsCache.class, CombinationStatsRepository.class,
-		OverallAnswerRepository.class, GuestService.class })
+		OverallAnswerRepository.class, OverallRanksHolder.class, GuestService.class })
 class CategoryServiceTests {
 
 	@Container

@@ -49,6 +49,8 @@ public class CategoryService {
 
 	private final GuestService guestService;
 
+	private final OverallRanksHolder ranksHolder;
+
 	/**
 	 * Categories with their questions, and when the guest last finished each of them.
 	 */
@@ -202,7 +204,7 @@ public class CategoryService {
 	 * they were in under older answers this counts them twice, which no longer shows.
 	 */
 	private @Nullable Double topPercent(long myBits, Instant changedAt) {
-		OverallRanks ranks = statsCache.overallRanks();
+		OverallRanks ranks = ranksHolder.current();
 		boolean counted = ranks.includes(changedAt);
 		if (!counted && ranks.exact()) {
 			ranks = overallRepository.ranks();
