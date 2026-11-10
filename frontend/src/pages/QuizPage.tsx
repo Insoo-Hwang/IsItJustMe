@@ -12,6 +12,7 @@ import { showToast } from '../lib/toast.ts'
 import {
   answeredCount,
   completeTest,
+  dropRetakes,
   firstUnanswered,
   getTestState,
   setAnswer,
@@ -54,6 +55,15 @@ function QuizPage() {
 
   // A pending auto-advance belongs to the question it was set on.
   useEffect(() => () => clearTimeout(timer.current), [n])
+
+  // Leaving a retake midway throws its answers away. The URL has already changed on a real
+  // exit; it has not when the effect is only re-run in place (StrictMode).
+  useEffect(
+    () => () => {
+      if (!window.location.pathname.startsWith(`/test/${catId}/q/`)) dropRetakes(catId)
+    },
+    [catId],
+  )
 
   const category = findCategory(catId)
   if (!category) return <Navigate to="/main" replace />

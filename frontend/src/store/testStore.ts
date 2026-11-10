@@ -92,6 +92,18 @@ export function clearAnswers(catId: string) {
   })
 }
 
+// Drops the answers of a retake that was left midway: a finished test keeps its saved result
+// and starts over next time. Without catId it checks every category.
+export function dropRetakes(catId?: string) {
+  const stale = Object.keys(state.answers).filter((id) => (catId == null || id === catId) && state.results[id])
+  if (stale.length === 0) return
+  setState((s) => {
+    const answers = { ...s.answers }
+    for (const id of stale) delete answers[id]
+    return { ...s, answers }
+  })
+}
+
 // Moves the finished answers into results. Returns false if any answer is missing.
 export function completeTest(catId: string): boolean {
   const current = state.answers[catId] ?? []

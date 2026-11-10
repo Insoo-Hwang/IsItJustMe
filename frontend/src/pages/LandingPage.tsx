@@ -1,10 +1,11 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import Icon from '../components/Icon.tsx'
 import { CATEGORIES, QUESTION_COUNT, totalTests } from '../data/categories.ts'
 import { withAnd } from '../lib/korean.ts'
 import { invitePath, useInviteRoom } from '../lib/room.ts'
 import { showToast } from '../lib/toast.ts'
-import { answeredCount, firstUnanswered, useTestState } from '../store/testStore.ts'
+import { answeredCount, dropRetakes, firstUnanswered, useTestState } from '../store/testStore.ts'
 import styles from './LandingPage.module.css'
 
 // A crowd of people as dots, one of them the rare one.
@@ -57,6 +58,9 @@ function LandingPage() {
   const { answers, results } = useTestState()
   const invited = useInviteRoom()
 
+  // a retake left without a clean exit (closed tab, reload) is dropped here
+  useEffect(() => dropRetakes(), [results])
+
   const inProgress = CATEGORIES.find((c) => answeredCount(answers[c.id]) > 0)
   const inProgressCount = answeredCount(inProgress && answers[inProgress.id])
 
@@ -74,10 +78,14 @@ function LandingPage() {
     else showToast(`테스트 ${CATEGORIES.length}개를 모두 끝내면 비교할 수 있어요`)
   }
 
+  // the first unanswered question of a test in progress
+  const questionPath = (catId: string) => {
+    const next = firstUnanswered(answers[catId])
+    return `/test/${catId}/q/${(next < 0 ? QUESTION_COUNT - 1 : next) + 1}`
+  }
+
   const resume = () => {
-    if (!inProgress) return
-    const next = firstUnanswered(answers[inProgress.id])
-    navigate(`/test/${inProgress.id}/q/${(next < 0 ? QUESTION_COUNT - 1 : next) + 1}`)
+    if (inProgress) navigate(questionPath(inProgress.id))
   }
 
   const start = () => document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })
@@ -148,22 +156,33 @@ function LandingPage() {
         <div className={styles.grid}>
           {CATEGORIES.map((c) => {
             const result = results[c.id]
+            // a test in progress goes straight back to its next question, even when retaking a finished one
+            const progress = answeredCount(answers[c.id])
+            const showResult = result && progress === 0
+            const target = progress > 0 ? questionPath(c.id) : showResult ? `/result/${c.id}` : `/test/${c.id}`
             return (
               <button
                 key={c.id}
                 type="button"
                 className={styles.catCard}
-                onClick={() => navigate(result ? `/result/${c.id}` : `/test/${c.id}`)}
-                aria-label={result ? `${c.name} 결과 보기` : undefined}
+                onClick={() => navigate(target)}
+                aria-label={progress > 0 ? `${c.name} 이어하기` : showResult ? `${c.name} 결과 보기` : undefined}
               >
                 <span className={styles.catIcon} style={{ background: c.tint.bg, color: c.tint.fg }}>
                   <Icon name={c.icon} size={24} filled />
                 </span>
-                {result && (
-                  <span className={styles.doneBadge} aria-hidden>
-                    <Icon name="check" size={14} />
-                    완료
+                {progress > 0 ? (
+                  <span className={`${styles.doneBadge} ${styles.progressBadge}`} aria-hidden>
+                    <Icon name="pending" size={14} />
+                    {progress}/{QUESTION_COUNT}
                   </span>
+                ) : (
+                  result && (
+                    <span className={styles.doneBadge} aria-hidden>
+                      <Icon name="check" size={14} />
+                      완료
+                    </span>
+                  )
                 )}
                 <span className={styles.catText}>
                   <span className={styles.catName}>{c.name}</span>
