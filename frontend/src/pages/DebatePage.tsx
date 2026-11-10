@@ -6,7 +6,7 @@ import ui from '../components/ui.module.css'
 import { findCategory, type Choice } from '../data/categories.ts'
 import story from '../data/story.ts'
 import { fillDebate, parseDebate } from '../lib/debate.ts'
-import { useTestState } from '../store/testStore.ts'
+import { firstUnanswered, getTestState, setAnswer, useTestState } from '../store/testStore.ts'
 import styles from './DebatePage.module.css'
 
 const SIDES: Choice[] = ['a', 'b']
@@ -31,6 +31,16 @@ function DebatePage() {
   const values = (c: Choice) => ({ name, prompt: question.prompt, choice: label(pick), rate: rateOf(c) })
   const done = results[category.id] != null
 
+  // The side taken here is also the answer to this question in the test that follows.
+  const take = (c: Choice) => {
+    setMine(c)
+    if (!done) setAnswer(category.id, Number(n) - 1, c)
+  }
+  const startTest = () => {
+    const next = firstUnanswered(getTestState().answers[category.id])
+    navigate(`/test/${category.id}/q/${(next < 0 ? 0 : next) + 1}`)
+  }
+
   return (
     <div className={ui.page}>
       <TopBar title={d.title} left={{ icon: 'home', label: '홈으로', onClick: () => navigate('/main') }} />
@@ -48,7 +58,7 @@ function DebatePage() {
             <p className={styles.question}>{d.question}</p>
             <div className={styles.options}>
               {SIDES.map((c) => (
-                <button key={c} type="button" className={styles.option} onClick={() => setMine(c)}>
+                <button key={c} type="button" className={styles.option} onClick={() => take(c)}>
                   {label(c)}
                 </button>
               ))}
@@ -73,7 +83,6 @@ function DebatePage() {
                 </li>
               ))}
             </ul>
-            <p className={styles.verdict}>{fillDebate(mine === pick ? d.same : d.different, values(mine))}</p>
           </>
         )}
       </section>
@@ -83,7 +92,7 @@ function DebatePage() {
           <button
             type="button"
             className={`${ui.primary} ${ui.large}`}
-            onClick={() => navigate(done ? `/result/${category.id}` : `/test/${category.id}`)}
+            onClick={() => (done ? navigate(`/result/${category.id}`) : startTest())}
           >
             {done ? `내 ${category.name} 결과 보기` : d.testButton}
             <Icon name="arrow_forward" size={20} />
