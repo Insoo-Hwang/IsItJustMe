@@ -250,6 +250,9 @@
   color: var(--same-text);
 }
 
+.ad {
+  margin-top: 12px;
+}
 .actions {
   display: flex;
   flex-direction: column;

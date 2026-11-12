@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Navigate, useNavigate, useParams } from 'react-router'
 import { fetchResult, HttpError, type ResultDto } from '../api/categories.ts'
+import AdCard from '../components/AdCard.tsx'
 import Icon from '../components/Icon.tsx'
 import ResultHighlights from '../components/ResultHighlights.tsx'
 import tier from '../components/tier.module.css'
@@ -12,6 +13,7 @@ import { ageGroupLabel, genderLabel } from '../lib/profile.ts'
 import { exactRate, rarityOf, sameRatioLabel, type PickedChoice } from '../lib/rarity.ts'
 import { clearAnswers } from '../store/testStore.ts'
 import styles from './ResultPage.module.css'
+import NotFoundPage from './NotFoundPage.tsx'
 
 const DONUT_LENGTH = 2 * Math.PI * 34
 
@@ -24,7 +26,7 @@ function ResultPage() {
     enabled: category != null,
     retry: (count, err) => !(err instanceof HttpError && err.status === 404) && count < 2,
   })
-  if (!category) return <Navigate to="/main" replace />
+  if (!category) return <NotFoundPage />
   if (query.error instanceof HttpError && query.error.status === 404) {
     return <Navigate to={`/test/${category.id}`} replace />
   }
@@ -140,6 +142,8 @@ function ResultView({ category, data }: { category: Category; data: ResultDto })
         </div>
       </section>
 
+      <ResultHighlights categoryId={id} questions={questions} picks={result.picks} show="contested" />
+
       <div className={styles.stats}>
         <div className={`${ui.card} ${styles.stat}`}>
           <div className={styles.statLabel}>나와 취향이 비슷한 사람</div>
@@ -204,7 +208,8 @@ function ResultView({ category, data }: { category: Category; data: ResultDto })
 
       <PickList title="가장 흔한 내 선택 TOP 3" picks={result.commonTop3} tone="common" />
       <PickList title="가장 희귀한 내 선택 TOP 3" picks={result.rareTop3} tone="rare" />
-      <ResultHighlights categoryId={id} questions={questions} picks={result.picks} />
+      <AdCard placement="RESULT_BANNER" categoryId={id} className={styles.ad} />
+      <ResultHighlights categoryId={id} questions={questions} picks={result.picks} show="debate" />
       <p className={styles.note}>다른 참여자의 답은 결과에 바로 반영되지 않을 수 있어요.</p>
 
       <div className={styles.actions}>

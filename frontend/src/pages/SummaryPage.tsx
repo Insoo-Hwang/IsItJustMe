@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
+import AdCard from '../components/AdCard.tsx'
 import Icon from '../components/Icon.tsx'
 import { fetchMyRoom, fetchUniverse } from '../api/rooms.ts'
 import RarityHexagon from '../components/RarityHexagon.tsx'
@@ -239,6 +240,8 @@ function SummaryPage() {
       </ul>
 
       <TasteCard data={card} />
+
+      <AdCard placement="SUMMARY_BANNER" className={styles.ad} />
 
       <section className={`${ui.card} ${styles.share}`} aria-label="친구와 비교">
         <div>
