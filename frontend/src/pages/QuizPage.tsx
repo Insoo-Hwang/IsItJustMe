@@ -209,7 +209,7 @@ function QuizPage() {
       </div>
 
       {onBreak ? (
-        <AdBreak onClose={resume} />
+        <AdBreak categoryId={id} onClose={resume} />
       ) : (
         <>
           <div className={styles.body}>

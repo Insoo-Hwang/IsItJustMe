@@ -8,6 +8,7 @@ import { ENDINGS, GREETINGS, GUESSES, INTRO, REVEAL, type Guess } from '../data/
 import { BACKGROUNDS, preloadArt, spriteOf } from '../data/endingArt.ts'
 import { useSummary } from '../lib/summary.ts'
 import EndingDialogue from './EndingDialogue.tsx'
+import { trackOnce } from '../lib/track.ts'
 import styles from './EndingPage.module.css'
 
 type Phase = 'intro' | 'reveal' | 'talk' | 'letter'
@@ -26,7 +27,9 @@ function EndingPage() {
 
   const tone = state.status === 'ready' ? state.summary.tier.tone : null
   useEffect(() => {
-    if (tone) preloadArt(tone)
+    if (!tone) return
+    preloadArt(tone)
+    trackOnce('ENDING_OPEN', 'ENDING_OPEN')
   }, [tone])
 
   if (state.status === 'locked') return <Navigate to="/main" replace />

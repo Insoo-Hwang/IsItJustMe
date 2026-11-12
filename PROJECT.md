@@ -237,6 +237,48 @@
 | 없는 방 | 404 Not Found | 프론트는 없는 링크 안내 |
 | 답하지 않은 카테고리 있음 | 409 Conflict | 프론트는 미리보기와 테스트 버튼을 표시 |
 
+### `POST /api/v1/events` — 행동 기록
+
+| 항목 | 내용 |
+|---|---|
+| 역할 | 광고 노출 · 클릭, 공유, 링크 열람 같은 행동 하나를 어드민 통계용으로 기록한다 |
+| 호출 시점 | 광고가 보일 때 · 눌릴 때 · 건너뛸 때, 공유했을 때, 초대 · 나만 그래? 링크를 열었을 때, 취향 카드를 저장했을 때, 엔딩에 들어갔을 때. 화면은 응답을 기다리지 않는다 (`lib/track.ts`) |
+| Request | `{ "type": string, "category": string \| null }` — `type`은 `AD_VIEW` · `AD_CLICK` · `AD_SKIP` · `SHARE_UNIVERSE` · `SHARE_DEBATE` · `INVITE_OPEN` · `DEBATE_OPEN` · `DEBATE_PICK` · `CARD_SAVE` · `ENDING_OPEN`, `category`는 카테고리 코드 (없으면 생략). 쿠키 `guest_token`은 있으면 함께 저장 |
+| Response Body | 없음 |
+
+| 상황 | 상태 코드 | 동작 |
+|---|---|---|
+| 기록 | 204 No Content | `event`에 한 행 저장 (세션이 없으면 게스트 없이 저장) |
+| 없는 `type` · 없는 카테고리 | 400 Bad Request | 저장하지 않음 |
+
+### `GET /api/v1/admin/dashboard` — 어드민 대시보드
+
+| 항목 | 내용 |
+|---|---|
+| 역할 | 어드민 화면(`/backstage`)의 모든 숫자를 한 번에 내려준다. 캐시하지 않고 DB에서 바로 읽는다 |
+| 호출 시점 | 어드민 화면 진입, 기간 변경, 새로고침 |
+| Request | 헤더 `X-Admin-Token` 필수 (`ADMIN_TOKEN` 환경 변수 값). 쿼리 `days` 1 ~ 90 (기본 14): 오늘(한국 시간)로 끝나는 기간 |
+| Response Body | `{ "generatedAt", "days", "totals", "period", "daily", "funnel", "progress", "categories", "demographics", "hours", "questions", "ads" }` |
+
+| 필드 | 내용 |
+|---|---|
+| `totals` | 전체 기간 합계: 방문자 · 프로필 입력 · 1개 이상 완료 · 전부 완료 · 완료한 테스트 수 · 공유 링크 · 친구 등록 · 친구가 온 링크 |
+| `period` | 기간 안의 수와 바로 앞 같은 길이 기간의 수 (`{ "current", "previous" }`). 키는 `guests` · `answers` · `finished` · `rooms` · `planets`와 행동 `type` |
+| `daily` | 날짜별 새 방문자 · 완료한 테스트 · 전부 완료 · 공유 링크 · 친구 등록 · 행동 수 |
+| `funnel` | 방문 → 프로필 입력 → 1개 완료 → 절반 이상 완료 → 전부 완료 → 공유 링크 생성 |
+| `progress` | 끝낸 테스트 수(0 ~ 6)별 방문자 수 |
+| `categories` | 카테고리별 끝낸 사람 · 첫 테스트로 고른 사람 |
+| `demographics` | 성별 · 나이대별 방문자 · 전부 완료한 사람 |
+| `hours` | 기간 안의 테스트 완료를 시간대(한국 시간 0 ~ 23시)별로 |
+| `questions` | 60문항의 A 선택 인원 · 전체 응답 인원 |
+| `ads` | 기간 안의 카테고리별 광고 노출 · 클릭 · 건너뛰기 |
+
+| 상황 | 상태 코드 | 동작 |
+|---|---|---|
+| 토큰 일치 | 200 OK | 반환 |
+| 토큰 없음 / 불일치 | 401 Unauthorized | 프론트는 토큰 입력 화면으로 |
+| `days` 범위 밖 | 400 Bad Request | - |
+
 ## 작업 기록
 
 ### 1. 프로젝트 초기 설정
@@ -448,3 +490,11 @@ Claude Design 시안을 React 화면으로 옮겼다. 테스트 · 결과 API가
 ### 29. 질문 중간 광고
 - 카테고리 질문 5 → 6 사이에 광고 (`AdBreak`). 질문 화면 틀(상단바 · 진행 바) 안에서 질문 자리에 표시, 바로 건너뛰기 가능, 이미지를 누르면 상품 페이지(새 탭). 카테고리마다 방문당 한 번
 - 광고 이미지는 WebP로 변환해 `frontend/src/assets/ad/ad-quiz.webp` (2.3MB → 107KB)
+
+### 30. 어드민 대시보드 · 행동 기록
+- 행동 기록: `event` 테이블(V12)과 `POST /api/v1/events`. 광고 노출 · 클릭 · 건너뛰기, 공유, 링크 열람, 취향 카드 저장, 엔딩 진입을 화면에서 보냄 (`lib/track.ts`). 노출처럼 "보였다"는 기록은 페이지를 연 동안 한 번만 보냄
+- 어드민 API: `GET /api/v1/admin/dashboard` (`AdminDashboardRepository`). `X-Admin-Token` 헤더로 보호 (`AdminAuth`). `ADMIN_TOKEN`이 없으면 시작할 때 임의 토큰을 만들어 로그에 남김
+- 어드민 화면 `/backstage`: 한눈에 보기(자동 문장), 최근 N일 지표와 이전 기간 대비, 일별 추이, 전환 퍼널, 광고(일별 · 카테고리별 CTR), 공유 · 유입, 카테고리 · 시간대, 참여자 구성, 60문항 선택 비율. 기간 7 · 14 · 30 · 90일
+- 어드민 화면은 따로 불러오는 묶음(`React.lazy`)이라 방문자 번들에 들어가지 않음. 차트는 라이브러리 없이 SVG · CSS로 그리고, 차트마다 같은 숫자의 표를 둠
+- 로컬 실행: `backend/.env`에 `ADMIN_TOKEN=...`을 적고(git 제외) `./gradlew bootRun` 후 `http://localhost:5173/backstage`
+- 테스트: `AdminControllerTests`(토큰 · 기간 검증), `AdminDashboardRepositoryTests`(집계), `EventControllerTests`

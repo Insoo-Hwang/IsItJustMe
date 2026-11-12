@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import AppShell from './app/AppShell.tsx'
 import DebatePage from './pages/DebatePage.tsx'
@@ -11,10 +12,21 @@ import ResultDetailPage from './pages/ResultDetailPage.tsx'
 import ResultPage from './pages/ResultPage.tsx'
 import SummaryPage from './pages/SummaryPage.tsx'
 
+// The admin page is for the operator only, so its code stays out of the visitors' bundle.
+const AdminPage = lazy(() => import('./pages/admin/AdminPage.tsx'))
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route
+          path="/backstage"
+          element={
+            <Suspense fallback={null}>
+              <AdminPage />
+            </Suspense>
+          }
+        />
         <Route element={<AppShell />}>
           <Route path="/" element={<Navigate to="/main" replace />} />
           <Route path="/main" element={<LandingPage />} />

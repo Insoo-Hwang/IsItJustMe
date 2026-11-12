@@ -16,6 +16,7 @@ import { roomQuery, roomRetry, rowsOf } from '../lib/room.ts'
 import { clearInvite, setInvite } from '../store/testStore.ts'
 import MyComparison from './MyComparison.tsx'
 import RoomStatus from './RoomStatus.tsx'
+import { trackOnce } from '../lib/track.ts'
 import styles from './RoomPage.module.css'
 
 // The owner's results before the friend has taken the tests.
@@ -69,6 +70,10 @@ function InvitePage() {
   useEffect(() => {
     if (settled) clearInvite(token)
   }, [settled, token])
+  const role = room.data?.viewer.role
+  useEffect(() => {
+    if (role && role !== 'OWNER') trackOnce(`INVITE_OPEN:${token}`, 'INVITE_OPEN')
+  }, [role, token])
 
   if (missing) return <RoomStatus kind="missing" />
   if (queries.some((q) => q.isError)) {

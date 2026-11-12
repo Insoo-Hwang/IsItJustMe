@@ -4,6 +4,7 @@ import { HttpError } from '../api/categories.ts'
 import { openRoom } from '../api/rooms.ts'
 import { invitePath } from '../lib/room.ts'
 import { showToast } from '../lib/toast.ts'
+import { track } from '../lib/track.ts'
 import Icon from './Icon.tsx'
 import NameSheet from './NameSheet.tsx'
 import ui from './ui.module.css'
@@ -40,6 +41,7 @@ function ShareUniverseButton({ className, children }: Props) {
     setBusy(true)
     try {
       await share(name)
+      track('SHARE_UNIVERSE')
       setOpen(false)
       void queryClient.invalidateQueries({ queryKey: ['room', 'mine'] })
     } catch (err) {

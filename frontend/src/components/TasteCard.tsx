@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { cardBlob, drawTasteCard, type TasteCardData } from '../lib/tasteCard.ts'
 import Icon from './Icon.tsx'
 import styles from './TasteCard.module.css'
+import { track } from '../lib/track.ts'
 import ui from './ui.module.css'
 
 const FILE_NAME = '나만그래-취향카드.png'
@@ -49,6 +50,7 @@ function TasteCard({ data }: { data: TasteCardData }) {
     a.href = url
     a.download = FILE_NAME
     a.click()
+    track('CARD_SAVE')
   }
 
   const show = () => {

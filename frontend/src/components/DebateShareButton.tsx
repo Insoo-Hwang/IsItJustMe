@@ -3,6 +3,7 @@ import type { Choice } from '../data/categories.ts'
 import story from '../data/story.ts'
 import { debatePath, fillDebate } from '../lib/debate.ts'
 import { showToast } from '../lib/toast.ts'
+import { track } from '../lib/track.ts'
 import Icon from './Icon.tsx'
 import NameSheet from './NameSheet.tsx'
 import ui from './ui.module.css'
@@ -23,6 +24,7 @@ function DebateShareButton({ className, categoryId, n, pick, prompt, choice, rat
 
   const share = async (name: string) => {
     setOpen(false)
+    track('SHARE_DEBATE', categoryId)
     const url = `${location.origin}${debatePath(categoryId, n, pick, name)}`
     const text = fillDebate(story.debate.shareText, { name, prompt, choice, rate })
     if (navigator.share) {

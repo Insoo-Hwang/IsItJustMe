@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router'
 import Icon from '../components/Icon.tsx'
 import TopBar from '../components/TopBar.tsx'
@@ -6,6 +6,7 @@ import ui from '../components/ui.module.css'
 import { findCategory, type Choice } from '../data/categories.ts'
 import story from '../data/story.ts'
 import { fillDebate, parseDebate } from '../lib/debate.ts'
+import { track, trackOnce } from '../lib/track.ts'
 import { firstUnanswered, getTestState, setAnswer, useTestState } from '../store/testStore.ts'
 import styles from './DebatePage.module.css'
 
@@ -22,6 +23,10 @@ function DebatePage() {
   const category = findCategory(catId)
   const question = category?.questions[Number(n) - 1]
   const debate = parseDebate(search)
+  const valid = category != null && question != null && debate != null
+  useEffect(() => {
+    if (valid) trackOnce(`DEBATE_OPEN:${category.id}:${n}`, 'DEBATE_OPEN', category.id)
+  }, [valid, category, n])
   if (!category || !question || !debate) return <Navigate to="/main" replace />
 
   const { name, pick } = debate
@@ -34,6 +39,7 @@ function DebatePage() {
   // The side taken here is also the answer to this question in the test that follows.
   const take = (c: Choice) => {
     setMine(c)
+    track('DEBATE_PICK', category.id)
     if (!done) setAnswer(category.id, Number(n) - 1, c)
   }
   const startTest = () => {
