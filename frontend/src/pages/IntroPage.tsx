@@ -1,17 +1,18 @@
-import { Navigate, useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import Icon from '../components/Icon.tsx'
 import TopBar from '../components/TopBar.tsx'
 import ui from '../components/ui.module.css'
 import { findCategory, QUESTION_COUNT } from '../data/categories.ts'
 import { answeredCount, clearAnswers, firstUnanswered, useTestState } from '../store/testStore.ts'
 import styles from './IntroPage.module.css'
+import NotFoundPage from './NotFoundPage.tsx'
 
 function IntroPage() {
   const { catId } = useParams()
   const navigate = useNavigate()
   const { answers, results } = useTestState()
   const category = findCategory(catId)
-  if (!category) return <Navigate to="/main" replace />
+  if (!category) return <NotFoundPage />
 
   const current = answers[category.id]
   const answered = answeredCount(current)

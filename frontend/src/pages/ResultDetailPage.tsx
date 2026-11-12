@@ -7,6 +7,7 @@ import ui from '../components/ui.module.css'
 import { findCategory, fromAnswerBits, type Category } from '../data/categories.ts'
 import { AGE_GROUPS, GENDERS, type AgeGroup, type Gender } from '../lib/profile.ts'
 import styles from './ResultDetailPage.module.css'
+import NotFoundPage from './NotFoundPage.tsx'
 
 const ALL = 'ALL'
 
@@ -23,7 +24,7 @@ function ResultDetailPage() {
     enabled: category != null,
     retry: (count, err) => !(err instanceof HttpError && err.status === 404) && count < 2,
   })
-  if (!category) return <Navigate to="/main" replace />
+  if (!category) return <NotFoundPage />
   if (query.error instanceof HttpError && query.error.status === 404) {
     return <Navigate to={`/test/${category.id}`} replace />
   }

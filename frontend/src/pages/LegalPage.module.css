@@ -1,0 +1,91 @@
+.doc {
+  padding: 8px 0 40px;
+}
+
+.date {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.section {
+  margin-top: 28px;
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.no {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fill);
+  color: var(--on-fill);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.text,
+.list li {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink-2);
+  word-break: keep-all;
+}
+.text + .text,
+.list + .text,
+.text + .list {
+  margin-top: 8px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 18px;
+}
+.list li {
+  list-style: disc;
+}
+.list li::marker {
+  color: var(--ink-4);
+}
+
+.contact {
+  margin-top: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+}
+.contactLabel {
+  font-size: 14px;
+  color: var(--ink-3);
+}
+.contactValue {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--ink);
+  word-break: break-all;
+}
+
+.other {
+  display: block;
+  margin: 20px auto 0;
+  padding: 8px 12px;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

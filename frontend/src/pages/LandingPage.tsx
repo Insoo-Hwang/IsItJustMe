@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import Icon from '../components/Icon.tsx'
 import { CATEGORIES, QUESTION_COUNT, totalTests } from '../data/categories.ts'
 import { withAnd } from '../lib/korean.ts'
@@ -198,6 +198,15 @@ function LandingPage() {
           </button>
         )}
       </section>
+
+      <footer className={styles.footer}>
+        <nav className={styles.footerLinks} aria-label="정책">
+          <Link to="/privacy">개인정보처리방침</Link>
+          <span aria-hidden>·</span>
+          <Link to="/terms">이용약관</Link>
+        </nav>
+        <p>© 나만 그래?</p>
+      </footer>
     </div>
   )
 }

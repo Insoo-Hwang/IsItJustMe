@@ -87,8 +87,22 @@ export async function withGuest(request: () => Promise<Response>): Promise<Respo
   return res
 }
 
+// The site is closed for maintenance; the server sends the message to show.
+export class MaintenanceError extends HttpError {
+  readonly notice: string | null
+
+  constructor(notice: string | null) {
+    super(503, 'maintenance')
+    this.notice = notice
+  }
+}
+
 export async function fetchCategories(): Promise<CategoryDto[]> {
   const res = await fetch('/api/v1/categories')
+  if (res.status === 503) {
+    const body = (await res.json().catch(() => null)) as { maintenance?: boolean; message?: string } | null
+    if (body?.maintenance) throw new MaintenanceError(body.message ?? null)
+  }
   if (!res.ok) throw new HttpError(res.status, `categories failed: ${res.status}`)
   return res.json() as Promise<CategoryDto[]>
 }

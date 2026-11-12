@@ -4,6 +4,7 @@ import { ensureGuestSession } from '../api/guest.ts'
 import Toaster from '../components/Toast.tsx'
 import { INVITE_PARAM } from '../lib/room.ts'
 import { setInvite, setProfile, useTestState } from '../store/testStore.ts'
+import ErrorBoundary from './ErrorBoundary.tsx'
 import { ScrollContainerContext } from './scrollContainer.ts'
 import styles from './AppShell.module.css'
 
@@ -48,7 +49,10 @@ function AppShell() {
         <div ref={scrollRef} className={styles.scroll}>
           <ScrollContainerContext value={scrollRef}>
             <div className={styles.screen}>
-              <Outlet />
+              {/* a page that breaks keeps the frame; the next page starts clean */}
+              <ErrorBoundary key={pathname}>
+                <Outlet />
+              </ErrorBoundary>
             </div>
           </ScrollContainerContext>
         </div>

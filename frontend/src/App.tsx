@@ -6,6 +6,8 @@ import EndingPage from './pages/EndingPage.tsx'
 import IntroPage from './pages/IntroPage.tsx'
 import InvitePage from './pages/InvitePage.tsx'
 import LandingPage from './pages/LandingPage.tsx'
+import LegalPage from './pages/LegalPage.tsx'
+import NotFoundPage from './pages/NotFoundPage.tsx'
 import ProfilePage from './pages/ProfilePage.tsx'
 import QuizPage from './pages/QuizPage.tsx'
 import ResultDetailPage from './pages/ResultDetailPage.tsx'
@@ -20,7 +22,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route
-          path="/backstage"
+          path="/backstage/:view?"
           element={
             <Suspense fallback={null}>
               <AdminPage />
@@ -39,7 +41,9 @@ function App() {
           <Route path="/vs/:catId/:n" element={<DebatePage />} />
           <Route path="/ending" element={<EndingPage />} />
           <Route path="/invite/:token" element={<InvitePage />} />
-          <Route path="*" element={<Navigate to="/main" replace />} />
+          <Route path="/privacy" element={<LegalPage doc="privacy" />} />
+          <Route path="/terms" element={<LegalPage doc="terms" />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

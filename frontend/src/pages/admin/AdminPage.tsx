@@ -1,9 +1,13 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, type FormEvent } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { HttpError } from '../../api/categories.ts'
 import { AGE_GROUPS, GENDERS } from '../../lib/profile.ts'
+import { setTrackingOff } from '../../lib/track.ts'
+import AdsReport from './AdsReport.tsx'
+import Operations from './Operations.tsx'
 import { fetchDashboard, PERIODS, type Dashboard } from './api.ts'
-import { Bars, Columns, DataTable, InsightList, Legend, SplitBar, StatTile, Trend } from './charts.tsx'
+import { Bars, Card, Columns, DataTable, InsightList, Legend, SplitBar, StatTile, Trend } from './charts.tsx'
 import { EVENT_LABELS, fmt, FUNNEL_LABELS, insightsOf, pct, rate } from './insights.ts'
 import { SERIES } from './palette.ts'
 import styles from './admin.module.css'
@@ -59,27 +63,6 @@ function Login({ failed, onSubmit }: { failed: boolean; onSubmit: (token: string
         </button>
       </form>
     </div>
-  )
-}
-
-function Card({ title, sub, size, aside, children }: {
-  title: string
-  sub?: string
-  size?: 'half' | 'third'
-  aside?: ReactNode
-  children: ReactNode
-}) {
-  return (
-    <section className={`${styles.card} ${size ? styles[size] : ''}`} aria-label={title}>
-      <div className={styles.cardHead}>
-        <div>
-          <h3 className={styles.cardTitle}>{title}</h3>
-          {sub && <p className={styles.cardSub}>{sub}</p>}
-        </div>
-        {aside}
-      </div>
-      {children}
-    </section>
   )
 }
 
@@ -172,7 +155,6 @@ function Questions({ d }: { d: Dashboard }) {
 function Body({ d }: { d: Dashboard }) {
   const days = d.days
   const labels = d.daily.map((day) => dayLabel(day.date))
-  const event = (type: string) => d.daily.map((day) => day.events[type] ?? 0)
   const change = (key: string) => d.period[key] ?? { current: 0, previous: 0 }
   const views = change('AD_VIEW')
   const clicks = change('AD_CLICK')
@@ -250,64 +232,6 @@ function Body({ d }: { d: Dashboard }) {
             unit="명"
           />
           <DataTable head={['끝낸 테스트', '방문자']} rows={d.progress.map((count, n) => [`${n}개`, count])} />
-        </Card>
-      </div>
-
-      <h2 className={styles.sectionTitle}>
-        광고 <small>질문 5번과 6번 사이 · 최근 {days}일</small>
-      </h2>
-      <div className={styles.cards}>
-        <Card
-          title="일별 노출과 클릭"
-          size="half"
-          aside={
-            <Legend
-              items={[
-                { name: '노출', color: SERIES[0], line: true },
-                { name: '클릭', color: SERIES[1], line: true },
-              ]}
-            />
-          }
-        >
-          <Trend
-            series={[
-              { name: '노출', color: SERIES[0], values: event('AD_VIEW') },
-              { name: '클릭', color: SERIES[1], values: event('AD_CLICK') },
-            ]}
-            labels={labels}
-          />
-          <DataTable
-            head={['날짜', '노출', '클릭', '건너뛰기']}
-            rows={d.daily.map((day) => [day.date, day.events.AD_VIEW ?? 0, day.events.AD_CLICK ?? 0, day.events.AD_SKIP ?? 0])}
-          />
-        </Card>
-        <Card title="카테고리별 광고 성과" sub="어느 테스트에서 광고가 잘 눌리는지" size="half">
-          <div className={styles.tableScroll}>
-            <table className={`${styles.table} ${styles.big}`}>
-              <thead>
-                <tr>
-                  <th>카테고리</th>
-                  <th>노출</th>
-                  <th>클릭</th>
-                  <th>건너뛰기</th>
-                  <th>CTR</th>
-                  <th>건너뛴 비율</th>
-                </tr>
-              </thead>
-              <tbody>
-                {d.ads.map((ad) => (
-                  <tr key={ad.category}>
-                    <td>{d.categories.find((c) => c.code === ad.category)?.name ?? ad.category}</td>
-                    <td>{fmt(ad.views)}</td>
-                    <td>{fmt(ad.clicks)}</td>
-                    <td>{fmt(ad.skips)}</td>
-                    <td>{pct(rate(ad.clicks, ad.views))}</td>
-                    <td>{pct(rate(ad.skips, ad.views))}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </Card>
       </div>
 
@@ -439,12 +363,42 @@ function Body({ d }: { d: Dashboard }) {
   )
 }
 
+type View = 'service' | 'ads' | 'ops'
+
+const DEFAULT_DAYS = 14
+
+const periodOf = (value: string | null): number => {
+  const n = Number(value)
+  return (PERIODS as readonly number[]).includes(n) ? n : DEFAULT_DAYS
+}
+
 // Service numbers for the operator: growth, conversion, ads, sharing and the questions.
 // Outside the phone-sized app shell, and behind the admin token.
 function AdminPage() {
   const [token, setToken] = useState(readToken)
   const [failed, setFailed] = useState(false)
-  const [days, setDays] = useState<number>(14)
+  // The tab is in the path and the period in the query, so the back button steps through
+  // admin screens instead of leaving, and a reload or a shared link opens the same screen.
+  const navigate = useNavigate()
+  const { view: viewParam } = useParams()
+  const view: View = viewParam === 'ads' || viewParam === 'ops' ? viewParam : 'service'
+  const [params] = useSearchParams()
+  const days = periodOf(params.get('days'))
+  const go = (next: View, nextDays: number) => {
+    const query = new URLSearchParams()
+    if (nextDays !== DEFAULT_DAYS) query.set('days', String(nextDays))
+    // the picked ad belongs to the ad report; it stays only while the period changes there
+    const ad = params.get('ad')
+    if (next === 'ads' && view === 'ads' && ad) query.set('ad', ad)
+    navigate({ pathname: next === 'service' ? '/backstage' : `/backstage/${next}`, search: query.size ? `?${query}` : '' })
+  }
+  const setView = (next: View) => {
+    if (next !== view) go(next, days)
+  }
+  const setDays = (next: number) => {
+    if (next !== days) go(view, next)
+  }
+  const queryClient = useQueryClient()
 
   const signOut = (rejected: boolean) => {
     storeToken('')
@@ -463,7 +417,7 @@ function AdminPage() {
         throw err
       }
     },
-    enabled: token !== '',
+    enabled: token !== '' && view === 'service',
     placeholderData: keepPreviousData,
     retry: (count, err) => !(err instanceof HttpError && err.status === 401) && count < 2,
   })
@@ -475,6 +429,8 @@ function AdminPage() {
           failed={failed}
           onSubmit={(value) => {
             storeToken(value)
+            // this browser belongs to the operator from now on; its visits stay out of the stats
+            setTrackingOff(true)
             setFailed(false)
             setToken(value)
           }}
@@ -489,15 +445,34 @@ function AdminPage() {
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <span className={styles.title}>나만 그래? 어드민</span>
-          {d && <span className={styles.updated}>{new Date(d.generatedAt).toLocaleString('ko-KR')} 기준</span>}
-          <div className={styles.periods} role="group" aria-label="기간">
+          <div className={styles.views} role="group" aria-label="화면">
+            {(
+              [
+                ['service', '서비스'],
+                ['ads', '광고 리포트'],
+                ['ops', '운영'],
+              ] as const
+            ).map(([key, label]) => (
+              <button key={key} type="button" aria-pressed={view === key} onClick={() => setView(key)}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {d && view === 'service' && (
+            <span className={styles.updated}>{new Date(d.generatedAt).toLocaleString('ko-KR')} 기준</span>
+          )}
+          <div className={`${styles.periods} ${view === 'ops' ? styles.hiddenKeep : ''}`} role="group" aria-label="기간">
             {PERIODS.map((p) => (
               <button key={p} type="button" aria-pressed={days === p} onClick={() => setDays(p)}>
                 {p}일
               </button>
             ))}
           </div>
-          <button type="button" className={styles.action} onClick={() => void query.refetch()}>
+          <button
+            type="button"
+            className={styles.action}
+            onClick={() => void queryClient.invalidateQueries({ queryKey: ['admin'] })}
+          >
             새로고침
           </button>
           <button type="button" className={styles.action} onClick={() => signOut(false)}>
@@ -506,7 +481,11 @@ function AdminPage() {
         </div>
       </header>
       <main className={styles.inner}>
-        {d ? (
+        {view === 'ops' ? (
+          <Operations token={token} onUnauthorized={() => signOut(true)} />
+        ) : view === 'ads' ? (
+          <AdsReport token={token} days={days} onUnauthorized={() => signOut(true)} />
+        ) : d ? (
           <div className={`${styles.body} ${query.isFetching ? styles.stale : ''}`}>
             <Body d={d} />
           </div>

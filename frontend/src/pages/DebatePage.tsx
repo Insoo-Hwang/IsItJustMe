@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
 import Icon from '../components/Icon.tsx'
 import TopBar from '../components/TopBar.tsx'
 import ui from '../components/ui.module.css'
@@ -9,6 +9,7 @@ import { fillDebate, parseDebate } from '../lib/debate.ts'
 import { track, trackOnce } from '../lib/track.ts'
 import { firstUnanswered, getTestState, setAnswer, useTestState } from '../store/testStore.ts'
 import styles from './DebatePage.module.css'
+import NotFoundPage from './NotFoundPage.tsx'
 
 const SIDES: Choice[] = ['a', 'b']
 
@@ -27,7 +28,7 @@ function DebatePage() {
   useEffect(() => {
     if (valid) trackOnce(`DEBATE_OPEN:${category.id}:${n}`, 'DEBATE_OPEN', category.id)
   }, [valid, category, n])
-  if (!category || !question || !debate) return <Navigate to="/main" replace />
+  if (!category || !question || !debate) return <NotFoundPage />
 
   const { name, pick } = debate
   const d = story.debate
