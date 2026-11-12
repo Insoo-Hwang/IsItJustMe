@@ -9,6 +9,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import org.jspecify.annotations.Nullable;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -38,10 +40,15 @@ public class UniversePlanet {
 	@Column(nullable = false, updatable = false)
 	private Instant joinedAt;
 
-	public UniversePlanet(Long roomId, Long guestId, String name, Instant now) {
+	/** % of questions answered like the owner when joining; empty for older planets. */
+	@Column(name = "match_percent", updatable = false)
+	private @Nullable Integer match;
+
+	public UniversePlanet(Long roomId, Long guestId, String name, int match, Instant now) {
 		this.roomId = roomId;
 		this.guestId = guestId;
 		this.name = name;
+		this.match = match;
 		this.joinedAt = now;
 	}
 

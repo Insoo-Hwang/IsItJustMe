@@ -19,6 +19,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import com.isitjustme.category.CategoryCatalog;
 import com.isitjustme.category.CategoryCatalog.CategoryInfo;
@@ -48,11 +49,14 @@ class EventControllerTests {
 	}
 
 	@Test
-	void recordsAnEventOfAVisitorWithoutASession() throws Exception {
+	void recordsAnAdActionOfAVisitorWithoutASession() throws Exception {
 		mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
-			.content("{\"type\": \"AD_VIEW\", \"category\": \"food\"}")).andExpect(status().isNoContent());
+			.content("{\"type\": \"AD_VIEW\", \"category\": \"food\", \"ad\": \"swiswi-03\", "
+					+ "\"placement\": \"QUIZ_BREAK\"}"))
+			.andExpect(status().isNoContent());
 
-		then(eventRepository).should().save(isNull(), eq(EventType.AD_VIEW), eq("food"), any());
+		then(eventRepository).should()
+			.save(isNull(), eq(EventType.AD_VIEW), eq("food"), eq("swiswi-03"), eq(AdPlacement.QUIZ_BREAK), any());
 	}
 
 	@Test
@@ -60,7 +64,32 @@ class EventControllerTests {
 		mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
 			.content("{\"type\": \"SHARE_UNIVERSE\"}")).andExpect(status().isNoContent());
 
-		then(eventRepository).should().save(isNull(), eq(EventType.SHARE_UNIVERSE), isNull(), any());
+		then(eventRepository).should().save(isNull(), eq(EventType.SHARE_UNIVERSE), isNull(), isNull(), isNull(), any());
+	}
+
+	@Test
+	void dropsTheAdFromActionsThatAreNotAboutAnAd() throws Exception {
+		mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
+			.content("{\"type\": \"CARD_SAVE\", \"ad\": \"swiswi-03\", \"placement\": \"QUIZ_BREAK\"}"))
+			.andExpect(status().isNoContent());
+
+		then(eventRepository).should().save(isNull(), eq(EventType.CARD_SAVE), isNull(), isNull(), isNull(), any());
+	}
+
+	@Test
+	void rejectsAdActionsWithoutTheAdOrItsPlace() throws Exception {
+		mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
+			.content("{\"type\": \"AD_CLICK\", \"placement\": \"QUIZ_BREAK\"}")).andExpect(status().isBadRequest());
+		mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
+			.content("{\"type\": \"AD_CLICK\", \"ad\": \"swiswi-03\"}")).andExpect(status().isBadRequest());
+		mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
+			.content("{\"type\": \"AD_CLICK\", \"ad\": \"Not An Id!\", \"placement\": \"QUIZ_BREAK\"}"))
+			.andExpect(status().isBadRequest());
+		mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
+			.content("{\"type\": \"AD_CLICK\", \"ad\": \"swiswi-03\", \"placement\": \"NOWHERE\"}"))
+			.andExpect(status().isBadRequest());
+
+		then(eventRepository).should(never()).save(any(), any(), any(), any(), any(), any());
 	}
 
 	@Test
@@ -68,11 +97,34 @@ class EventControllerTests {
 		mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
 			.content("{\"type\": \"NOT_A_TYPE\"}")).andExpect(status().isBadRequest());
 		mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
-			.content("{\"type\": \"AD_VIEW\", \"category\": \"nope\"}")).andExpect(status().isBadRequest());
+			.content("{\"type\": \"CARD_SAVE\", \"category\": \"nope\"}")).andExpect(status().isBadRequest());
 		mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON).content("{}"))
 			.andExpect(status().isBadRequest());
 
-		then(eventRepository).should(never()).save(any(), any(), any(), any());
+		then(eventRepository).should(never()).save(any(), any(), any(), any(), any(), any());
+	}
+
+	@Test
+	void limitsHowOftenOneAddressMayRecord() throws Exception {
+		for (int i = 0; i < 120; i++) {
+			mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"type\": \"CARD_SAVE\"}")
+				.with(from("10.0.0.9"))).andExpect(status().isNoContent());
+		}
+
+		mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
+			.content("{\"type\": \"CARD_SAVE\"}")
+			.with(from("10.0.0.9"))).andExpect(status().isTooManyRequests());
+		mockMvc.perform(post("/api/v1/events").contentType(MediaType.APPLICATION_JSON)
+			.content("{\"type\": \"CARD_SAVE\"}")
+			.with(from("10.0.0.10"))).andExpect(status().isNoContent());
+	}
+
+	private static RequestPostProcessor from(String address) {
+		return (request) -> {
+			request.setRemoteAddr(address);
+			return request;
+		};
 	}
 
 }

@@ -175,6 +175,29 @@ class RoomServiceTests {
 			.hasMessageContaining("409");
 	}
 
+	@Test
+	void theMatchShownIsTheOneFromWhenThePlanetJoined() {
+		String owner = finishedGuest(0);
+		String shareToken = roomService.open(owner, "철수");
+		roomService.join(finishedGuest(0), shareToken, "영희");
+
+		// the owner answering differently must not move a friend's match, or the friend's
+		// answers could be read off it one question at a time
+		CATEGORY_CODES.forEach((code) -> categoryService.submit(owner, code, 0b11_1111_1111));
+
+		assertThat(roomService.universe(null, shareToken).planets()).extracting(PlanetView::match).containsExactly(100);
+	}
+
+	@Test
+	void namesWithHiddenCharactersAreRejected() {
+		assertThat(RoomService.validName(" 영희 ")).isEqualTo("영희");
+		// right-to-left override, zero width space, a line break
+		for (String name : List.of("영\u202E희", "영\u200B희", "영\n희")) {
+			assertThatThrownBy(() -> RoomService.validName(name)).isInstanceOf(ResponseStatusException.class)
+				.hasMessageContaining("400");
+		}
+	}
+
 	private String guest() {
 		String token = guestService.resolveOrIssue(null).token();
 		guestService.updateProfile(token, new GuestProfile(Gender.FEMALE, AgeGroup.TWENTIES));

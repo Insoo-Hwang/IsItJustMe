@@ -242,14 +242,16 @@
 | 항목 | 내용 |
 |---|---|
 | 역할 | 광고 노출 · 클릭, 공유, 링크 열람 같은 행동 하나를 어드민 통계용으로 기록한다 |
-| 호출 시점 | 광고가 보일 때 · 눌릴 때 · 건너뛸 때, 공유했을 때, 초대 · 나만 그래? 링크를 열었을 때, 취향 카드를 저장했을 때, 엔딩에 들어갔을 때. 화면은 응답을 기다리지 않는다 (`lib/track.ts`) |
-| Request | `{ "type": string, "category": string \| null }` — `type`은 `AD_VIEW` · `AD_CLICK` · `AD_SKIP` · `SHARE_UNIVERSE` · `SHARE_DEBATE` · `INVITE_OPEN` · `DEBATE_OPEN` · `DEBATE_PICK` · `CARD_SAVE` · `ENDING_OPEN`, `category`는 카테고리 코드 (없으면 생략). 쿠키 `guest_token`은 있으면 함께 저장 |
+| 호출 시점 | 광고가 보일 때(아래쪽 카드는 절반 이상 화면에 들어왔을 때) · 눌릴 때 · 건너뛸 때, 공유했을 때, 초대 · 나만 그래? 링크를 열었을 때, 취향 카드를 저장했을 때, 엔딩에 들어갔을 때. 화면은 응답을 기다리지 않는다 (`lib/track.ts`) |
+| Request | `{ "type": string, "category": string \| null, "ad": string \| null, "placement": string \| null }` — `type`은 `AD_VIEW` · `AD_CLICK` · `AD_SKIP` · `SHARE_UNIVERSE` · `SHARE_DEBATE` · `INVITE_OPEN` · `DEBATE_OPEN` · `DEBATE_PICK` · `CARD_SAVE` · `ENDING_OPEN`, `category`는 카테고리 코드 (없으면 생략). `ad`는 광고 id(`lib/ads.ts`, 영소문자 · 숫자 · `-` 30자 이내), `placement`는 광고 자리(`QUIZ_BREAK` · `ANALYZING` · `RESULT_BANNER` · `SUMMARY_BANNER` · `ENDING_BANNER`). 광고 행동(`AD_*`)은 둘 다 필수, 다른 행동은 보내도 버린다. 쿠키 `guest_token`은 있으면 함께 저장 |
 | Response Body | 없음 |
 
 | 상황 | 상태 코드 | 동작 |
 |---|---|---|
 | 기록 | 204 No Content | `event`에 한 행 저장 (세션이 없으면 게스트 없이 저장) |
-| 없는 `type` · 없는 카테고리 | 400 Bad Request | 저장하지 않음 |
+| 없는 `type` · 없는 카테고리 · 없는 `placement` · 형식이 틀린 `ad` · 광고 행동에 `ad`나 `placement`가 없음 | 400 Bad Request | 저장하지 않음 |
+| 한 주소에서 1분에 120회 초과 | 429 Too Many Requests | 저장하지 않음 (`Retry-After: 60`) |
+| 같은 게스트 · 광고 · 위치 · 테스트의 `AD_VIEW`가 30분 안에 또 옴 | 204 No Content | 저장하지 않음 (노출 중복 방지) |
 
 ### `GET /api/v1/admin/dashboard` — 어드민 대시보드
 
@@ -258,7 +260,7 @@
 | 역할 | 어드민 화면(`/backstage`)의 모든 숫자를 한 번에 내려준다. 캐시하지 않고 DB에서 바로 읽는다 |
 | 호출 시점 | 어드민 화면 진입, 기간 변경, 새로고침 |
 | Request | 헤더 `X-Admin-Token` 필수 (`ADMIN_TOKEN` 환경 변수 값). 쿼리 `days` 1 ~ 90 (기본 14): 오늘(한국 시간)로 끝나는 기간 |
-| Response Body | `{ "generatedAt", "days", "totals", "period", "daily", "funnel", "progress", "categories", "demographics", "hours", "questions", "ads" }` |
+| Response Body | `{ "generatedAt", "days", "totals", "period", "daily", "funnel", "progress", "categories", "demographics", "hours", "questions" }` |
 
 | 필드 | 내용 |
 |---|---|
@@ -271,13 +273,98 @@
 | `demographics` | 성별 · 나이대별 방문자 · 전부 완료한 사람 |
 | `hours` | 기간 안의 테스트 완료를 시간대(한국 시간 0 ~ 23시)별로 |
 | `questions` | 60문항의 A 선택 인원 · 전체 응답 인원 |
-| `ads` | 기간 안의 카테고리별 광고 노출 · 클릭 · 건너뛰기 |
 
 | 상황 | 상태 코드 | 동작 |
 |---|---|---|
 | 토큰 일치 | 200 OK | 반환 |
 | 토큰 없음 / 불일치 | 401 Unauthorized | 프론트는 토큰 입력 화면으로 |
+| 한 주소에서 토큰 10번 틀림 | 429 Too Many Requests | 15분 동안 맞는 토큰도 거절 |
 | `days` 범위 밖 | 400 Bad Request | - |
+
+### `GET /api/v1/admin/ads` — 광고 리포트
+
+| 항목 | 내용 |
+|---|---|
+| 역할 | 어드민 "광고 리포트" 탭의 숫자를 내려준다. 광고 하나를 고르면 그 광고로 나눠 보고, 없으면 전체. 캐시하지 않는다 |
+| 호출 시점 | 광고 리포트 탭 진입, 기간 · 광고 변경, 새로고침 |
+| Request | 헤더 `X-Admin-Token` 필수. 쿼리 `days` 1 ~ 90 (기본 14), `ad` 광고 id (선택) |
+| Response Body | `{ "generatedAt", "days", "ad", "ads", "total", "daily", "audiences", "categories", "hours", "placements", "matrix", "retention" }` |
+
+| 필드 | 내용 |
+|---|---|
+| `ads` | 광고별 노출 · 도달(본 사람 수) · 클릭 · 클릭한 사람 · 건너뛰기 · 테스트 중간 광고 노출(`skippableViews`, 건너뛴 비율의 분모), 이전 같은 길이 기간의 노출 · 클릭. `ad` 선택과 관계없이 전부 |
+| `total` | 전체 광고 합계. 도달은 여러 광고를 본 사람도 한 번만 센다 |
+| `daily` | 날짜별 노출 · 클릭 · 건너뛰기 |
+| `audiences` | 성별 · 나이대별 노출 · 클릭 · 건너뛰기 (프로필 입력한 방문자) |
+| `categories` | 광고를 본 순간 하던 테스트별 노출 · 클릭 · 건너뛰기 |
+| `hours` | 시간대(한국 시간 0 ~ 23시)별 노출 · 클릭 · 건너뛰기, 24개 |
+| `placements` | 광고 자리별 노출 · 클릭 · 건너뛰기 |
+| `matrix` | 광고 × 위치별 노출 · 클릭. `ad` 선택과 관계없이 전부 |
+| `retention` | 테스트 중간 광고(`QUIZ_BREAK`)를 본 (방문자, 테스트) 수와 그중 광고 뒤에 그 테스트를 끝낸 수 |
+
+| 상황 | 상태 코드 | 동작 |
+|---|---|---|
+| 토큰 일치 | 200 OK | 반환 |
+| 토큰 없음 / 불일치 | 401 Unauthorized | 프론트는 토큰 입력 화면으로 |
+| `days` 범위 밖 · 형식이 틀린 `ad` | 400 Bad Request | - |
+
+### `GET /api/v1/admin/maintenance` · `PUT /api/v1/admin/maintenance` — 점검 모드
+
+| 항목 | 내용 |
+|---|---|
+| 역할 | 점검 모드 상태를 읽고 켜고 끈다. 켜져 있는 동안 어드민을 뺀 모든 `/api/**`가 503으로 답한다 (`MaintenanceGuard`) |
+| 호출 시점 | 어드민 "운영" 탭 진입, 점검 시작 · 끝내기, 안내 문구 바꾸기 |
+| Request | 헤더 `X-Admin-Token` 필수. `PUT` 본문 `{ "enabled": boolean, "message": string \| null }` — `message`는 200자 이내, 비우면 기본 문구 |
+| Response Body | `{ "enabled": boolean, "message": string, "since": string \| null }` — `since`는 점검을 시작한 시각, 열려 있으면 `null` |
+
+| 상황 | 상태 코드 | 동작 |
+|---|---|---|
+| 조회 · 변경 | 200 OK | 현재 상태 반환. 상태는 서버 메모리에 있어 재시작하면 `site.maintenance`(`MAINTENANCE` 환경 변수) 값으로 돌아감 |
+| 토큰 없음 / 불일치 | 401 Unauthorized | - |
+| 문구 200자 초과 | 400 Bad Request | - |
+
+점검 중 방문자 API의 응답: `503 Service Unavailable`, 본문 `{ "maintenance": true, "message": string }`. 화면은 시작할 때 이 응답을 받으면 점검 안내를 보여준다.
+
+## 배포 전 보안 체크리스트
+
+코드에서 막을 수 있는 것은 이미 막았다 (아래 "지금 적용된 보호"). 여기 남은 것은 배포 환경을 정할 때 함께 해야 하는 일이다.
+
+### 반드시
+
+| # | 할 일 | 이유 |
+|---|---|---|
+| 1 | **어드민 토큰을 긴 무작위 값으로 교체**: `openssl rand -base64 32` 같은 32자 이상 값을 `ADMIN_TOKEN` 환경 변수로. 로컬 `backend/.env`의 값은 쓰지 않는다 | 지금 값은 짧고 추측 가능하다. 24자 미만이면 서버가 시작할 때 경고를 남긴다 |
+| 2 | **HTTPS만 사용**, `app.guest.cookie-secure`는 기본값(true) 유지 | 게스트 쿠키와 어드민 토큰이 평문으로 오가지 않게 |
+| 3 | **프록시 뒤라면 실제 접속 주소를 믿게 설정**: `server.forward-headers-strategy=native` (또는 `framework`), 프록시는 `X-Forwarded-For`를 덮어쓰도록 | 요청 수 제한 · 어드민 잠금이 접속 주소 기준이다. 설정하지 않으면 모든 방문자가 프록시 주소 하나로 보여 서로의 한도를 나눠 쓰게 된다 |
+| 4 | **DB · Redis를 인터넷에 열지 않기**: 같은 사설망에서만 접속, DB는 강한 비밀번호, Redis는 `requirepass`(또는 ACL)와 `spring.data.redis.password` | `compose.yaml`의 `secret`과 비밀번호 없는 Redis는 개발용이다. Redis에 쓸 수 있으면 방문자에게 보이는 통계를 바꿀 수 있다 |
+| 5 | **비밀값은 환경 변수나 비밀 저장소로만**: `ADMIN_TOKEN`, DB · Redis 비밀번호 | 저장소 · 이미지 · 로그에 남지 않게. `.env`는 git에서 제외돼 있다 |
+| 6 | **`ADMIN_TOKEN`을 꼭 설정** | 비어 있으면 시작할 때 임의 토큰을 만들어 로그에 찍는다. 로그를 외부로 보내면 토큰도 같이 나간다 |
+
+### 권장
+
+| # | 할 일 | 이유 |
+|---|---|---|
+| 7 | 서버가 2대 이상이면 요청 수 제한 · 점검 모드 상태를 Redis로 옮긴다 | 지금은 서버 메모리에 있어 서버마다 따로 센다 |
+| 8 | 글꼴 · 아이콘을 직접 호스팅하거나 jsDelivr 스타일시트에 `integrity`(SRI)를 붙인다 | 외부 CDN이 바뀌면 화면이 바뀔 수 있다. 직접 호스팅하면 보안 정책(CSP)에서 외부 주소도 뺄 수 있다 |
+| 9 | HSTS(`Strict-Transport-Security`)는 HTTPS를 붙이는 프록시에서 건다 | 앱은 HTTP로 뜰 수도 있어 앱에서 걸지 않았다 |
+| 10 | 백엔드 의존성 취약점 검사(OWASP Dependency-Check 등)를 CI에 넣는다 | 프론트는 `npm audit` 0건을 확인했지만 백엔드는 검사 도구가 없다 |
+| 11 | 개인정보 삭제 요청 처리 방법을 정한다 (게스트 행 삭제 = 관련 행 CASCADE) | 개인정보처리방침이 "요청하면 삭제"라고 약속한다. 지워도 조합별 집계 숫자는 줄지 않는다 |
+| 12 | 오래 안 온 게스트 정리 정책 | 게스트가 영구 보관된다 |
+| 13 | 공유 링크를 끄거나 새로 만드는 기능 | 링크를 아는 사람은 주인의 답을 계속 볼 수 있다 |
+| 14 | 문의처 이메일(`frontend/src/data/legal.ts`의 `CONTACT_EMAIL`)과 정책 문구 법률 검토 | 지금은 "준비 중"이다. 10대 이용자가 있어 만 14세 미만 동의 부분 확인 필요 |
+| 15 | 어드민 접속을 IP로 제한하거나 계정 · 2단계 인증으로 바꾼다 | 토큰 하나가 새면 어드민 전체가 열린다 |
+
+### 지금 적용된 보호
+
+- **요청 수 제한** (`RateLimitGuard`): 접속 주소마다 1분에 세션 30 · 답 제출 30 · 공유방 · 친구 등록 20 · 행동 기록 120 · 프로필 20회. 넘으면 429. `site.rate-limit.enabled=false`로 끌 수 있음
+- **어드민 잠금** (`AdminAuth`): 한 주소에서 토큰을 10번 틀리면 15분 동안 맞는 토큰도 거절(429). 틀린 시도는 로그에 남음. 점검 모드를 켜고 끈 주소도 로그에 남음
+- **보안 헤더** (`SecurityHeaders`): CSP(자기 스크립트만, 외부는 글꼴 · 아이콘 스타일만), `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`. 배포 빌드로 홈 · 결과 · 종합 · 어드민을 열어 위반 0건 확인
+- **친구 답 역추적 방지**: 우주의 친구 일치율은 등록할 때 고정(`universe_planet.match_percent`). 주인이 답을 바꿔 가며 친구의 답을 알아낼 수 없음
+- **우주 크기 제한**: 한 공유방에 친구 300명까지
+- **이름 검사**: 제어 문자 · 보이지 않는 서식 문자(방향 뒤집기 등) 거절
+- **광고 노출 중복 방지**: 같은 사람 · 광고 · 위치 · 테스트의 노출은 30분에 한 번만 저장
+- **개발 DB · Redis 포트**는 이 컴퓨터(127.0.0.1)에만 열림
+- 이미 안전한 것: SQL은 모두 바인딩, HTML 직접 삽입 없음, 쿠키 SameSite=Lax · HttpOnly · Secure, 게스트 토큰 256비트 무작위 · DB에는 해시만, 캐시는 타입 고정 JSON, 액추에이터는 health · info만
 
 ## 작업 기록
 
@@ -494,7 +581,37 @@ Claude Design 시안을 React 화면으로 옮겼다. 테스트 · 결과 API가
 ### 30. 어드민 대시보드 · 행동 기록
 - 행동 기록: `event` 테이블(V12)과 `POST /api/v1/events`. 광고 노출 · 클릭 · 건너뛰기, 공유, 링크 열람, 취향 카드 저장, 엔딩 진입을 화면에서 보냄 (`lib/track.ts`). 노출처럼 "보였다"는 기록은 페이지를 연 동안 한 번만 보냄
 - 어드민 API: `GET /api/v1/admin/dashboard` (`AdminDashboardRepository`). `X-Admin-Token` 헤더로 보호 (`AdminAuth`). `ADMIN_TOKEN`이 없으면 시작할 때 임의 토큰을 만들어 로그에 남김
-- 어드민 화면 `/backstage`: 한눈에 보기(자동 문장), 최근 N일 지표와 이전 기간 대비, 일별 추이, 전환 퍼널, 광고(일별 · 카테고리별 CTR), 공유 · 유입, 카테고리 · 시간대, 참여자 구성, 60문항 선택 비율. 기간 7 · 14 · 30 · 90일
+- 어드민 화면 `/backstage`: 한눈에 보기(자동 문장), 최근 N일 지표와 이전 기간 대비, 일별 추이, 전환 퍼널, 공유 · 유입, 카테고리 · 시간대, 참여자 구성, 60문항 선택 비율. 기간 7 · 14 · 30 · 90일
 - 어드민 화면은 따로 불러오는 묶음(`React.lazy`)이라 방문자 번들에 들어가지 않음. 차트는 라이브러리 없이 SVG · CSS로 그리고, 차트마다 같은 숫자의 표를 둠
 - 로컬 실행: `backend/.env`에 `ADMIN_TOKEN=...`을 적고(git 제외) `./gradlew bootRun` 후 `http://localhost:5173/backstage`
 - 테스트: `AdminControllerTests`(토큰 · 기간 검증), `AdminDashboardRepositoryTests`(집계), `EventControllerTests`
+
+### 31. 광고 10종 · 확률 노출 · 광고 리포트
+- 광고를 swiswi 상품 10개로 늘림 (`lib/ads.ts`, 이미지 `assets/ad/<상품 이름>.webp`, 각 800px · 100 ~ 160KB). 이번 방문에 아직 안 보인 광고 중에서 무작위로 고름. 광고 id와 이미지 파일명은 스마트스토어 상품명을 줄인 영문(예: `mush-dot-case`), 어드민에는 상품명 그대로
+- 5번 → 6번에서 매번 뜨던 광고를 30% 확률로 (`AD_CHANCE`). 카테고리마다 방문당 한 번만 뽑아, 앞뒤로 오가도 다시 뽑지 않음
+- 행동 기록에 광고 id와 자리(`placement`)를 함께 저장 (V13). 자리는 서버 enum `AdPlacement`로 검사
+- 어드민 "광고 리포트" 탭 (`GET /api/v1/admin/ads`): 광고별 노출 · 도달 · 1인당 노출 · 클릭 · CTR · 평균 대비 · 건너뛴 비율, 일별 · 시간대별, 나이대 · 성별 CTR, 테스트별 CTR, 자리별, 광고 뒤 테스트 완료율, 광고주용 자동 문장과 CSV 내려받기. 노출 30번 미만은 순위에서 빼고 "표본 적음" 표시
+- 서비스 탭의 카테고리별 광고 표는 광고 리포트로 옮김
+- 테스트: `AdReportRepositoryTests`, `EventControllerTests`(광고 id · 자리 검사), `AdminControllerTests`(광고 리포트 인증 · 검증)
+- 광고 자리 추가: 취향 분석 중 화면(`ANALYZING`, 그 테스트 중간에 광고가 없었을 때만 30%, 분석 시간 1.5초는 그대로), 카테고리 결과 아래(`RESULT_BANNER`) · 종합 결과 아래(`SUMMARY_BANNER`) · 엔딩 편지 아래(`ENDING_BANNER`)의 작은 카드(`AdCard`, 항상). 자리별 확률은 `lib/ads.ts`의 `CHANCE`
+- 아래쪽 카드는 절반 이상 화면에 들어왔을 때만 노출로 셈 (`IntersectionObserver`). 스크롤하지 않은 사람의 노출은 세지 않음
+- 광고 카드: 세로로 긴 상품 사진, 상품명(" - " 앞) · 옵션(뒤, 없으면 폰케이스 · 파우치 · 카드지갑), "스마트스토어에서 보기". 상품명 말고는 아무 문구도 지어내지 않음. 카테고리 결과에서는 버튼들 아래로 옮겨 잘못 누르지 않게 함
+
+### 32. 안내 페이지 · 점검 모드
+- 공용 안내 화면 `StatusScreen`(아이콘 · 제목 · 설명 · 버튼). 라우터 없이도 그려져서 앱이 뜨기 전에도 씀
+- 404 (`NotFoundPage`): 모르는 주소, 없는 카테고리 · 문항 · 나만 그래? 링크. 예전에는 조용히 홈으로 보냈음. 앱 안에서 온 경우에만 "이전 페이지로"
+- 화면 오류 (`ErrorBoundary`): 페이지가 그리다 깨지면 다시 시도 · 홈으로. 주소마다 새로 시작해서 다른 페이지로 가면 풀림
+- 시작 실패 (`BootScreen`): 인터넷 끊김(다시 연결되면 자동 재시도) · 점검 중(서버가 준 문구) · 서버 연결 실패. 새로고침 없이 다시 시도. 어드민 주소는 실패해도 열려서 점검 중에도 끌 수 있음
+- 없는 공유 링크 · 우주 불러오기 실패도 같은 안내 화면으로
+- 개인정보처리방침 `/privacy` · 이용약관 `/terms` (`LegalPage`, 문구는 `data/legal.ts`). 실제로 저장하는 항목(쿠키 180일, 성별 · 나이대, 답, 공유 이름, 행동 기록)과 맞춰 씀. 홈 맨 아래에 링크. 문의처(`CONTACT_EMAIL`)는 비어 있어 "준비 중"으로 보임
+- 점검 모드: `site.maintenance`(`MAINTENANCE`)와 어드민 "운영" 탭 스위치 · 안내 문구.
+- 어드민 주소에 화면 상태를 담음: 탭은 `/backstage` · `/backstage/ads` · `/backstage/ops`, 기간 `?days=`, 고른 광고 `?ad=`. 뒤로가기가 어드민 안에서 이전 화면으로 돌아가고, 새로고침 · 링크 공유해도 같은 화면
+- 테스트: `MaintenanceGuardTests`(점검 중 503과 문구, 어드민은 열림, 토큰 없이 못 바꿈)
+
+### 33. 보안 보강 · 광고 리포트 정확도 · 광고 위치
+- 보안: 요청 수 제한, 어드민 토큰 10회 실패 시 15분 잠금 · 짧은 토큰 경고 · 점검 전환 기록, 보안 헤더(CSP 등), 친구 일치율 등록 시점 고정(V14), 한 우주 300명 제한, 이름의 숨은 문자 거절, 개발 DB · Redis 포트를 127.0.0.1로. 배포 때 할 일은 "배포 전 보안 체크리스트"
+- 광고 리포트 바로잡기: "광고 뒤 테스트 완료"는 테스트 중간 광고만 셈(결과 아래 카드는 테스트가 끝난 뒤라 빠짐), "건너뛴 비율"의 분모는 건너뛰기 버튼이 있는 테스트 중간 광고 노출만
+- 광고 숫자 믿을 수 있게: 아래쪽 카드는 절반 이상이 1초 넘게 보여야 노출, 같은 사람 · 광고 · 위치 · 테스트의 노출은 30분에 한 번만 저장(V15), 어드민에 로그인한 브라우저는 기록하지 않음(운영 탭에서 켜고 끔)
+- 광고 리포트 추가: CTR 오차 범위(±, 95% Wilson), 순위 · 평균 대비는 노출 100번 이상만, 상품 종류별(폰케이스 · 파우치 · 카드지갑), 광고 × 위치 표, 시간대별은 클릭 수 대신 클릭률, 그룹별 노출 비중. CSV에도 반영
+- 광고 위치: 종합 결과는 취향 우주 바로 위, 카테고리 결과는 "나만 그래?" 공유 바로 위
+- 테스트: `RateLimiterTests`, 어드민 잠금 · 보안 헤더(`AdminControllerTests`), 행동 기록 요청 수 제한(`EventControllerTests`), 노출 중복 · 건너뛰기 분모 · 완료율 범위(`AdReportRepositoryTests`), 일치율 고정 · 숨은 문자(`RoomServiceTests`)

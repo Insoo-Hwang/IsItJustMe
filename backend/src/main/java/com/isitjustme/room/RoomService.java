@@ -36,6 +36,9 @@ public class RoomService {
 
 	static final int NAME_MAX_LENGTH = 10;
 
+	/** A universe this full takes no more planets, so no one room can grow without end. */
+	static final int MAX_PLANETS = 300;
+
 	private final ShareRoomRepository roomRepository;
 
 	private final RoomCards roomCards;
@@ -114,15 +117,26 @@ public class RoomService {
 		if (guest.getId() == room.ownerGuestId()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "owner cannot join");
 		}
-		requireComplete(guest.getId());
-		return planetRepository.findByRoomIdAndGuestId(room.id(), guest.getId())
-			.orElseGet(() -> planetRepository.save(new UniversePlanet(room.id(), guest.getId(), name, Instant.now())))
-			.getId();
+		Optional<UniversePlanet> existing = planetRepository.findByRoomIdAndGuestId(room.id(), guest.getId());
+		if (existing.isPresent()) {
+			return existing.get().getId();
+		}
+		List<CategoryBits> mine = categoryService.completeAnswers(List.of(guest.getId())).get(guest.getId());
+		if (mine == null) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "answers incomplete");
+		}
+		if (planetRepository.countByRoomId(room.id()) >= MAX_PLANETS) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "universe full");
+		}
+		// the match is fixed now; see UniversePlanet#match
+		int match = TasteMatch.compare(room.owner(), mine).match();
+		return planetRepository.save(new UniversePlanet(room.id(), guest.getId(), name, match, Instant.now())).getId();
 	}
 
 	/**
 	 * Every planet with its match to the owner, in join order. Only the match is shown;
-	 * the answers stay hidden.
+	 * the answers stay hidden. The match is the one fixed when the planet joined, so the
+	 * owner changing their answers cannot reveal a friend's answers.
 	 */
 	@Transactional(readOnly = true)
 	public UniverseView universe(@Nullable String rawToken, String shareToken) {
@@ -135,7 +149,8 @@ public class RoomService {
 		return new UniverseView(planets.stream()
 			.filter((p) -> answers.containsKey(p.getGuestId()))
 			.map((p) -> new PlanetView(p.getId(), p.getName(),
-					TasteMatch.compare(room.owner(), answers.get(p.getGuestId())).match(),
+					(p.getMatch() != null) ? p.getMatch()
+							: TasteMatch.compare(room.owner(), answers.get(p.getGuestId())).match(),
 					Objects.equals(p.getGuestId(), viewerId)))
 			.toList());
 	}
@@ -172,9 +187,15 @@ public class RoomService {
 		}
 	}
 
-	private static String validName(String name) {
+	/**
+	 * 1 to 10 characters after trimming, with no control or invisible formatting characters
+	 * (they could hide text or flip its direction on other people's screens).
+	 */
+	static String validName(String name) {
 		String trimmed = name.strip();
-		if (trimmed.isEmpty() || trimmed.length() > NAME_MAX_LENGTH) {
+		boolean hidden = trimmed.codePoints()
+			.anyMatch((c) -> Character.isISOControl(c) || Character.getType(c) == Character.FORMAT);
+		if (trimmed.isEmpty() || trimmed.length() > NAME_MAX_LENGTH || hidden) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid name");
 		}
 		return trimmed;
