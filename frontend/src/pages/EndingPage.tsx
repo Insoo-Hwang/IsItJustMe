@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useLayoutEffect, useState, type CSSProperties } from 'react'
 import { Navigate, useNavigate } from 'react-router'
 import { useScrollContainer } from '../app/scrollContainer.ts'
+import AdCard from '../components/AdCard.tsx'
 import Icon from '../components/Icon.tsx'
 import tier from '../components/tier.module.css'
 import ui from '../components/ui.module.css'
@@ -142,6 +143,7 @@ function EndingPage() {
               </button>
             </div>
           </div>
+          <AdCard placement="ENDING_BANNER" className={styles.ad} />
         </article>
       )}
     </div>

@@ -197,6 +197,10 @@
   padding: 20px;
   text-align: center;
 }
+/* with an ad below, the title block sits higher and closer to it */
+.loadingWithAd {
+  gap: 20px;
+}
 .loadingIcon {
   position: relative;
   width: 80px;

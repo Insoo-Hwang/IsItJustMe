@@ -6,6 +6,7 @@ import { ensureGuestSession } from '../api/guest.ts'
 import AdBreak from '../components/AdBreak.tsx'
 import Icon from '../components/Icon.tsx'
 import TopBar from '../components/TopBar.tsx'
+import { drawAd, type Ad } from '../lib/ads.ts'
 import ui from '../components/ui.module.css'
 import { findCategory, QUESTION_COUNT, toAnswerBits, type Category, type Choice } from '../data/categories.ts'
 import { showToast } from '../lib/toast.ts'
@@ -21,16 +22,18 @@ import {
 } from '../store/testStore.ts'
 import ProfileStep from './ProfileStep.tsx'
 import styles from './QuizPage.module.css'
+import NotFoundPage from './NotFoundPage.tsx'
 
 const AUTO_ADVANCE_MS = 520
 const ANALYZE_MS = 1500
-// an ad, once per category per visit, between questions 5 and 6
+// Between questions 5 and 6 an ad may show up (drawAd). The draw happens once per
+// category per visit, so going back and forward again does not roll again.
 const AD_AFTER_INDEX = 4
-const adShown = new Set<string>()
+const adDrawn = new Set<string>()
 
-function LoadingView({ category }: { category: Category }) {
+function LoadingView({ category, ad }: { category: Category; ad: Ad | null }) {
   return (
-    <div className={styles.loading} role="status">
+    <div className={`${styles.loading} ${ad ? styles.loadingWithAd : ''}`} role="status">
       <div className={styles.loadingIcon} style={{ background: category.tint.bg, color: category.tint.fg }} aria-hidden>
         <Icon name={category.icon} size={34} filled />
         <span className={styles.loadingRing} />
@@ -41,6 +44,9 @@ function LoadingView({ category }: { category: Category }) {
           {category.participants.toLocaleString('ko-KR')}명의 답변과 비교하고 있어요
         </div>
       </div>
+      {ad && (
+        <AdBreak ad={ad} placement="ANALYZING" categoryId={category.id} variant="compact" />
+      )}
     </div>
   )
 }
@@ -51,6 +57,9 @@ function QuizPage() {
   const queryClient = useQueryClient()
   const { answers } = useTestState()
   const [phase, setPhase] = useState<'quiz' | 'profile' | 'loading' | 'ad'>('quiz')
+  const [ad, setAd] = useState<Ad | null>(null)
+  // shown while analyzing, only on tests that had no ad in the middle
+  const [analyzingAd, setAnalyzingAd] = useState<Ad | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   // A pending auto-advance belongs to the question it was set on.
@@ -66,8 +75,8 @@ function QuizPage() {
   )
 
   const category = findCategory(catId)
-  if (!category) return <Navigate to="/main" replace />
-  if (phase === 'loading') return <LoadingView category={category} />
+  if (!category) return <NotFoundPage />
+  if (phase === 'loading') return <LoadingView category={category} ad={analyzingAd} />
 
   const id = category.id
   const current = answers[id] ?? []
@@ -90,10 +99,14 @@ function QuizPage() {
       showToast('하나를 골라주세요')
       return
     }
-    if (from === AD_AFTER_INDEX && !adShown.has(id)) {
-      adShown.add(id)
-      setPhase('ad')
-      return
+    if (from === AD_AFTER_INDEX && !adDrawn.has(id)) {
+      adDrawn.add(id)
+      const drawn = drawAd('QUIZ_BREAK')
+      if (drawn) {
+        setAd(drawn)
+        setPhase('ad')
+        return
+      }
     }
     if (from < QUESTION_COUNT - 1) {
       navigate(`/test/${id}/q/${from + 2}`)
@@ -125,6 +138,8 @@ function QuizPage() {
   // Saves the answers while the analyzing screen shows for at least ANALYZE_MS.
   const submit = async () => {
     const latest = getTestState().answers[id] ?? []
+    const shown = ad == null ? drawAd('ANALYZING') : null
+    setAnalyzingAd(shown)
     setPhase('loading')
     try {
       await Promise.all([
@@ -168,7 +183,7 @@ function QuizPage() {
   }
 
   // the break sits on question 5's URL; any other question means it was left
-  const onBreak = phase === 'ad' && index === AD_AFTER_INDEX
+  const onBreak = phase === 'ad' && index === AD_AFTER_INDEX && ad != null
   const resume = () => {
     setPhase('quiz')
     navigate(`/test/${id}/q/${AD_AFTER_INDEX + 2}`)
@@ -209,7 +224,7 @@ function QuizPage() {
       </div>
 
       {onBreak ? (
-        <AdBreak categoryId={id} onClose={resume} />
+        <AdBreak ad={ad} placement="QUIZ_BREAK" categoryId={id} onClose={resume} />
       ) : (
         <>
           <div className={styles.body}>

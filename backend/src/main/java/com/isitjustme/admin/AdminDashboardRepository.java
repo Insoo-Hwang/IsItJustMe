@@ -15,7 +15,6 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.isitjustme.admin.AdminDashboard.AdRow;
 import com.isitjustme.admin.AdminDashboard.CategoryRow;
 import com.isitjustme.admin.AdminDashboard.Change;
 import com.isitjustme.admin.AdminDashboard.Day;
@@ -78,7 +77,7 @@ public class AdminDashboardRepository {
 		Totals totals = totals();
 		List<Long> progress = progress(totals.guests());
 		return new AdminDashboard(Instant.now(), days, totals, period, daily, funnel(totals, progress), progress,
-				categories(), demographics(), hours(since), questions(), ads(since));
+				categories(), demographics(), hours(since), questions());
 	}
 
 	private static Change change(Map<LocalDate, Long> counts, LocalDate from) {
@@ -245,23 +244,6 @@ public class AdminDashboardRepository {
 				""")
 			.query((rs, i) -> new QuestionRow(rs.getString(1), rs.getInt(2), rs.getString(3), rs.getString(4),
 					rs.getString(5), rs.getLong(6), rs.getLong(7)))
-			.list();
-	}
-
-	private List<AdRow> ads(OffsetDateTime since) {
-		return jdbcClient.sql("""
-				SELECT c.code,
-				       COUNT(*) FILTER (WHERE e.type = 'AD_VIEW'),
-				       COUNT(*) FILTER (WHERE e.type = 'AD_CLICK'),
-				       COUNT(*) FILTER (WHERE e.type = 'AD_SKIP')
-				FROM category c
-				LEFT JOIN event e ON e.category_code = c.code AND e.created_at >= :since
-				     AND e.type IN ('AD_VIEW', 'AD_CLICK', 'AD_SKIP')
-				GROUP BY c.code, c.sort_order
-				ORDER BY c.sort_order
-				""")
-			.param("since", since)
-			.query((rs, i) -> new AdRow(rs.getString(1), rs.getLong(2), rs.getLong(3), rs.getLong(4)))
 			.list();
 	}
 

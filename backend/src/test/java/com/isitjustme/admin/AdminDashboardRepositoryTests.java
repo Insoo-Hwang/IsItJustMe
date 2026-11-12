@@ -113,15 +113,6 @@ class AdminDashboardRepositoryTests {
 		assertThat(dashboard.period().get("AD_VIEW").current()).isEqualTo(2);
 		assertThat(dashboard.period().get("AD_VIEW").previous()).isEqualTo(1);
 		assertThat(dashboard.period().get("guests").current()).isEqualTo(1);
-		assertThat(dashboard.ads()).filteredOn((a) -> a.category().equals("food")).singleElement().satisfies((ad) -> {
-			assertThat(ad.views()).isEqualTo(2);
-			assertThat(ad.clicks()).isEqualTo(1);
-			assertThat(ad.skips()).isZero();
-		});
-		// the older view is outside the period
-		assertThat(dashboard.ads()).filteredOn((a) -> a.category().equals("love"))
-			.singleElement()
-			.satisfies((ad) -> assertThat(ad.views()).isZero());
 	}
 
 	@Test

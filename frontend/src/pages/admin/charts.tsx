@@ -80,6 +80,27 @@ export function DataTable({ head, rows }: { head: string[]; rows: (string | numb
   )
 }
 
+export function Card({ title, sub, size, aside, children }: {
+  title: string
+  sub?: string
+  size?: 'half' | 'third'
+  aside?: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <section className={`${styles.card} ${size ? styles[size] : ''}`} aria-label={title}>
+      <div className={styles.cardHead}>
+        <div>
+          <h3 className={styles.cardTitle}>{title}</h3>
+          {sub && <p className={styles.cardSub}>{sub}</p>}
+        </div>
+        {aside}
+      </div>
+      {children}
+    </section>
+  )
+}
+
 type TileProps = {
   label: string
   value: string

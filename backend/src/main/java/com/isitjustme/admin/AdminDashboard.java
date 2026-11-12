@@ -18,7 +18,7 @@ import java.util.Map;
  */
 public record AdminDashboard(Instant generatedAt, int days, Totals totals, Map<String, Change> period,
 		List<Day> daily, List<FunnelStep> funnel, List<Long> progress, List<CategoryRow> categories,
-		List<Demographic> demographics, List<Long> hours, List<QuestionRow> questions, List<AdRow> ads) {
+		List<Demographic> demographics, List<Long> hours, List<QuestionRow> questions) {
 
 	/**
 	 * @param profiled guests who entered gender and age group
@@ -68,12 +68,6 @@ public record AdminDashboard(Instant generatedAt, int days, Totals totals, Map<S
 	 */
 	public record QuestionRow(String category, int number, String prompt, String option0, String option1,
 			long option0Count, long total) {
-	}
-
-	/**
-	 * Ad actions of the period in one category's test.
-	 */
-	public record AdRow(String category, long views, long clicks, long skips) {
 	}
 
 }

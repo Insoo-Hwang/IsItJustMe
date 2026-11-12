@@ -49,6 +49,21 @@
   border-radius: 20px;
 }
 
+/* inside the analyzing screen: a smaller poster under the title */
+.compact {
+  flex: none;
+  width: min(100%, 260px);
+  margin-top: 0;
+  padding-bottom: 0;
+  gap: 8px;
+}
+.compact .top {
+  height: auto;
+}
+.compact .image {
+  max-height: 46dvh;
+}
+
 @keyframes rise {
   from {
     opacity: 0;

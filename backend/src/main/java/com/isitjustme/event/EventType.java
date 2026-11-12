@@ -6,13 +6,13 @@ package com.isitjustme.event;
  */
 public enum EventType {
 
-	/** The ad between questions 5 and 6 was shown. */
+	/** An ad was shown. */
 	AD_VIEW,
 
-	/** The ad was opened. */
+	/** An ad was opened. */
 	AD_CLICK,
 
-	/** The ad was skipped. */
+	/** An ad was skipped. */
 	AD_SKIP,
 
 	/** The taste universe link was shared from the summary or the invite page. */
@@ -34,6 +34,11 @@ public enum EventType {
 	CARD_SAVE,
 
 	/** The ending was opened. */
-	ENDING_OPEN
+	ENDING_OPEN;
+
+	/** Ad actions name the ad and the spot it was shown in. */
+	public boolean isAd() {
+		return this == AD_VIEW || this == AD_CLICK || this == AD_SKIP;
+	}
 
 }
