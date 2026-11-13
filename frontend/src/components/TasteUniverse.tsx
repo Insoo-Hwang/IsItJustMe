@@ -2,6 +2,7 @@ import { useState, type KeyboardEvent } from 'react'
 import type { PlanetDto } from '../api/rooms.ts'
 import { withAnd, withRang } from '../lib/korean.ts'
 import { matchLine } from '../lib/room.ts'
+import PlanetAnswers from './PlanetAnswers.tsx'
 import styles from './TasteUniverse.module.css'
 import ui from './ui.module.css'
 
@@ -10,6 +11,8 @@ type Props = {
   planets: PlanetDto[]
   // only the map: planets cannot be picked and the match card is left out
   preview?: boolean
+  // the owner's share token, when the owner is looking: a picked planet then shows its answers
+  ownerToken?: string
 }
 
 const SIZE = 340
@@ -37,9 +40,9 @@ function position(index: number, match: number): [number, number] {
 const label = (p: PlanetDto) => (p.me ? `${p.name}(나)` : p.name)
 
 // The owner in the middle and every planet around them by match. Only owner-planet
-// pairs mean anything; distances between planets do not. A picked planet shows only
-// its match, never the answers behind it.
-function TasteUniverse({ ownerName: owner, planets, preview = false }: Props) {
+// pairs mean anything; distances between planets do not. A picked planet shows its
+// match; only the owner also sees the answers behind it.
+function TasteUniverse({ ownerName: owner, planets, preview = false, ownerToken }: Props) {
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const selected = planets.find((p) => p.id === (selectedId ?? planets.find((m) => m.me)?.id))
 
@@ -125,6 +128,15 @@ function TasteUniverse({ ownerName: owner, planets, preview = false }: Props) {
               취향 일치율 <b>{selected.match}%</b>
             </div>
             <p className={styles.pickLine}>{matchLine(selected.match)}</p>
+            {ownerToken && (
+              <PlanetAnswers
+                key={selected.id}
+                token={ownerToken}
+                planetId={selected.id}
+                ownerName={owner}
+                planetName={selected.name}
+              />
+            )}
           </>
         ) : (
           <p className={styles.pickEmpty}>행성을 눌러 {withAnd(owner)}의 일치율을 확인해보세요</p>

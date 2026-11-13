@@ -88,10 +88,19 @@ function InvitePage() {
     rows.reduce((sum, r) => sum + r.rarity.picks.length, 0),
   )
   const isOwner = viewer.role === 'OWNER'
+  // a shared link opened fresh has nowhere to go back to
+  const back = () => {
+    if ((window.history.state as { idx?: number } | null)?.idx) navigate(-1)
+    else navigate('/main')
+  }
 
   return (
     <div className={`${ui.page} ${styles.page}`}>
-      <TopBar title="나만 그래?" left={{ icon: 'home', label: '홈으로', onClick: () => navigate('/main') }} />
+      <TopBar
+        title="나만 그래?"
+        left={{ icon: 'arrow_back', label: '뒤로', onClick: back }}
+        right={{ icon: 'home', label: '홈으로', onClick: () => navigate('/main') }}
+      />
 
       <section className={`${styles.invite} ${tier[overall.tone]}`} aria-label={`${name}의 초대장`}>
         <div className={styles.inviteBadge}>{isOwner ? '나의 취향 우주' : `${name}의 초대장`}</div>
@@ -132,7 +141,7 @@ function InvitePage() {
       )}
 
       <h2 className={styles.sectionTitle}>{name}의 취향 우주</h2>
-      <TasteUniverse ownerName={name} planets={universe.data} />
+      <TasteUniverse ownerName={name} planets={universe.data} ownerToken={isOwner ? token : undefined} />
 
       {!isOwner && viewer.complete && (
         <div className={styles.actions}>

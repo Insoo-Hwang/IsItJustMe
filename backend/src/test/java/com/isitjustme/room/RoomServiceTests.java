@@ -28,10 +28,12 @@ import com.isitjustme.guest.Gender;
 import com.isitjustme.guest.GuestProfile;
 import com.isitjustme.guest.GuestService;
 import com.isitjustme.room.RoomService.ComparisonView;
+import com.isitjustme.room.RoomService.PlanetDetailView;
 import com.isitjustme.room.RoomService.PlanetView;
 import com.isitjustme.room.RoomService.Role;
 import com.isitjustme.room.RoomService.RoomView;
 import com.isitjustme.room.RoomService.UniverseView;
+import com.isitjustme.room.TasteMatch.CategoryMatch;
 
 @DataJpaTest
 @Testcontainers
@@ -186,6 +188,55 @@ class RoomServiceTests {
 		CATEGORY_CODES.forEach((code) -> categoryService.submit(owner, code, 0b11_1111_1111));
 
 		assertThat(roomService.universe(null, shareToken).planets()).extracting(PlanetView::match).containsExactly(100);
+	}
+
+	@Test
+	void theOwnerSeesEachPlanetsAnswersFromWhenItJoined() {
+		String owner = finishedGuest(0b1);
+		String shareToken = roomService.open(owner, "철수");
+		String member = finishedGuest(0b11);
+		long planetId = roomService.join(member, shareToken, "영희");
+
+		// answers changed after joining do not show
+		CATEGORY_CODES.forEach((code) -> categoryService.submit(member, code, 0b11_1111_1111));
+		CATEGORY_CODES.forEach((code) -> categoryService.submit(owner, code, 0));
+
+		PlanetDetailView detail = roomService.planet(owner, shareToken, planetId);
+		assertThat(detail.name()).isEqualTo("영희");
+		assertThat(detail.match()).isEqualTo(90);
+		assertThat(detail.categories()).extracting(CategoryMatch::code).containsExactlyElementsOf(CATEGORY_CODES);
+		assertThat(detail.categories()).extracting(CategoryMatch::ownerBits).containsOnly(0b1);
+		assertThat(detail.categories()).extracting(CategoryMatch::otherBits).containsOnly(0b11);
+		assertThat(detail.categories()).extracting(CategoryMatch::matched).containsOnly(9);
+		assertThat(roomService.universe(null, shareToken).planets()).extracting(PlanetView::match).containsExactly(90);
+	}
+
+	@Test
+	void onlyTheOwnerSeesAPlanetsAnswers() {
+		String owner = finishedGuest(0);
+		String shareToken = roomService.open(owner, "철수");
+		String member = finishedGuest(0);
+		long planetId = roomService.join(member, shareToken, "영희");
+		String otherOwner = finishedGuest(0);
+		String otherShare = roomService.open(otherOwner, "민수");
+		long otherPlanet = roomService.join(finishedGuest(0), otherShare, "지민");
+
+		assertThatThrownBy(() -> roomService.planet(member, shareToken, planetId))
+			.isInstanceOf(ResponseStatusException.class)
+			.hasMessageContaining("403");
+		assertThatThrownBy(() -> roomService.planet(finishedGuest(0), shareToken, planetId))
+			.isInstanceOf(ResponseStatusException.class)
+			.hasMessageContaining("403");
+		assertThatThrownBy(() -> roomService.planet(null, shareToken, planetId))
+			.isInstanceOf(ResponseStatusException.class)
+			.hasMessageContaining("401");
+		// a planet of another room, even one the guest owns
+		assertThatThrownBy(() -> roomService.planet(owner, shareToken, otherPlanet))
+			.isInstanceOf(ResponseStatusException.class)
+			.hasMessageContaining("404");
+		assertThatThrownBy(() -> roomService.planet(otherOwner, shareToken, otherPlanet))
+			.isInstanceOf(ResponseStatusException.class)
+			.hasMessageContaining("403");
 	}
 
 	@Test

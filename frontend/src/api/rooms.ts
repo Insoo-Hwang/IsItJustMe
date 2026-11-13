@@ -38,7 +38,8 @@ export type CategoryMatchDto = {
   matched: number
 }
 
-// The owner compared with the viewer; nobody else's answers are ever sent.
+// The owner compared with the viewer. The owner also gets each planet's answers
+// (fetchPlanet); two friends are never compared.
 export type ComparisonDto = {
   ownerName: string
   // null until the viewer joins the universe
@@ -100,4 +101,18 @@ export async function fetchComparison(token: string): Promise<ComparisonDto> {
   const res = await withGuest(() => fetch(`/api/v1/rooms/${token}/compare`, { credentials: 'same-origin' }))
   if (!res.ok) throw new HttpError(res.status, `comparison failed: ${res.status}`)
   return res.json() as Promise<ComparisonDto>
+}
+
+// One planet next to the owner, with both answers from when it joined. Owner only.
+export type PlanetDetailDto = {
+  id: number
+  name: string
+  match: number
+  categories: CategoryMatchDto[]
+}
+
+export async function fetchPlanet(token: string, planetId: number): Promise<PlanetDetailDto> {
+  const res = await withGuest(() => fetch(`/api/v1/rooms/${token}/planets/${planetId}`, { credentials: 'same-origin' }))
+  if (!res.ok) throw new HttpError(res.status, `planet failed: ${res.status}`)
+  return res.json() as Promise<PlanetDetailDto>
 }

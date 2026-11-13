@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
@@ -27,8 +28,9 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Share rooms and their universes. The owner sits in the middle and each planet is
- * compared with the owner only; the details of a comparison are shown only to the
- * guest being compared. Comparisons are not stored; they come from the current answers.
+ * compared with the owner only. The details of a comparison are shown only to the two
+ * people in it: the friend sees it with the current answers, the owner sees each planet's
+ * answers from when it joined. Two friends are never compared.
  */
 @Service
 @RequiredArgsConstructor
@@ -38,6 +40,8 @@ public class RoomService {
 
 	/** A universe this full takes no more planets, so no one room can grow without end. */
 	static final int MAX_PLANETS = 300;
+
+	private static final int QUESTION_BITS = 10;
 
 	private final ShareRoomRepository roomRepository;
 
@@ -128,9 +132,12 @@ public class RoomService {
 		if (planetRepository.countByRoomId(room.id()) >= MAX_PLANETS) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "universe full");
 		}
-		// the match is fixed now; see UniversePlanet#match
+		// the match and both answers are fixed now; see UniversePlanet
 		int match = TasteMatch.compare(room.owner(), mine).match();
-		return planetRepository.save(new UniversePlanet(room.id(), guest.getId(), name, match, Instant.now())).getId();
+		return planetRepository
+			.save(new UniversePlanet(room.id(), guest.getId(), name, match, CategoryService.overallBits(room.owner()),
+					CategoryService.overallBits(mine), Instant.now()))
+			.getId();
 	}
 
 	/**
@@ -175,6 +182,46 @@ public class RoomService {
 		Optional<UniversePlanet> planet = planetRepository.findByRoomIdAndGuestId(room.id(), guest.getId());
 		return new ComparisonView(room.ownerName(), planet.map(UniversePlanet::getId).orElse(null),
 				planet.map(UniversePlanet::getName).orElse(null), comparison.match(), comparison.categories());
+	}
+
+	/**
+	 * One planet compared with the owner question by question, for the owner only. The
+	 * answers are the ones from when the planet joined, so they match the number shown in
+	 * the universe.
+	 */
+	@Transactional(readOnly = true)
+	public PlanetDetailView planet(@Nullable String rawToken, String shareToken, long planetId) {
+		Guest guest = guestService.findByToken(rawToken)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+		RoomCard room = roomCards.find(shareToken);
+		if (guest.getId() != room.ownerGuestId()) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "only the owner sees a planet's answers");
+		}
+		UniversePlanet planet = planetRepository.findById(planetId)
+			.filter((p) -> p.getRoomId() == room.id())
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+		Comparison comparison;
+		if (planet.getOwnerBits() != null && planet.getPlanetBits() != null) {
+			comparison = TasteMatch.compare(split(planet.getOwnerBits(), room.owner()),
+					split(planet.getPlanetBits(), room.owner()));
+		}
+		else {
+			List<CategoryBits> theirs = categoryService.completeAnswers(List.of(planet.getGuestId()))
+				.get(planet.getGuestId());
+			if (theirs == null) {
+				throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+			}
+			comparison = TasteMatch.compare(room.owner(), theirs);
+		}
+		return new PlanetDetailView(planet.getId(), planet.getName(), comparison.match(), comparison.categories());
+	}
+
+	// Back from CategoryService#overallBits: ten bits per category, in the order of `layout`.
+	static List<CategoryBits> split(long bits, List<CategoryBits> layout) {
+		return IntStream.range(0, layout.size())
+			.mapToObj((i) -> new CategoryBits(layout.get(i).code(),
+					(int) ((bits >>> (i * QUESTION_BITS)) & ((1 << QUESTION_BITS) - 1))))
+			.toList();
 	}
 
 	private boolean isComplete(Long guestId) {
@@ -236,6 +283,12 @@ public class RoomService {
 	 * @param planetName the viewer's planet name, null when the viewer has not joined
 	 * @param match % of all questions answered the same way
 	 */
+	/**
+	 * @param match % of all questions answered the same way, from when the planet joined
+	 */
+	public record PlanetDetailView(long id, String name, int match, List<CategoryMatch> categories) {
+	}
+
 	public record ComparisonView(String ownerName, @Nullable Long planetId, @Nullable String planetName, int match,
 			List<CategoryMatch> categories) {
 	}

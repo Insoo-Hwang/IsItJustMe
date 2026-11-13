@@ -16,7 +16,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * A guest who agreed to show their match with the owner in the room's universe.
+ * A guest who joined the room's universe: everyone with the link sees the match, and the
+ * owner also sees both sets of answers from the moment they joined.
  */
 @Entity
 @Table(name = "universe_planet")
@@ -44,11 +45,22 @@ public class UniversePlanet {
 	@Column(name = "match_percent", updatable = false)
 	private @Nullable Integer match;
 
-	public UniversePlanet(Long roomId, Long guestId, String name, int match, Instant now) {
+	/** The owner's answers when the friend joined, ten bits per category in display order. */
+	@Column(updatable = false)
+	private @Nullable Long ownerBits;
+
+	/** The friend's answers when joining, laid out like {@link #ownerBits}. */
+	@Column(updatable = false)
+	private @Nullable Long planetBits;
+
+	public UniversePlanet(Long roomId, Long guestId, String name, int match, long ownerBits, long planetBits,
+			Instant now) {
 		this.roomId = roomId;
 		this.guestId = guestId;
 		this.name = name;
 		this.match = match;
+		this.ownerBits = ownerBits;
+		this.planetBits = planetBits;
 		this.joinedAt = now;
 	}
 

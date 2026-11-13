@@ -26,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.isitjustme.category.CategoryService.CategoryBits;
 import com.isitjustme.room.RoomService.ComparisonView;
+import com.isitjustme.room.RoomService.PlanetDetailView;
 import com.isitjustme.room.RoomService.PlanetView;
 import com.isitjustme.room.RoomService.Role;
 import com.isitjustme.room.RoomService.RoomView;
@@ -151,6 +152,28 @@ class RoomControllerTests {
 			.andExpect(jsonPath("$.categories[0].ownerBits").value(1))
 			.andExpect(jsonPath("$.categories[0].otherBits").value(3))
 			.andExpect(jsonPath("$.categories[0].matched").value(9));
+	}
+
+	@Test
+	void returnsPlanetForOwner() throws Exception {
+		given(roomService.planet("token", "share", 7))
+			.willReturn(new PlanetDetailView(7, "영희", 90, List.of(new CategoryMatch("food", 1, 3, 9))));
+
+		mockMvc.perform(get("/api/v1/rooms/share/planets/7").cookie(new Cookie("guest_token", "token")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.id").value(7))
+			.andExpect(jsonPath("$.name").value("영희"))
+			.andExpect(jsonPath("$.match").value(90))
+			.andExpect(jsonPath("$.categories[0].ownerBits").value(1))
+			.andExpect(jsonPath("$.categories[0].otherBits").value(3));
+	}
+
+	@Test
+	void planetIsForbiddenToOthers() throws Exception {
+		given(roomService.planet("token", "share", 7)).willThrow(new ResponseStatusException(HttpStatus.FORBIDDEN));
+
+		mockMvc.perform(get("/api/v1/rooms/share/planets/7").cookie(new Cookie("guest_token", "token")))
+			.andExpect(status().isForbidden());
 	}
 
 	@Test

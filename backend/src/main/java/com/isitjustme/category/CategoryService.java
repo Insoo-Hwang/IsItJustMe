@@ -236,7 +236,7 @@ public class CategoryService {
 	}
 
 	// Each category takes the next ten bits of a long, in display order (six categories = 60 bits).
-	private static long overallBits(List<CategoryBits> answers) {
+	public static long overallBits(List<CategoryBits> answers) {
 		long bits = 0;
 		for (int i = 0; i < answers.size(); i++) {
 			bits |= (long) answers.get(i).answerBits() << (i * RarityCalculator.QUESTION_COUNT);

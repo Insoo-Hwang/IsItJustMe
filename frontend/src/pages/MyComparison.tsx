@@ -6,7 +6,7 @@ import NameSheet from '../components/NameSheet.tsx'
 import RarityHexagon from '../components/RarityHexagon.tsx'
 import ui from '../components/ui.module.css'
 import { fromAnswerBits, shortName, type Category, type Choice, type Question } from '../data/categories.ts'
-import { withAnd } from '../lib/korean.ts'
+import { withAnd, withTopic } from '../lib/korean.ts'
 import { minorityShare } from '../lib/rarity.ts'
 import { matchLine, roomRetry, rowsOf } from '../lib/room.ts'
 import { showToast } from '../lib/toast.ts'
@@ -206,7 +206,7 @@ function MyComparison({ token, ownerName: owner }: Props) {
       {joining && (
         <NameSheet
           title="행성 이름 정하기"
-          description={`링크를 가진 누구나 이 이름과 ${withAnd(owner)}의 일치율을 볼 수 있어요. 자세한 비교는 나만 볼 수 있어요.`}
+          description={`링크를 가진 누구나 이 이름과 ${withAnd(owner)}의 일치율을 볼 수 있어요. ${withTopic(owner)} 등록할 때의 내 답을 문항별로 볼 수 있어요.`}
           confirmLabel="이 방에 내 결과 공개하기"
           busy={busy}
           onSubmit={(name) => void join(name)}

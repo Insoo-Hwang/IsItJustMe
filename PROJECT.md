@@ -237,6 +237,22 @@
 | 없는 방 | 404 Not Found | 프론트는 없는 링크 안내 |
 | 답하지 않은 카테고리 있음 | 409 Conflict | 프론트는 미리보기와 테스트 버튼을 표시 |
 
+### `GET /api/v1/rooms/{shareToken}/planets/{planetId}` — 행성 답 보기 (우주 주인 전용)
+
+| 항목 | 내용 |
+|---|---|
+| 역할 | 우주 주인에게 한 행성(친구)의 답을 주인의 답과 나란히 내려준다. 답은 친구가 등록할 때 저장해 둔 두 사람의 답이라, 우주에 보이는 일치율과 항상 맞는다 |
+| 호출 시점 | 우주 주인이 자기 우주에서 행성을 눌렀을 때 |
+| Request | 쿠키 `guest_token` 필수 |
+| Response Body | `{ "id", "name", "match", "categories": [{ "code", "ownerBits", "otherBits", "matched" }] }` — `otherBits`는 친구의 답, `matched`는 카테고리 10문항 중 같은 답 수 |
+
+| 상황 | 상태 코드 | 동작 |
+|---|---|---|
+| 우주 주인 | 200 OK | 반환 |
+| 쿠키 없음 / DB에 없는 토큰 | 401 Unauthorized | 프론트는 세션을 다시 받고 한 번 재시도 |
+| 주인이 아닌 사람 | 403 Forbidden | 프론트는 주인에게만 요청함 |
+| 없는 방 / 그 방의 행성이 아님 | 404 Not Found | 반환하지 않음 |
+
 ### `POST /api/v1/events` — 행동 기록
 
 | 항목 | 내용 |

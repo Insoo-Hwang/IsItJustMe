@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.isitjustme.guest.GuestController;
 import com.isitjustme.room.RoomService.ComparisonView;
+import com.isitjustme.room.RoomService.PlanetDetailView;
 import com.isitjustme.room.RoomService.RoomView;
 import com.isitjustme.room.RoomService.UniverseView;
 
@@ -60,6 +61,15 @@ public class RoomController {
 	public UniverseView universe(@CookieValue(name = GuestController.COOKIE_NAME, required = false) String token,
 			@PathVariable String shareToken) {
 		return roomService.universe(token, shareToken);
+	}
+
+	/**
+	 * One planet's answers next to the owner's, for the owner only.
+	 */
+	@GetMapping("/{shareToken}/planets/{planetId}")
+	public PlanetDetailView planet(@CookieValue(name = GuestController.COOKIE_NAME, required = false) String token,
+			@PathVariable String shareToken, @PathVariable long planetId) {
+		return roomService.planet(token, shareToken, planetId);
 	}
 
 	/**
