@@ -206,8 +206,8 @@ function ResultView({ category, data }: { category: Category; data: ResultDto })
         </div>
       </div>
 
-      <PickList title="가장 흔한 내 선택 TOP 3" picks={result.commonTop3} tone="common" />
-      <PickList title="가장 희귀한 내 선택 TOP 3" picks={result.rareTop3} tone="rare" />
+      <PickList title="많은 사람이 고른 내 선택" picks={result.commonTop3} tone="common" />
+      <PickList title="적은 사람만 고른 내 선택" picks={result.rareTop3} tone="rare" />
       <AdCard placement="RESULT_BANNER" categoryId={id} className={styles.ad} />
       <ResultHighlights categoryId={id} questions={questions} picks={result.picks} show="debate" />
       <p className={styles.note}>다른 참여자의 답은 결과에 바로 반영되지 않을 수 있어요.</p>

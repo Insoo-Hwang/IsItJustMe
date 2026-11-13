@@ -502,3 +502,13 @@
 .ad {
   margin-top: 12px;
 }
+
+/* same as the category result: the way home closes the page */
+.actions {
+  display: flex;
+  flex-direction: column;
+  margin: -8px 0 32px;
+}
+.actions > button {
+  flex: none;
+}

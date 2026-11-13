@@ -142,8 +142,8 @@ function SummaryPage() {
             <span style={{ left: `${topPercent}%` }} />
           </div>
           <div className={styles.rankEnds} aria-hidden>
-            <span>더 희귀한 편</span>
-            <span>더 흔한 편</span>
+            <span>소수 쪽</span>
+            <span>다수 쪽</span>
           </div>
         </section>
       )}
@@ -284,6 +284,12 @@ function SummaryPage() {
           <Icon name="arrow_forward" size={20} />
         </button>
       </section>
+
+      <div className={styles.actions}>
+        <button type="button" className={`${ui.primary} ${ui.large}`} onClick={() => navigate('/main')}>
+          홈으로 가기
+        </button>
+      </div>
     </div>
   )
 }
