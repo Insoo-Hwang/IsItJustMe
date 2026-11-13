@@ -26,6 +26,7 @@ class RarityCalculatorTests {
 		assertThat(summary.exact()).isEqualTo(3);
 		// (4 identical + 4 similar - me) / 9 others
 		assertThat(summary.similar()).isEqualTo(77.8);
+		assertThat(summary.similarCount()).isEqualTo(7);
 	}
 
 	@Test
@@ -41,6 +42,7 @@ class RarityCalculatorTests {
 
 		// 3 opposite / 4 others
 		assertThat(summary.opposite()).isEqualTo(75.0);
+		assertThat(summary.oppositeCount()).isEqualTo(3);
 		assertThat(summary.different()).isEqualTo(2);
 	}
 
@@ -56,7 +58,7 @@ class RarityCalculatorTests {
 	void onlyParticipantHasNobodyToCompare() {
 		Summary summary = RarityCalculator.summarize(counts(Map.of(5, 1L)), 5);
 
-		assertThat(summary).isEqualTo(new Summary(1, 0, 0, 0, 0));
+		assertThat(summary).isEqualTo(new Summary(1, 0, 0, 0, 0, 0, 0));
 	}
 
 	@Test

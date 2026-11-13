@@ -121,7 +121,7 @@
 | 호출 시점 | 결과 화면 진입 시 |
 | Request | 쿠키 `guest_token` 필수 |
 | Response Body | `{ "answerBits", "overall": Summary, "peer": { "profile": { "gender", "ageGroup" }, "summary": Summary }, "questions": [...] }` — `questions`는 카테고리의 질문 (목록 API와 같은 형식) |
-| Summary | `{ "participants", "exact", "similar", "opposite", "different" }` — 참여자 수, 나와 완전히 같은 다른 참여자 수, 8개 이상 일치하는 다른 참여자 비율(%), 2개 이하로 일치하는 다른 참여자 비율(%), 10개 모두 다른 참여자 수 |
+| Summary | `{ "participants", "exact", "similar", "opposite", "different", "similarCount", "oppositeCount" }` — 참여자 수, 나와 완전히 같은 다른 참여자 수, 8개 이상 일치하는 다른 참여자 비율(%), 2개 이하로 일치하는 다른 참여자 비율(%), 10개 모두 다른 참여자 수, `similar` · `opposite`에 해당하는 다른 참여자 수 |
 
 | 상황 | 상태 코드 | 동작 |
 |---|---|---|

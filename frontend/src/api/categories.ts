@@ -34,6 +34,9 @@ export type SummaryDto = {
   opposite: number
   // other participants with every answer the other way
   different: number
+  // other participants behind `similar` and `opposite`
+  similarCount: number
+  oppositeCount: number
 }
 
 export type ResultDto = {

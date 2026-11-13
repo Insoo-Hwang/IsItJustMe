@@ -105,8 +105,8 @@ class CategoryControllerTests {
 	@Test
 	void returnsResult() throws Exception {
 		GuestProfile profile = new GuestProfile(Gender.FEMALE, AgeGroup.TWENTIES);
-		given(categoryService.result("token", "food")).willReturn(new ResultView(717, new Summary(100, 2, 12.1, 3.5, 1),
-				new PeerView(profile, new Summary(20, 0, 5.3, 0, 0)), List.of(QUESTION)));
+		given(categoryService.result("token", "food")).willReturn(new ResultView(717, new Summary(100, 2, 12.1, 3.5, 1, 12, 3),
+				new PeerView(profile, new Summary(20, 0, 5.3, 0, 0, 1, 0)), List.of(QUESTION)));
 
 		mockMvc.perform(get("/api/v1/categories/food/result").cookie(new Cookie("guest_token", "token")))
 			.andExpect(status().isOk())
@@ -115,6 +115,8 @@ class CategoryControllerTests {
 			.andExpect(jsonPath("$.overall.exact").value(2))
 			.andExpect(jsonPath("$.overall.similar").value(12.1))
 			.andExpect(jsonPath("$.overall.opposite").value(3.5))
+			.andExpect(jsonPath("$.overall.similarCount").value(12))
+			.andExpect(jsonPath("$.overall.oppositeCount").value(3))
 			.andExpect(jsonPath("$.overall.different").value(1))
 			.andExpect(jsonPath("$.peer.profile.ageGroup").value("TWENTIES"))
 			.andExpect(jsonPath("$.peer.summary.exact").value(0))
@@ -124,7 +126,7 @@ class CategoryControllerTests {
 	@Test
 	void returnsOverallResult() throws Exception {
 		given(categoryService.overallResult("token"))
-			.willReturn(new OverallResultView(60, new Summary(300, 3, 0.8, 1.2, 0), 63.4, 8.2));
+			.willReturn(new OverallResultView(60, new Summary(300, 3, 0.8, 1.2, 0, 2, 4), 63.4, 8.2));
 
 		mockMvc.perform(get("/api/v1/categories/result").cookie(new Cookie("guest_token", "token")))
 			.andExpect(status().isOk())
@@ -139,7 +141,7 @@ class CategoryControllerTests {
 	@Test
 	void returnsNullAverageMatchWithoutOtherGuests() throws Exception {
 		given(categoryService.overallResult("token"))
-			.willReturn(new OverallResultView(60, new Summary(1, 0, 0, 0, 0), null, null));
+			.willReturn(new OverallResultView(60, new Summary(1, 0, 0, 0, 0, 0, 0), null, null));
 
 		mockMvc.perform(get("/api/v1/categories/result").cookie(new Cookie("guest_token", "token")))
 			.andExpect(status().isOk())

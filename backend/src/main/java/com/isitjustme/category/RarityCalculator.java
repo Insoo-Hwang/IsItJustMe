@@ -46,13 +46,14 @@ final class RarityCalculator {
 
 	static Summary summarize(Counts counts) {
 		if (counts.participants() == 0) {
-			return new Summary(0, 0, 0, 0, 0);
+			return new Summary(0, 0, 0, 0, 0, 0, 0);
 		}
 		long others = counts.participants() - 1;
-		double similarRate = (others > 0) ? round1(Math.max(0, counts.similar() - 1) * 100.0 / others) : 0;
+		long similarOthers = Math.max(0, counts.similar() - 1);
+		double similarRate = (others > 0) ? round1(similarOthers * 100.0 / others) : 0;
 		double oppositeRate = (others > 0) ? round1(counts.opposite() * 100.0 / others) : 0;
 		return new Summary(counts.participants(), Math.max(0, counts.same() - 1), similarRate, oppositeRate,
-				counts.different());
+				counts.different(), similarOthers, counts.opposite());
 	}
 
 	/**
@@ -171,8 +172,11 @@ final class RarityCalculator {
 	 * @param similar % of other participants matching at least 80% of the answers
 	 * @param opposite % of other participants matching at most 20% of the answers
 	 * @param different other participants with every answer the other way
+	 * @param similarCount other participants behind {@code similar}
+	 * @param oppositeCount other participants behind {@code opposite}
 	 */
-	record Summary(long participants, long exact, double similar, double opposite, long different) {
+	record Summary(long participants, long exact, double similar, double opposite, long different, long similarCount,
+			long oppositeCount) {
 	}
 
 }

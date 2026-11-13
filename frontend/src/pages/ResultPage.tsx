@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router'
 import { fetchResult, HttpError, type ResultDto } from '../api/categories.ts'
 import AdCard from '../components/AdCard.tsx'
@@ -50,10 +51,22 @@ function ResultPage() {
   return <ResultView category={category} data={query.data} />
 }
 
+// How many people the donut stands for, beside it: the count stands out in the card's color.
+function Count({ of, count, tone }: { of: number; count: number; tone: 'same' | 'apart' }) {
+  return (
+    <div className={styles.donutSide}>
+      <span className={styles.donutOf}>{of.toLocaleString('ko-KR')}명 중</span>
+      <b className={`${styles.donutCount} ${styles[tone]}`}>{count.toLocaleString('ko-KR')}명</b>
+    </div>
+  )
+}
+
 function Donut({ value, color, track }: { value: number; color: string; track: string }) {
+  // tiny shares keep two decimals instead of showing 0.0%
+  const label = value > 0 && value < 0.1 ? value.toFixed(2) : String(Math.round(value * 10) / 10)
   return (
     <div className={styles.donut}>
-      <svg width="76" height="76" viewBox="0 0 84 84" aria-hidden>
+      <svg width="80" height="80" viewBox="0 0 84 84" aria-hidden>
         <circle cx="42" cy="42" r="34" fill="none" stroke={track} strokeWidth="9" />
         {value > 0 && (
           <circle
@@ -68,7 +81,7 @@ function Donut({ value, color, track }: { value: number; color: string; track: s
           />
         )}
       </svg>
-      <div className={styles.donutValue}>{value}%</div>
+      <div className={styles.donutValue}>{label}%</div>
     </div>
   )
 }
@@ -101,6 +114,16 @@ function PickList({ title, picks, tone }: { title: string; picks: PickedChoice[]
 
 function ResultView({ category, data }: { category: Category; data: ResultDto }) {
   const navigate = useNavigate()
+  // the stat card whose explanation is open
+  const [help, setHelp] = useState<number | null>(null)
+
+  // tapping anywhere else closes the explanation
+  useEffect(() => {
+    if (help == null) return
+    const close = () => setHelp(null)
+    document.addEventListener('pointerdown', close)
+    return () => document.removeEventListener('pointerdown', close)
+  }, [help])
 
   const id = category.id
   // the version the guest answered, which may differ from the category's current one
@@ -112,6 +135,9 @@ function ResultView({ category, data }: { category: Category; data: ResultDto })
   const peer = data.peer.summary
   const peerRate = exactRate(peer)
   const overallRate = exactRate(overall)
+  // the shares are of everyone but me
+  const others = Math.max(0, overall.participants - 1)
+  const differentRate = others > 0 ? (overall.different / others) * 100 : 0
   const fmt = (v: number) => v.toLocaleString('ko-KR')
 
   const retry = () => {
@@ -146,41 +172,83 @@ function ResultView({ category, data }: { category: Category; data: ResultDto })
 
       <div className={styles.stats}>
         <div className={`${ui.card} ${styles.stat}`}>
-          <div className={styles.statLabel}>나와 취향이 비슷한 사람</div>
-          <Donut value={overall.similar} color="var(--same)" track="var(--same-soft)" />
-          <div className={styles.statNote}>
-            답변이 8개 이상
-            <br />
-            일치하는 참여자
+          <button
+            type="button"
+            className={styles.statLabel}
+            aria-expanded={help === 0}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => setHelp(help === 0 ? null : 0)}
+          >
+            나와 취향이 비슷한 사람
+          </button>
+          {help === 0 && (
+            <p className={styles.popover} role="tooltip" onPointerDown={(e) => e.stopPropagation()}>
+              10문항 중 8개 이상 나와 같은 답을 고른 참여자 비율이에요.
+            </p>
+          )}
+          <div className={styles.donutRow}>
+            <Donut value={overall.similar} color="var(--same)" track="var(--same-soft)" />
+            <Count of={others} count={overall.similarCount} tone="same" />
           </div>
         </div>
         <div className={`${ui.card} ${styles.stat}`}>
-          <div className={styles.statLabel}>나와 완전히 같은 사람</div>
-          <div className={`${styles.exact} ${styles.same}`}>
-            <span className={styles.exactValue}>{fmt(overall.exact)}</span>
-            <span className={styles.exactUnit}>명</span>
-          </div>
-          <div className={styles.statNote}>
-            {overall.exact === 0 ? '세상에 하나뿐인 조합이에요' : `${fmt(overall.participants)}명 중 ${fmt(overall.exact)}명`}
+          <button
+            type="button"
+            className={styles.statLabel}
+            aria-expanded={help === 1}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => setHelp(help === 1 ? null : 1)}
+          >
+            나와 완전히 같은 사람
+          </button>
+          {help === 1 && (
+            <p className={styles.popover} role="tooltip" onPointerDown={(e) => e.stopPropagation()}>
+              10문항 답이 모두 나와 같은 참여자 비율이에요.
+            </p>
+          )}
+          <div className={styles.donutRow}>
+            <Donut value={overallRate} color="var(--same)" track="var(--same-soft)" />
+            <Count of={others} count={overall.exact} tone="same" />
           </div>
         </div>
         <div className={`${ui.card} ${styles.stat}`}>
-          <div className={styles.statLabel}>나와 취향이 갈리는 사람</div>
-          <Donut value={overall.opposite} color="var(--apart)" track="var(--apart-soft)" />
-          <div className={styles.statNote}>
-            답변이 2개 이하로
-            <br />
-            일치하는 참여자
+          <button
+            type="button"
+            className={styles.statLabel}
+            aria-expanded={help === 2}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => setHelp(help === 2 ? null : 2)}
+          >
+            나와 취향이 갈리는 사람
+          </button>
+          {help === 2 && (
+            <p className={styles.popover} role="tooltip" onPointerDown={(e) => e.stopPropagation()}>
+              10문항 중 같은 답이 2개 이하인 참여자 비율이에요.
+            </p>
+          )}
+          <div className={styles.donutRow}>
+            <Donut value={overall.opposite} color="var(--apart)" track="var(--apart-soft)" />
+            <Count of={others} count={overall.oppositeCount} tone="apart" />
           </div>
         </div>
         <div className={`${ui.card} ${styles.stat}`}>
-          <div className={styles.statLabel}>나와 완전히 다른 사람</div>
-          <div className={`${styles.exact} ${styles.apart}`}>
-            <span className={styles.exactValue}>{fmt(overall.different)}</span>
-            <span className={styles.exactUnit}>명</span>
-          </div>
-          <div className={styles.statNote}>
-            {overall.different === 0 ? '정반대인 사람은 아직 없어요' : '10문항 모두 반대로 고른 사람'}
+          <button
+            type="button"
+            className={styles.statLabel}
+            aria-expanded={help === 3}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => setHelp(help === 3 ? null : 3)}
+          >
+            나와 완전히 다른 사람
+          </button>
+          {help === 3 && (
+            <p className={styles.popover} role="tooltip" onPointerDown={(e) => e.stopPropagation()}>
+              10문항을 모두 나와 반대로 고른 참여자 비율이에요.
+            </p>
+          )}
+          <div className={styles.donutRow}>
+            <Donut value={differentRate} color="var(--apart)" track="var(--apart-soft)" />
+            <Count of={others} count={overall.different} tone="apart" />
           </div>
         </div>
       </div>
