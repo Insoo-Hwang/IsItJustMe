@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from 'react'
 import { QUESTION_COUNT, type Choice } from '../data/categories.ts'
 import type { GuestProfile } from '../lib/profile.ts'
+import type { EndingPlan } from '../../story/ending.ts'
+import type { Guess, Self } from '../../story/parse.ts'
 
 export type Answers = (Choice | null)[]
 
@@ -19,6 +21,16 @@ export type TestState = {
   invite: Invite | null
   // last name typed for sharing or joining, only on this device
   lastName: string
+  // the last ending seen to the letter, only on this device
+  ending: SavedEnding | null
+}
+
+export type SavedEnding = {
+  // memory answers the plan was made for, see memoryKey()
+  key: string
+  plan: EndingPlan
+  guess: Guess
+  self: Self
 }
 
 export type Invite = {
@@ -27,7 +39,7 @@ export type Invite = {
 }
 
 const KEY = 'rarity-test-v1'
-const EMPTY: TestState = { answers: {}, results: {}, profile: null, invite: null, lastName: '' }
+const EMPTY: TestState = { answers: {}, results: {}, profile: null, invite: null, lastName: '', ending: null }
 
 function load(): TestState {
   try {
@@ -140,4 +152,8 @@ export function clearInvite(token: string) {
 
 export function setLastName(lastName: string) {
   setState((s) => ({ ...s, lastName }))
+}
+
+export function saveEnding(ending: SavedEnding) {
+  setState((s) => ({ ...s, ending }))
 }

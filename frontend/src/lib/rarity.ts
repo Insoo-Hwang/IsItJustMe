@@ -7,6 +7,8 @@ export type { Tone }
 
 export type PickedChoice = {
   n: number
+  // question code
+  id: string
   // which option I picked
   side: Choice
   prompt: string
@@ -37,6 +39,7 @@ export function tierOf(minority: number, picks: number): { tier: string; tone: T
 function picksOf(questions: Question[], answers: Choice[]): PickedChoice[] {
   return questions.map((q, i) => ({
     n: i + 1,
+    id: q.id,
     side: answers[i],
     prompt: q.prompt,
     choice: answers[i] === 'a' ? q.a : q.b,

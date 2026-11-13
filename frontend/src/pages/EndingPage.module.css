@@ -364,3 +364,56 @@
 .ad {
   margin-top: 24px;
 }
+
+/* the letter's end: who wrote it, then the line that stays */
+.letterBody .signature {
+  margin-top: 8px;
+  text-align: right;
+  color: var(--ink-3);
+  font-size: 15px;
+}
+.lastLine {
+  margin-top: 40px;
+  font-size: 21px;
+  font-weight: 750;
+  line-height: 1.55;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  text-wrap: balance;
+  opacity: 0;
+  animation: appear 1.2s ease-out 3.8s forwards;
+}
+
+/* short card to share after reading */
+.endCard {
+  margin-top: 40px;
+  padding: 24px 20px 20px;
+  border-radius: 20px;
+  background: color-mix(in oklch, var(--tier) 22%, var(--surface));
+  box-shadow: var(--shadow-card), inset 0 0 0 1px var(--hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.endCardLabel {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--tier-deep);
+}
+.endCardQuote {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.endCardNote {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.endCardShare {
+  flex: none;
+  margin-top: 8px;
+}
