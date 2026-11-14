@@ -53,3 +53,24 @@
   font-weight: 700;
   fill: var(--other-deep);
 }
+
+/* the shape grows out of the middle; a second person's shape follows a moment later */
+.area,
+.dot,
+.otherArea,
+.otherDot {
+  transform-box: view-box;
+  transform-origin: 150px 150px;
+  animation: grow 0.8s var(--ease-out) both;
+}
+.otherArea,
+.otherDot {
+  animation-delay: 0.25s;
+}
+
+@keyframes grow {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
+import CountUp from '../components/CountUp.tsx'
 import Icon from '../components/Icon.tsx'
 import TopBar from '../components/TopBar.tsx'
 import ui from '../components/ui.module.css'
@@ -82,7 +83,9 @@ function DebatePage() {
                       {c === pick && <span className={styles.tag}>{name}</span>}
                       {c === mine && <span className={`${styles.tag} ${styles.me}`}>나</span>}
                     </span>
-                    <span className={styles.barRate}>{Math.round(rateOf(c))}%</span>
+                    <span className={styles.barRate}>
+                      <CountUp to={Math.round(rateOf(c))} />%
+                    </span>
                   </div>
                   <div className={styles.track}>
                     <span style={{ width: `${rateOf(c)}%` }} />

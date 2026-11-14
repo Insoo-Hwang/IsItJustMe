@@ -119,18 +119,6 @@
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
-.start {
-  height: 40px;
-  padding: 0 14px 0 16px;
-  border-radius: 999px;
-  background: var(--cta);
-  color: var(--on-cta);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 14px;
-  font-weight: 650;
-}
 
 /* categories */
 .section {
@@ -219,60 +207,103 @@
   line-height: 1.35;
 }
 
-.summary {
+/* the last result: a teaser while locked, a call to open it once every test is done */
+.final {
   margin-top: 16px;
-  width: 100%;
-  padding: 18px 20px 16px;
+  padding: 18px 20px;
   border-radius: var(--radius-card);
-  background: var(--fill);
-  color: var(--on-fill);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  text-align: left;
-  transition: transform 0.2s var(--ease-out);
 }
-.summary:active {
-  transform: scale(0.985);
-}
-.summaryMain {
+.finalHead {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
 }
-.summaryText {
+.finalLabel {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  font-weight: 700;
-}
-.summaryCount {
+  gap: 6px;
   font-size: 14px;
+  font-weight: 650;
+  color: var(--ink-2);
+}
+.finalCount {
+  font-size: 13px;
   font-weight: 600;
-  opacity: 0.6;
+  color: var(--ink-3);
   font-variant-numeric: tabular-nums;
 }
-.summaryTrack {
-  height: 4px;
+.finalTitle {
+  margin-top: 14px;
+  font-size: 18px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+.finalSub {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+.finalTrack {
+  margin-top: 16px;
+  height: 6px;
   border-radius: 999px;
-  background: color-mix(in oklch, currentColor 18%, transparent);
+  background: var(--surface-2);
   overflow: hidden;
 }
-.summaryTrack > span {
+.finalTrack > span {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: currentColor;
+  background: var(--accent);
   transition: width 0.6s var(--ease-out);
 }
-.summaryLocked {
-  background: var(--surface);
+.finalHint {
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--ink-2);
-  box-shadow: var(--shadow-card);
 }
-.summaryLocked .summaryTrack > span {
-  background: var(--accent);
+
+.finalOpen {
+  background: var(--fill);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--on-fill) 14%, transparent);
+  animation: rise 0.5s var(--ease-out) both;
+}
+.finalOpen .finalLabel {
+  font-size: 16px;
+  font-weight: 750;
+  color: var(--on-fill);
+}
+.finalOpen .finalSub {
+  color: color-mix(in oklch, var(--on-fill) 80%, transparent);
+}
+.finalBadge {
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+.sparkle {
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+.finalButton {
+  margin-top: 16px;
+  flex: none;
+}
+.finalArrow {
+  animation: nudge 1.6s ease-in-out infinite;
 }
 
 .compare {
@@ -330,6 +361,17 @@
 @keyframes appear {
   from {
     opacity: 0;
+  }
+}
+@keyframes twinkle {
+  50% {
+    opacity: 0.55;
+    transform: scale(0.85) rotate(12deg);
+  }
+}
+@keyframes nudge {
+  50% {
+    transform: translateX(3px);
   }
 }
 @keyframes pulse {

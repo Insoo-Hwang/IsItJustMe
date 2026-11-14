@@ -13,6 +13,7 @@ import { drawShareImage, type ShareImageData } from '../lib/shareImage.ts'
 import { cardBlob } from '../lib/tasteCard.ts'
 import { showToast } from '../lib/toast.ts'
 import Icon from './Icon.tsx'
+import KakaoMark from './KakaoMark.tsx'
 import sheet from './NameSheet.module.css'
 import styles from './ShareSheet.module.css'
 
@@ -25,15 +26,6 @@ type Props = {
   // a channel was used (not when the visitor backed out of it)
   onShare?: (channel: ShareChannel) => void
   onClose: () => void
-}
-
-// A speech bubble with a tail, drawn here: the Material icon font has no KakaoTalk mark.
-function KakaoMark() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M12 3.6c-5.2 0-9.4 3.3-9.4 7.4 0 2.6 1.7 4.9 4.3 6.2l-.9 3.3c-.1.4.3.7.6.5l3.9-2.6c.5.1 1 .1 1.5.1 5.2 0 9.4-3.3 9.4-7.5S17.2 3.6 12 3.6z" />
-    </svg>
-  )
 }
 
 // Bottom sheet with the ways to share a link: KakaoTalk, copy, and the phone's share sheet.
@@ -143,7 +135,8 @@ function ShareSheet({ share, image, imagePending, onShare, onClose }: Props) {
         <div className={styles.channels}>
           {kakaoEnabled && (
             <button type="button" className={styles.channel} onClick={kakao} disabled={sender === undefined}>
-              <span className={`${styles.mark} ${styles.kakao}`}>
+              {/* grey while it gets ready, then KakaoTalk's yellow with a little bounce */}
+              <span className={`${styles.mark} ${sender === undefined ? '' : styles.kakao}`}>
                 <KakaoMark />
               </span>
               {sender === undefined ? '준비 중…' : '카카오톡'}

@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from 'react'
+import { useState, type CSSProperties, type KeyboardEvent } from 'react'
 import type { PlanetDto } from '../api/rooms.ts'
 import { withAnd, withRang } from '../lib/korean.ts'
 import { matchLine } from '../lib/room.ts'
@@ -39,6 +39,14 @@ function position(index: number, match: number): [number, number] {
 
 const label = (p: PlanetDto) => (p.me ? `${p.name}(나)` : p.name)
 
+// Planets fly out of the sun to their places one after another, the first 12 a little apart.
+const arrival = (index: number, x: number, y: number) =>
+  ({
+    '--from-x': `${CENTER - x}px`,
+    '--from-y': `${CENTER - y}px`,
+    animationDelay: `${150 + Math.min(index, 12) * 70}ms`,
+  }) as CSSProperties
+
 // The owner in the middle and every planet around them by match. Only owner-planet
 // pairs mean anything; distances between planets do not. A picked planet shows its
 // match; only the owner also sees the answers behind it.
@@ -67,7 +75,8 @@ function TasteUniverse({ ownerName: owner, planets, preview = false, ownerToken 
             return (
               <line
                 key={p.id}
-                className={p.id === selected?.id ? styles.linkSelected : styles.link}
+                style={arrival(i, x, y)}
+                className={`${p.id === selected?.id ? styles.linkSelected : styles.link} ${styles.linkIn}`}
                 x1={CENTER}
                 y1={CENTER}
                 x2={x}
@@ -87,6 +96,7 @@ function TasteUniverse({ ownerName: owner, planets, preview = false, ownerToken 
               <g
                 key={p.id}
                 className={styles.planet}
+                style={arrival(i, x, y)}
                 {...(preview
                   ? {}
                   : {

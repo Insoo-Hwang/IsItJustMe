@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router'
 import Icon from '../components/Icon.tsx'
+import ui from '../components/ui.module.css'
 import { CATEGORIES, QUESTION_COUNT, totalTests } from '../data/categories.ts'
 import { withAnd } from '../lib/korean.ts'
 import { invitePath, useInviteRoom } from '../lib/room.ts'
@@ -58,11 +59,6 @@ function LandingPage() {
   const doneCount = CATEGORIES.filter((c) => results[c.id]).length
   const allDone = doneCount === CATEGORIES.length
 
-  const openSummary = () => {
-    if (allDone) navigate('/summary')
-    else showToast(`테스트 ${CATEGORIES.length}개를 모두 끝내면 볼 수 있어요`)
-  }
-
   const openInvite = () => {
     if (!invited) return
     if (allDone) navigate(invitePath(invited.token))
@@ -74,8 +70,6 @@ function LandingPage() {
     const next = firstUnanswered(answers[catId])
     return `/test/${catId}/q/${(next < 0 ? QUESTION_COUNT - 1 : next) + 1}`
   }
-
-  const start = () => document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })
 
   return (
     <div className={styles.landing}>
@@ -108,12 +102,6 @@ function LandingPage() {
           <span className={styles.total}>
             <b>{totalTests().toLocaleString('ko-KR')}</b>건의 테스트가 진행됐어요
           </span>
-          {doneCount === 0 && (
-            <button type="button" className={styles.start} onClick={start}>
-              시작하기
-              <Icon name="arrow_downward" size={18} />
-            </button>
-          )}
         </div>
       </section>
 
@@ -165,25 +153,42 @@ function LandingPage() {
           })}
         </div>
 
-        <button
-          type="button"
-          className={`${styles.summary} ${allDone ? '' : styles.summaryLocked}`}
-          aria-disabled={!allDone}
-          onClick={openSummary}
-        >
-          <span className={styles.summaryMain}>
-            <span className={styles.summaryText}>
-              <Icon name={allDone ? 'auto_awesome' : 'lock'} size={20} filled={allDone} />
-              종합 결과 보기
+        {allDone ? (
+          <section className={`${styles.final} ${styles.finalOpen}`} aria-label="최종 결과">
+            <div className={styles.finalHead}>
+              <span className={styles.finalLabel}>
+                <Icon name="auto_awesome" size={20} filled className={styles.sparkle} />
+                모든 취향을 알아봤어요!
+              </span>
+              <span className={styles.finalBadge}>
+                {doneCount}/{CATEGORIES.length}
+              </span>
+            </div>
+            <p className={styles.finalSub}>이제 마지막 비교 상대를 확인할 차례예요.</p>
+            <button type="button" className={`${ui.primary} ${ui.large} ${styles.finalButton}`} onClick={() => navigate('/summary')}>
+              나의 최종 결과 확인하기
+              <Icon name="arrow_forward" size={20} className={styles.finalArrow} />
+            </button>
+          </section>
+        ) : (
+          <section className={styles.final} aria-label="마지막 결과">
+            <div className={styles.finalHead}>
+              <span className={styles.finalLabel}>
+                <Icon name="lock" size={18} />
+                마지막 결과
+              </span>
+              <span className={styles.finalCount}>
+                {doneCount}/{CATEGORIES.length}
+              </span>
+            </div>
+            <h3 className={styles.finalTitle}>당신과 똑같은 사람은 몇 명일까요?</h3>
+            <p className={styles.finalSub}>희귀도 순위, 완전히 일치하는 사람, 그리고 마지막 비교 상대까지.</p>
+            <span className={styles.finalTrack} aria-hidden>
+              <span style={{ width: `${(doneCount / CATEGORIES.length) * 100}%` }} />
             </span>
-            <span className={styles.summaryCount}>
-              {doneCount}/{CATEGORIES.length}
-            </span>
-          </span>
-          <span className={styles.summaryTrack} aria-hidden>
-            <span style={{ width: `${(doneCount / CATEGORIES.length) * 100}%` }} />
-          </span>
-        </button>
+            <p className={styles.finalHint}>{CATEGORIES.length - doneCount}개의 취향만 더 알아보면 공개돼요</p>
+          </section>
+        )}
 
         {invited && (
           <button

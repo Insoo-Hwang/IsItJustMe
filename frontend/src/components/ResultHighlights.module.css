@@ -96,7 +96,8 @@
   font-size: 14px;
   font-weight: 750;
   font-variant-numeric: tabular-nums;
-  animation: grow 0.8s var(--ease-out) both;
+  /* holds at 50:50 for a moment, then pulls with a small overshoot */
+  animation: grow 0.9s cubic-bezier(0.34, 1.4, 0.64, 1) 0.35s both;
 }
 .splitA {
   background: var(--side-a);
@@ -140,8 +141,9 @@
   color: var(--ink-3);
 }
 
+/* a tug of war: both sides start even, then the line slips toward the losing side */
 @keyframes grow {
   from {
-    flex-grow: 0;
+    flex-grow: 50;
   }
 }

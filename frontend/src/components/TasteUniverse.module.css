@@ -50,6 +50,37 @@
 .planet {
   cursor: pointer;
   outline: none;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: arrive 0.7s var(--ease-out) both;
+}
+.linkIn {
+  animation: appear 0.5s ease-out both;
+}
+/* the ring of the picked planet pops in */
+.halo {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: halo 0.4s var(--ease-out) both;
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    translate: var(--from-x) var(--from-y);
+    scale: 0.3;
+  }
+}
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes halo {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
 }
 .planet:focus-visible .halo,
 .halo {

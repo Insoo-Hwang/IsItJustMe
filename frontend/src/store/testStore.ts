@@ -23,6 +23,8 @@ export type TestState = {
   lastName: string
   // the last ending seen to the letter, only on this device
   ending: SavedEnding | null
+  // the opening animation before the first test was shown, only on this device
+  introSeen: boolean
 }
 
 export type SavedEnding = {
@@ -39,7 +41,7 @@ export type Invite = {
 }
 
 const KEY = 'rarity-test-v1'
-const EMPTY: TestState = { answers: {}, results: {}, profile: null, invite: null, lastName: '', ending: null }
+const EMPTY: TestState = { answers: {}, results: {}, profile: null, invite: null, lastName: '', ending: null, introSeen: false }
 
 function load(): TestState {
   try {
@@ -156,4 +158,13 @@ export function setLastName(lastName: string) {
 
 export function saveEnding(ending: SavedEnding) {
   setState((s) => ({ ...s, ending }))
+}
+
+// A guest who has not answered anything yet and has not seen the opening animation.
+export function isFirstVisit(): boolean {
+  return !state.introSeen && Object.keys(state.results).length === 0 && Object.values(state.answers).every((a) => answeredCount(a) === 0)
+}
+
+export function markIntroSeen() {
+  if (!state.introSeen) setState((s) => ({ ...s, introSeen: true }))
 }

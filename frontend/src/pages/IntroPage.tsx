@@ -1,9 +1,18 @@
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import Icon from '../components/Icon.tsx'
+import IntroMovie from '../components/IntroMovie.tsx'
 import TopBar from '../components/TopBar.tsx'
 import ui from '../components/ui.module.css'
 import { findCategory, QUESTION_COUNT } from '../data/categories.ts'
-import { answeredCount, clearAnswers, firstUnanswered, useTestState } from '../store/testStore.ts'
+import {
+  answeredCount,
+  clearAnswers,
+  firstUnanswered,
+  isFirstVisit,
+  markIntroSeen,
+  useTestState,
+} from '../store/testStore.ts'
 import styles from './IntroPage.module.css'
 import NotFoundPage from './NotFoundPage.tsx'
 
@@ -11,6 +20,12 @@ function IntroPage() {
   const { catId } = useParams()
   const navigate = useNavigate()
   const { answers, results } = useTestState()
+  // decided once on arrival: the movie plays over the first test's start screen, only once
+  const [movie, setMovie] = useState(isFirstVisit)
+  useEffect(() => {
+    if (movie) markIntroSeen()
+  }, [movie])
+
   const category = findCategory(catId)
   if (!category) return <NotFoundPage />
 
@@ -83,6 +98,7 @@ function IntroPage() {
           </button>
         )}
       </div>
+      {movie && <IntroMovie onDone={() => setMovie(false)} />}
     </div>
   )
 }

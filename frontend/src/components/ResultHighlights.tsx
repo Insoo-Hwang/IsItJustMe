@@ -1,5 +1,6 @@
 import type { Question } from '../data/categories.ts'
 import type { PickedChoice } from '../lib/rarity.ts'
+import CountUp from './CountUp.tsx'
 import DebateShareButton from './DebateShareButton.tsx'
 import styles from './ResultHighlights.module.css'
 import ui from './ui.module.css'
@@ -32,10 +33,10 @@ function ResultHighlights({ categoryId, questions, picks, show }: Props) {
         <p className={styles.fightPrompt}>{contested.prompt}</p>
         <div className={styles.split} aria-hidden>
           <span className={styles.splitA} style={{ flexGrow: Math.max(contestedA, 8) }}>
-            {contestedA}%
+            <CountUp from={50} to={contestedA} after={350} duration={900} />%
           </span>
           <span className={styles.splitB} style={{ flexGrow: Math.max(100 - contestedA, 8) }}>
-            {100 - contestedA}%
+            <CountUp from={50} to={100 - contestedA} after={350} duration={900} />%
           </span>
         </div>
         <div className={styles.splitLabels}>

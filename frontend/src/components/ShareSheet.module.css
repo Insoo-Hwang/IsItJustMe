@@ -56,4 +56,15 @@
 .kakao {
   background: #fee500;
   color: #191919;
+  animation: ready 0.45s var(--ease-out);
+}
+
+@keyframes ready {
+  0% {
+    background: var(--surface-3);
+    color: var(--ink);
+  }
+  50% {
+    transform: scale(1.15);
+  }
 }
