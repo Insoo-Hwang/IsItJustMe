@@ -21,6 +21,9 @@ public enum EventType {
 	/** A "나만 그래?" link was shared from a category result. */
 	SHARE_DEBATE,
 
+	/** A share went out through KakaoTalk; counted on top of the share it belongs to. */
+	SHARE_KAKAO,
+
 	/** A friend opened an invite link. */
 	INVITE_OPEN,
 

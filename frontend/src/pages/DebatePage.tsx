@@ -34,7 +34,7 @@ function DebatePage() {
   const d = story.debate
   const rateOf = (c: Choice) => (c === 'a' ? question.aRate : 100 - question.aRate)
   const label = (c: Choice) => (c === 'a' ? question.a : question.b)
-  const values = (c: Choice) => ({ name, prompt: question.prompt, choice: label(pick), rate: rateOf(c) })
+  const values = (c: Choice) => ({ name, prompt: question.prompt, a: question.a, b: question.b, choice: label(pick), rate: rateOf(c) })
   const done = results[category.id] != null
 
   // The side taken here is also the answer to this question in the test that follows.

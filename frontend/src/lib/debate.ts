@@ -15,15 +15,17 @@ export function parseDebate(search: URLSearchParams): { pick: Choice; name: stri
   return { pick, name }
 }
 
-type Values = { name: string; prompt: string; choice: string; rate: number }
+type Values = { name: string; prompt: string; a: string; b: string; choice: string; rate: number }
 
 // Fills the placeholders of a STORY.md 3-5 line.
-export function fillDebate(line: string, { name, prompt, choice, rate }: Values): string {
+export function fillDebate(line: string, { name, prompt, a, b, choice, rate }: Values): string {
   return line
     .replaceAll('{이름은}', withTopic(name))
     .replaceAll('{이름이랑}', withRang(name))
     .replaceAll('{이름}', name)
     .replaceAll('{질문}', prompt)
     .replaceAll('{선택}', choice)
+    .replaceAll('{A}', a)
+    .replaceAll('{B}', b)
     .replaceAll('{비율}', String(Math.round(rate)))
 }

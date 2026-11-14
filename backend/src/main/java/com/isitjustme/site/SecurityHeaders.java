@@ -19,13 +19,20 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class SecurityHeaders extends OncePerRequestFilter {
 
-	static final String CONTENT_POLICY = String.join("; ", "default-src 'self'", "script-src 'self'",
+	static final String CONTENT_POLICY = String.join("; ", "default-src 'self'",
+			// the KakaoTalk share SDK, loaded with an integrity hash (lib/share.ts)
+			"script-src 'self' https://t1.kakaocdn.net",
 			// React sets style attributes; the stylesheets of the fonts and icons are external
 			"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
 			"font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net",
 			// the taste card is drawn to a canvas and saved as a data or blob image
-			"img-src 'self' data: blob:", "connect-src 'self'", "object-src 'none'", "base-uri 'self'",
-			"form-action 'self'", "frame-ancestors 'none'");
+			"img-src 'self' data: blob:",
+			// the SDK uploads the share picture and checks the message with Kakao's API
+			"connect-src 'self' https://kapi.kakao.com",
+			// on Android browsers without intent links the SDK opens KakaoTalk from a hidden frame
+			"frame-src 'self' kakaolink:", "object-src 'none'", "base-uri 'self'",
+			// on a desktop the SDK posts the message to Kakao's share popup
+			"form-action 'self' https://sharer.kakao.com", "frame-ancestors 'none'");
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)

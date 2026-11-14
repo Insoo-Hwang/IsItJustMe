@@ -2,10 +2,11 @@ import { useState } from 'react'
 import type { Choice } from '../data/categories.ts'
 import story from '../data/story.ts'
 import { debatePath, fillDebate } from '../lib/debate.ts'
-import { showToast } from '../lib/toast.ts'
+import type { ShareChannel } from '../lib/share.ts'
 import { track } from '../lib/track.ts'
 import Icon from './Icon.tsx'
 import NameSheet from './NameSheet.tsx'
+import ShareSheet from './ShareSheet.tsx'
 import ui from './ui.module.css'
 
 type Props = {
@@ -14,50 +15,52 @@ type Props = {
   n: number
   pick: Choice
   prompt: string
-  choice: string
+  // the two options of the question
+  a: string
+  b: string
   rate: number
 }
 
 // Shares a link that asks friends to take a side on one of my picks.
-function DebateShareButton({ className, categoryId, n, pick, prompt, choice, rate }: Props) {
-  const [open, setOpen] = useState(false)
+function DebateShareButton({ className, categoryId, n, pick, prompt, a, b, rate }: Props) {
+  const [asking, setAsking] = useState(false)
+  const [name, setName] = useState<string | null>(null)
 
-  const share = async (name: string) => {
-    setOpen(false)
+  const shared = (channel: ShareChannel) => {
     track('SHARE_DEBATE', categoryId)
-    const url = `${location.origin}${debatePath(categoryId, n, pick, name)}`
-    const text = fillDebate(story.debate.shareText, { name, prompt, choice, rate })
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: story.debate.title, text, url })
-        return
-      } catch (err) {
-        if (err instanceof DOMException && err.name === 'AbortError') return
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(`${text}\n${url}`)
-      showToast('링크를 복사했어요')
-    } catch (err) {
-      console.error(err)
-      showToast('링크를 복사하지 못했어요')
-    }
+    if (channel === 'kakao') track('SHARE_KAKAO', categoryId)
   }
 
   return (
     <>
-      <button type="button" className={`${className} ${ui.share}`} onClick={() => setOpen(true)}>
+      <button type="button" className={`${className} ${ui.share}`} onClick={() => setAsking(true)}>
         <Icon name="ios_share" size={22} />
         공유하기
       </button>
-      {open && (
+      {asking && (
         <NameSheet
           title="친구에게 보여줄 이름"
           description="논쟁 화면에 이 이름과 내 선택이 보여요."
-          confirmLabel="링크 공유하기"
+          confirmLabel="다음"
           share
-          onSubmit={(name) => void share(name)}
-          onClose={() => setOpen(false)}
+          onSubmit={(value) => {
+            setAsking(false)
+            setName(value)
+          }}
+          onClose={() => setAsking(false)}
+        />
+      )}
+      {name != null && (
+        <ShareSheet
+          share={{
+            title: story.debate.title,
+            text: fillDebate(story.debate.shareText, { name, prompt, a, b, choice: pick === 'a' ? a : b, rate }),
+            button: '내 편 고르기',
+            url: `${location.origin}${debatePath(categoryId, n, pick, name)}`,
+          }}
+          image={{ kind: 'debate', name, prompt, a, b, pick }}
+          onShare={shared}
+          onClose={() => setName(null)}
         />
       )}
     </>

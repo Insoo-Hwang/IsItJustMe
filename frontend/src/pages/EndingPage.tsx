@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router'
 import { useScrollContainer } from '../app/scrollContainer.ts'
 import AdCard from '../components/AdCard.tsx'
 import Icon from '../components/Icon.tsx'
+import ShareSheet from '../components/ShareSheet.tsx'
 import tier from '../components/tier.module.css'
 import ui from '../components/ui.module.css'
 import {
@@ -26,8 +27,7 @@ import {
 } from '../data/ending.ts'
 import { BACKGROUNDS, preloadArt, spriteOf } from '../data/endingArt.ts'
 import { useSummary, type SummaryRow } from '../lib/summary.ts'
-import { showToast } from '../lib/toast.ts'
-import { trackOnce } from '../lib/track.ts'
+import { track, trackOnce } from '../lib/track.ts'
 import { saveEnding, useTestState } from '../store/testStore.ts'
 import EndingDialogue from './EndingDialogue.tsx'
 import styles from './EndingPage.module.css'
@@ -50,25 +50,6 @@ function usable(plan: EndingPlan): boolean {
   return plan.scenes.every(known) && plan.letter.every(known) && (plan.combo == null || STORY.combos.some((c) => c.id === plan.combo))
 }
 
-async function shareEnding(text: string) {
-  const url = location.origin
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: '나만 그래?', text, url })
-      return
-    } catch (err) {
-      // closed the share sheet
-      if (err instanceof DOMException && err.name === 'AbortError') return
-    }
-  }
-  try {
-    await navigator.clipboard.writeText(`${text}\n${url}`)
-    showToast('공유 문구를 복사했어요')
-  } catch {
-    showToast('공유하지 못했어요. 다시 시도해주세요')
-  }
-}
-
 // The last match: the user's younger self. The dialogue and the letter are put together
 // from the overall tier, the memory answers and the two picks made in the ending.
 function EndingPage() {
@@ -79,6 +60,7 @@ function EndingPage() {
   const [phase, setPhase] = useState<Phase>('intro')
   const [guess, setGuess] = useState<Guess>('unsure')
   const [self, setSelf] = useState<Self>('unsure')
+  const [sharing, setSharing] = useState(false)
 
   useLayoutEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = 0
@@ -236,7 +218,7 @@ function EndingPage() {
             <div className={styles.endCardLabel}>나만 그래? · {overall.tier}</div>
             <p className={styles.endCardQuote}>{letter.last}</p>
             <p className={styles.endCardNote}>마지막 비교 상대는 나 자신이었어</p>
-            <button type="button" className={`${ui.dark} ${styles.endCardShare}`} onClick={() => void shareEnding(`${JOIN.shareText}\n“${letter.last}”`)}>
+            <button type="button" className={`${ui.dark} ${styles.endCardShare}`} onClick={() => setSharing(true)}>
               <Icon name="ios_share" size={20} />
               공유하기
             </button>
@@ -259,6 +241,18 @@ function EndingPage() {
           </div>
           <AdCard placement="ENDING_BANNER" className={styles.ad} />
         </article>
+      )}
+      {sharing && phase === 'letter' && (
+        <ShareSheet
+          share={{
+            title: '나만 그래?',
+            text: `${JOIN.shareText}\n“${letter.last}”`,
+            button: '나도 해보기',
+            url: location.origin,
+          }}
+          onShare={(channel) => channel === 'kakao' && track('SHARE_KAKAO')}
+          onClose={() => setSharing(false)}
+        />
       )}
     </div>
   )

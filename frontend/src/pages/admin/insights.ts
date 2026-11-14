@@ -15,6 +15,7 @@ export const EVENT_LABELS: Record<string, string> = {
   AD_SKIP: '광고 건너뛰기',
   SHARE_UNIVERSE: '취향 우주 공유',
   SHARE_DEBATE: '나만 그래? 공유',
+  SHARE_KAKAO: '카카오톡으로 공유',
   INVITE_OPEN: '초대 링크 열람',
   DEBATE_OPEN: '나만 그래? 링크 열람',
   DEBATE_PICK: '나만 그래? 편 고르기',

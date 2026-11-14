@@ -7,6 +7,7 @@ export type EventType =
   | 'AD_SKIP'
   | 'SHARE_UNIVERSE'
   | 'SHARE_DEBATE'
+  | 'SHARE_KAKAO'
   | 'INVITE_OPEN'
   | 'DEBATE_OPEN'
   | 'DEBATE_PICK'

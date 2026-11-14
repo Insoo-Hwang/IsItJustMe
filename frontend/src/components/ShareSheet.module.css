@@ -1,0 +1,59 @@
+/* the backdrop, sheet, title and description come from NameSheet.module.css */
+.preview {
+  margin-top: 16px;
+  border-radius: var(--radius-button);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+.preview img,
+.placeholder {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+}
+.placeholder {
+  background: var(--surface-2);
+}
+.channels {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+.channel {
+  flex: 1;
+  max-width: 120px;
+  padding: 8px 4px;
+  border-radius: var(--radius-button);
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  transition: transform 0.2s var(--ease-out);
+}
+.channel:active {
+  transform: scale(0.96);
+}
+.channel:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.mark {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* KakaoTalk's own yellow and near-black, the same in light and dark */
+.kakao {
+  background: #fee500;
+  color: #191919;
+}

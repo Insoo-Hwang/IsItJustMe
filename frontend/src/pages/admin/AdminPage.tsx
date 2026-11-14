@@ -175,7 +175,7 @@ function Body({ d }: { d: Dashboard }) {
         : `전체의 ${pct(rate(step.count, first))} · 앞 단계의 ${pct(rate(step.count, d.funnel[i - 1].count))}`,
   }))
 
-  const actions = ['SHARE_UNIVERSE', 'INVITE_OPEN', 'SHARE_DEBATE', 'DEBATE_OPEN', 'DEBATE_PICK', 'CARD_SAVE', 'ENDING_OPEN']
+  const actions = ['SHARE_UNIVERSE', 'INVITE_OPEN', 'SHARE_DEBATE', 'SHARE_KAKAO', 'DEBATE_OPEN', 'DEBATE_PICK', 'CARD_SAVE', 'ENDING_OPEN']
   const people = AGE_GROUPS.map((age) => ({
     label: age.label,
     values: GENDERS.map(

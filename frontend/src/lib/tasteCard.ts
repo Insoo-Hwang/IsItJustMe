@@ -21,37 +21,37 @@ export const CARD_HEIGHT = 1440
 
 // The light tier colors from tier.module.css. The card is an image people pass around, so
 // it keeps the light look even when the page is dark.
-const TONES: Record<Tone, { soft: string; light: string; deep: string }> = {
+export const TONES: Record<Tone, { soft: string; light: string; deep: string }> = {
   common: { soft: 'oklch(0.95 0.03 255)', light: 'oklch(0.86 0.07 255)', deep: 'oklch(0.5 0.15 260)' },
   firm: { soft: 'oklch(0.95 0.035 170)', light: 'oklch(0.85 0.07 170)', deep: 'oklch(0.48 0.1 170)' },
   unique: { soft: 'oklch(0.955 0.03 45)', light: 'oklch(0.86 0.08 45)', deep: 'oklch(0.55 0.16 38)' },
   rare: { soft: 'oklch(0.95 0.035 300)', light: 'oklch(0.85 0.08 300)', deep: 'oklch(0.5 0.17 300)' },
 }
-const INK = 'oklch(0.2 0.006 286)'
-const INK_2 = 'oklch(0.44 0.008 286)'
-const INK_3 = 'oklch(0.6 0.008 286)'
-const SURFACE = 'oklch(1 0 0)'
-const SURFACE_2 = 'oklch(0.965 0.003 286)'
-const HAIRLINE = 'oklch(0.2 0.01 286 / 0.1)'
+export const INK = 'oklch(0.2 0.006 286)'
+export const INK_2 = 'oklch(0.44 0.008 286)'
+export const INK_3 = 'oklch(0.6 0.008 286)'
+export const SURFACE = 'oklch(1 0 0)'
+export const SURFACE_2 = 'oklch(0.965 0.003 286)'
+export const HAIRLINE = 'oklch(0.2 0.01 286 / 0.1)'
 const FONT = "'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif"
 
 const LEFT = 112
 const RIGHT = CARD_WIDTH - 112
 const WIDTH = RIGHT - LEFT
 
-type Ctx = CanvasRenderingContext2D
+export type Ctx = CanvasRenderingContext2D
 
-function font(ctx: Ctx, size: number, weight = 500) {
+export function font(ctx: Ctx, size: number, weight = 500) {
   ctx.font = `${weight} ${size}px ${FONT}`
 }
 
-function text(ctx: Ctx, value: string, x: number, y: number, align: CanvasTextAlign = 'left') {
+export function text(ctx: Ctx, value: string, x: number, y: number, align: CanvasTextAlign = 'left') {
   ctx.textAlign = align
   ctx.fillText(value, x, y)
 }
 
 // Cuts the text with "…" so it fits in maxWidth.
-function fit(ctx: Ctx, value: string, maxWidth: number): string {
+export function fit(ctx: Ctx, value: string, maxWidth: number): string {
   if (ctx.measureText(value).width <= maxWidth) return value
   let end = value.length
   while (end > 0 && ctx.measureText(`${value.slice(0, end)}…`).width > maxWidth) end--
@@ -59,7 +59,7 @@ function fit(ctx: Ctx, value: string, maxWidth: number): string {
 }
 
 // Breaks at spaces into at most `max` lines.
-function wrap(ctx: Ctx, value: string, maxWidth: number, max: number): string[] {
+export function wrap(ctx: Ctx, value: string, maxWidth: number, max: number): string[] {
   const lines: string[] = []
   let line = ''
   for (const word of value.split(' ')) {
@@ -76,15 +76,17 @@ function wrap(ctx: Ctx, value: string, maxWidth: number, max: number): string[] 
   return [...lines.slice(0, max - 1), fit(ctx, lines.slice(max - 1).join(' '), maxWidth)]
 }
 
-function box(ctx: Ctx, x: number, y: number, w: number, h: number, r: number, fill: string) {
+export function box(ctx: Ctx, x: number, y: number, w: number, h: number, r: number, fill: string) {
   ctx.beginPath()
   ctx.roundRect(x, y, w, h, r)
   ctx.fillStyle = fill
   ctx.fill()
 }
 
-function hexagon(ctx: Ctx, cx: number, cy: number, radius: number, data: TasteCardData, deep: string) {
-  const count = data.axes.length
+// Radar chart of 0 ~ 1 values, clockwise from the top, with a label outside each corner
+// (none when labelSize is 0).
+export function hexagon(ctx: Ctx, cx: number, cy: number, radius: number, axes: TasteCardData['axes'], deep: string, labelSize = 22) {
+  const count = axes.length
   const at = (i: number, r: number): [number, number] => {
     const angle = -Math.PI / 2 + (i * 2 * Math.PI) / count
     return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)]
@@ -97,21 +99,22 @@ function hexagon(ctx: Ctx, cx: number, cy: number, radius: number, data: TasteCa
   ctx.strokeStyle = HAIRLINE
   ctx.lineWidth = 2
   for (const ring of [0.5, 1]) {
-    shape(data.axes.map(() => ring))
+    shape(axes.map(() => ring))
     ctx.stroke()
   }
-  shape(data.axes.map((a) => Math.max(0.04, a.value)))
+  shape(axes.map((a) => Math.max(0.04, a.value)))
   ctx.fillStyle = `color-mix(in oklch, ${deep} 28%, transparent)`
   ctx.fill()
   ctx.strokeStyle = deep
   ctx.lineWidth = 4
   ctx.stroke()
 
-  font(ctx, 22, 600)
+  if (labelSize === 0) return
+  font(ctx, labelSize, 600)
   ctx.fillStyle = INK_2
   ctx.textBaseline = 'middle'
-  data.axes.forEach((a, i) => {
-    const [x, y] = at(i, radius + 34)
+  axes.forEach((a, i) => {
+    const [x, y] = at(i, radius + labelSize * 1.55)
     text(ctx, a.label, x, y, 'center')
   })
   ctx.textBaseline = 'alphabetic'
@@ -203,7 +206,7 @@ export function drawTasteCard(canvas: HTMLCanvasElement, data: TasteCardData) {
 
   // hexagon and categories
   y = 848
-  hexagon(ctx, LEFT + 150, y + 150, 100, data, tone.deep)
+  hexagon(ctx, LEFT + 150, y + 150, 100, data.axes, tone.deep)
   const listX = LEFT + 360
   data.categories.forEach((c, i) => {
     const rowY = y + 40 + i * 46

@@ -259,7 +259,7 @@
 |---|---|
 | 역할 | 광고 노출 · 클릭, 공유, 링크 열람 같은 행동 하나를 어드민 통계용으로 기록한다 |
 | 호출 시점 | 광고가 보일 때(아래쪽 카드는 절반 이상 화면에 들어왔을 때) · 눌릴 때 · 건너뛸 때, 공유했을 때, 초대 · 나만 그래? 링크를 열었을 때, 취향 카드를 저장했을 때, 엔딩에 들어갔을 때. 화면은 응답을 기다리지 않는다 (`lib/track.ts`) |
-| Request | `{ "type": string, "category": string \| null, "ad": string \| null, "placement": string \| null }` — `type`은 `AD_VIEW` · `AD_CLICK` · `AD_SKIP` · `SHARE_UNIVERSE` · `SHARE_DEBATE` · `INVITE_OPEN` · `DEBATE_OPEN` · `DEBATE_PICK` · `CARD_SAVE` · `ENDING_OPEN`, `category`는 카테고리 코드 (없으면 생략). `ad`는 광고 id(`lib/ads.ts`, 영소문자 · 숫자 · `-` 30자 이내), `placement`는 광고 자리(`QUIZ_BREAK` · `ANALYZING` · `RESULT_BANNER` · `SUMMARY_BANNER` · `ENDING_BANNER`). 광고 행동(`AD_*`)은 둘 다 필수, 다른 행동은 보내도 버린다. 쿠키 `guest_token`은 있으면 함께 저장 |
+| Request | `{ "type": string, "category": string \| null, "ad": string \| null, "placement": string \| null }` — `type`은 `AD_VIEW` · `AD_CLICK` · `AD_SKIP` · `SHARE_UNIVERSE` · `SHARE_DEBATE` · `SHARE_KAKAO` · `INVITE_OPEN` · `DEBATE_OPEN` · `DEBATE_PICK` · `CARD_SAVE` · `ENDING_OPEN`, `category`는 카테고리 코드 (없으면 생략). `ad`는 광고 id(`lib/ads.ts`, 영소문자 · 숫자 · `-` 30자 이내), `placement`는 광고 자리(`QUIZ_BREAK` · `ANALYZING` · `RESULT_BANNER` · `SUMMARY_BANNER` · `ENDING_BANNER`). 광고 행동(`AD_*`)은 둘 다 필수, 다른 행동은 보내도 버린다. 쿠키 `guest_token`은 있으면 함께 저장 |
 | Response Body | 없음 |
 
 | 상황 | 상태 코드 | 동작 |
@@ -374,7 +374,7 @@
 
 - **요청 수 제한** (`RateLimitGuard`): 접속 주소마다 1분에 세션 30 · 답 제출 30 · 공유방 · 친구 등록 20 · 행동 기록 120 · 프로필 20회. 넘으면 429. `site.rate-limit.enabled=false`로 끌 수 있음
 - **어드민 잠금** (`AdminAuth`): 한 주소에서 토큰을 10번 틀리면 15분 동안 맞는 토큰도 거절(429). 틀린 시도는 로그에 남음. 점검 모드를 켜고 끈 주소도 로그에 남음
-- **보안 헤더** (`SecurityHeaders`): CSP(자기 스크립트만, 외부는 글꼴 · 아이콘 스타일만), `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`. 배포 빌드로 홈 · 결과 · 종합 · 어드민을 열어 위반 0건 확인
+- **보안 헤더** (`SecurityHeaders`): CSP(자기 스크립트와 카카오톡 공유 SDK만, 외부는 글꼴 · 아이콘 스타일과 카카오 공유 API · 공유 창만), `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`. 배포 빌드로 홈 · 결과 · 종합 · 어드민을 열어 위반 0건 확인
 - **친구 답 역추적 방지**: 우주의 친구 일치율은 등록할 때 고정(`universe_planet.match_percent`). 주인이 답을 바꿔 가며 친구의 답을 알아낼 수 없음
 - **우주 크기 제한**: 한 공유방에 친구 300명까지
 - **이름 검사**: 제어 문자 · 보이지 않는 서식 문자(방향 뒤집기 등) 거절

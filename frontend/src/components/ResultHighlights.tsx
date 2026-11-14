@@ -21,6 +21,7 @@ function ResultHighlights({ categoryId, questions, picks, show }: Props) {
   const contested = picks.reduce((best, p) => (Math.abs(aRateOf(p) - 50) < Math.abs(aRateOf(best) - 50) ? p : best))
   const contestedQuestion = questions[contested.n - 1]
   const contestedA = Math.round(aRateOf(contested))
+  const rarestQuestion = questions[rarest.n - 1]
   const rarestRate = Math.round(rarest.rate)
 
   if (show === 'contested') {
@@ -63,15 +64,18 @@ function ResultHighlights({ categoryId, questions, picks, show }: Props) {
         나는 <b>'{rarest.choice}'</b> 파
       </div>
       <p className={styles.hotTaunt}>나머지 {100 - rarestRate}%는 반대쪽을 골랐어요. 나만 그런 거야?</p>
-      <DebateShareButton
-        className={`${ui.primary} ${ui.large} ${styles.hotButton}`}
-        categoryId={categoryId}
-        n={rarest.n}
-        pick={rarest.side}
-        prompt={rarest.prompt}
-        choice={rarest.choice}
-        rate={rarest.rate}
-      />
+      {rarestQuestion && (
+        <DebateShareButton
+          className={`${ui.primary} ${ui.large} ${styles.hotButton}`}
+          categoryId={categoryId}
+          n={rarest.n}
+          pick={rarest.side}
+          prompt={rarest.prompt}
+          a={rarestQuestion.a}
+          b={rarestQuestion.b}
+          rate={rarest.rate}
+        />
+      )}
     </section>
   )
 }
