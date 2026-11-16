@@ -341,6 +341,84 @@
 
 점검 중 방문자 API의 응답: `503 Service Unavailable`, 본문 `{ "maintenance": true, "message": string }`. 화면은 시작할 때 이 응답을 받으면 점검 안내를 보여준다.
 
+## 내 PC에서 임시 배포
+
+친구에게 보여줄 때처럼 잠깐 외부에 여는 방법이다. 서버 · DB · Redis는 모두 이 PC에서 돌고, Cloudflare 빠른 터널이 HTTPS 주소를 하나 붙여 준다. 계정 · 결제 없이 무료다.
+
+- 주소는 `https://무작위-단어.trycloudflare.com` 형태이고 **열 때마다 바뀐다**.
+- PC가 꺼지거나 절전에 들어가면, 또는 서버 · 터널 · Docker Desktop 중 하나라도 닫으면 사이트도 내려간다.
+- 테스트용이다. 속도 · 접속 유지 보장이 없고, 실제 서비스는 아래 "배포 전 보안 체크리스트"를 따른다.
+
+### 준비 (처음 한 번)
+
+- Docker Desktop, JDK 21, Node.js
+- `cloudflared`: `winget install Cloudflare.cloudflared` (또는 [릴리스](https://github.com/cloudflare/cloudflared/releases)에서 `cloudflared-windows-amd64.exe`)
+- 어드민 토큰: 32바이트 무작위 값을 만들어 저장소 밖에 보관한다. 로컬 `backend/.env`의 값은 쓰지 않는다.
+
+```powershell
+$b = New-Object byte[] 32
+[Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b)
+[Convert]::ToBase64String($b)
+```
+
+### 열기
+
+PowerShell 창 두 개를 쓴다. 명령은 모두 `backend` 폴더 기준이다.
+
+1. **개발 서버를 끈다** (Vite 5173, `bootRun` 8080). Vite가 켜져 있으면 빌드의 `npm ci`가 `node_modules`를 지우지 못해 `EPERM`으로 실패하고, 8080은 배포 서버가 써야 한다.
+2. **jar 빌드** (프론트 빌드 포함, 코드가 바뀌었을 때만):
+
+```powershell
+./gradlew bootJar
+```
+
+3. **DB · Redis 띄우기**. Docker Desktop이 켜져 있어야 한다. `bootRun`과 달리 jar는 컨테이너를 알아서 띄우지 않는다.
+
+```powershell
+docker compose up -d
+```
+
+4. **서버 실행** (첫 번째 창):
+
+```powershell
+$env:ADMIN_TOKEN = "<준비한 어드민 토큰>"
+$env:SPRING_DATASOURCE_URL = "jdbc:postgresql://localhost:5432/isitjustme"
+$env:SPRING_DATASOURCE_USERNAME = "isitjustme"
+$env:SPRING_DATASOURCE_PASSWORD = "secret"
+$env:SERVER_FORWARD_HEADERS_STRATEGY = "native"
+java -jar build/libs/isitjustme-0.0.1-SNAPSHOT.jar
+```
+
+5. **터널 열기** (두 번째 창). 로그에 나오는 `https://….trycloudflare.com`이 외부 주소다.
+
+```powershell
+cloudflared tunnel --url http://localhost:8080
+```
+
+| 설정 | 이유 |
+|---|---|
+| `SPRING_DATASOURCE_*` | 개발 모드의 Docker Compose 연동(`developmentOnly`)이 jar에는 빠져 있어 DB 주소 · 계정을 직접 알려 줘야 한다. Redis는 기본값(`localhost:6379`)으로 붙는다 |
+| `SERVER_FORWARD_HEADERS_STRATEGY=native` | 터널이 넘겨주는 방문자의 실제 주소를 쓴다. 없으면 모든 방문자가 터널 주소 하나로 보여 요청 수 제한 · 어드민 잠금을 나눠 쓰게 된다 |
+| `ADMIN_TOKEN` | 환경 변수가 `backend/.env`의 값보다 우선한다. 비우면 임의 토큰이 로그에 찍힌다 |
+| `bootRun` 대신 `java -jar` | 개발 모드는 오류 응답에 스택 트레이스가 실린다. jar에는 개발 도구가 빠져 있다 |
+
+### 확인
+
+- `<외부 주소>/main`이 열리고, `<외부 주소>/api/v1/rooms/nope`의 404 응답에 `trace`가 없다.
+- `X-Admin-Token`을 틀리게 보내면 401이고, 서버 로그의 `Admin token refused for …`에 `127.0.0.1`이 아니라 요청한 쪽의 공인 주소가 찍힌다.
+
+### 내리기
+
+두 창에서 `Ctrl+C`. DB · Redis까지 내리려면 `docker compose stop`.
+
+`docker compose down`은 쓰지 않는다. `compose.yaml`에 이름 붙은 볼륨이 없어 DB 데이터가 컨테이너에 딸린 익명 볼륨에 있고, 컨테이너를 지우면 다음 `up`은 빈 DB로 시작한다.
+
+### 주의
+
+- DB는 개발에 쓰던 그대로다. 테스트로 넣은 데이터가 있으면 방문자 통계에 섞여 보인다.
+- DB · Redis 포트는 `127.0.0.1`에만 열려 있어 외부에서 접속할 수 없다. 터널로 나가는 것은 8080 하나다.
+- 주소를 아는 사람은 누구나 들어올 수 있다. 다 쓰면 내린다.
+
 ## 배포 전 보안 체크리스트
 
 코드에서 막을 수 있는 것은 이미 막았다 (아래 "지금 적용된 보호"). 여기 남은 것은 배포 환경을 정할 때 함께 해야 하는 일이다.
