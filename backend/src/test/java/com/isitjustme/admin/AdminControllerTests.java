@@ -2,6 +2,7 @@ package com.isitjustme.admin;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -9,6 +10,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -21,8 +23,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import com.isitjustme.mvp.MvpMode;
+import com.isitjustme.mvp.NotifyEmailRepository;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import com.isitjustme.admin.AdminDashboard.Totals;
@@ -35,10 +41,38 @@ class AdminControllerTests {
 	private MockMvc mockMvc;
 
 	@MockitoBean
+	private MvpMode mvp;
+
+	@MockitoBean
+	private NotifyEmailRepository emailRepository;
+
+	@MockitoBean
 	private AdminDashboardRepository dashboardRepository;
 
 	@MockitoBean
 	private AdReportRepository adReportRepository;
+
+	@Test
+	void switchesMvpModeWithTheToken() throws Exception {
+		given(mvp.set(false)).willReturn(new MvpMode.State(false, false, 300, 120));
+		given(emailRepository.count()).willReturn(4L);
+		String body = "{\"enabled\": false}";
+
+		mockMvc.perform(put("/api/v1/admin/mvp").contentType(MediaType.APPLICATION_JSON).content(body))
+			.andExpect(status().isUnauthorized());
+		then(mvp).should(never()).set(anyBoolean());
+
+		mockMvc
+			.perform(put("/api/v1/admin/mvp").header("X-Admin-Token", "let-me-in")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(body))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.enabled").value(false))
+			.andExpect(jsonPath("$.locked").value(false))
+			.andExpect(jsonPath("$.completers").value(120))
+			.andExpect(jsonPath("$.emails").value(4));
+		mockMvc.perform(get("/api/v1/admin/mvp/emails")).andExpect(status().isUnauthorized());
+	}
 
 	@Test
 	void rejectsRequestsWithoutTheToken() throws Exception {

@@ -7,6 +7,7 @@ import App from './App.tsx'
 import BootScreen, { type BootProblem } from './app/BootScreen.tsx'
 import ErrorBoundary from './app/ErrorBoundary.tsx'
 import { loadCategories } from './data/categories.ts'
+import { mvpQuery } from './lib/mvp.ts'
 import { syncResults } from './store/testStore.ts'
 
 const queryClient = new QueryClient()
@@ -22,7 +23,9 @@ function problemOf(err: unknown): BootProblem {
 // the boot screen says why and tries again from here, without reloading the page.
 async function start(): Promise<void> {
   try {
-    syncResults(await loadCategories())
+    // MVP mode decides what the result pages show, so it is known before the first render
+    const [completed] = await Promise.all([loadCategories(), queryClient.prefetchQuery(mvpQuery)])
+    syncResults(completed)
   } catch (err) {
     console.error(err)
     // The admin page has to open during maintenance too, or nobody could switch it off.

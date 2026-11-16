@@ -21,6 +21,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.isitjustme.mvp.MvpMode;
+import com.isitjustme.mvp.NotifyEmailRepository;
+
 import com.isitjustme.admin.AdReportRepository;
 import com.isitjustme.admin.AdminAuth;
 import com.isitjustme.admin.AdminController;
@@ -42,6 +45,12 @@ class MaintenanceGuardTests {
 
 	@Autowired
 	private MaintenanceMode maintenance;
+
+	@MockitoBean
+	private MvpMode mvp;
+
+	@MockitoBean
+	private NotifyEmailRepository emailRepository;
 
 	@MockitoBean
 	private AdminDashboardRepository dashboardRepository;

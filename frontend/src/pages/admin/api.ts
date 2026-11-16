@@ -121,3 +121,36 @@ export async function saveMaintenance(token: string, enabled: boolean, message: 
   if (!res.ok) throw new HttpError(res.status, `maintenance save failed: ${res.status}`)
   return res.json() as Promise<Maintenance>
 }
+
+export type MvpAdmin = {
+  // whether MVP mode is on; off shows every number whatever the count
+  enabled: boolean
+  // whether the numbers are hidden right now
+  locked: boolean
+  goal: number
+  completers: number
+  // addresses left to hear when the numbers open
+  emails: number
+}
+
+export async function fetchMvpAdmin(token: string): Promise<MvpAdmin> {
+  const res = await fetch('/api/v1/admin/mvp', { headers: { 'X-Admin-Token': token } })
+  if (!res.ok) throw new HttpError(res.status, `mvp failed: ${res.status}`)
+  return res.json() as Promise<MvpAdmin>
+}
+
+export async function saveMvpAdmin(token: string, enabled: boolean): Promise<MvpAdmin> {
+  const res = await fetch('/api/v1/admin/mvp', {
+    method: 'PUT',
+    headers: { 'X-Admin-Token': token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ enabled }),
+  })
+  if (!res.ok) throw new HttpError(res.status, `mvp save failed: ${res.status}`)
+  return res.json() as Promise<MvpAdmin>
+}
+
+export async function fetchNotifyEmails(token: string): Promise<{ email: string; createdAt: string }[]> {
+  const res = await fetch('/api/v1/admin/mvp/emails', { headers: { 'X-Admin-Token': token } })
+  if (!res.ok) throw new HttpError(res.status, `emails failed: ${res.status}`)
+  return res.json() as Promise<{ email: string; createdAt: string }[]>
+}

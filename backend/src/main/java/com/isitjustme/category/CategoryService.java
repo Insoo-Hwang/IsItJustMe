@@ -272,7 +272,12 @@ public class CategoryService {
 	public record QuestionView(String code, String prompt, String option0, String option1, int option0Rate) {
 	}
 
-	public record ResultView(int answerBits, Summary overall, PeerView peer, List<QuestionView> questions) {
+	/**
+	 * @param overall empty in MVP mode, while the numbers stay hidden
+	 * @param peer empty in MVP mode, while the numbers stay hidden
+	 */
+	public record ResultView(int answerBits, @Nullable Summary overall, @Nullable PeerView peer,
+			List<QuestionView> questions) {
 	}
 
 	public record PeerView(GuestProfile profile, Summary summary) {

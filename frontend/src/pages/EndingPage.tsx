@@ -85,6 +85,8 @@ function EndingPage() {
   )
 
   if (state.status === 'locked') return <Navigate to="/main" replace />
+  // the ending opens with the overall results
+  if (state.status === 'mvp') return <Navigate to="/summary" replace />
   if (state.status === 'missing') return <Navigate to={`/test/${state.categoryId}`} replace />
   if (state.status === 'error') {
     return (

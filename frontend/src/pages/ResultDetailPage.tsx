@@ -5,6 +5,7 @@ import { fetchQuestionStats, HttpError, type GroupCountDto, type QuestionStatsDt
 import TopBar from '../components/TopBar.tsx'
 import ui from '../components/ui.module.css'
 import { findCategory, fromAnswerBits, type Category } from '../data/categories.ts'
+import { isLocked, useMvp } from '../lib/mvp.ts'
 import { AGE_GROUPS, GENDERS, type AgeGroup, type Gender } from '../lib/profile.ts'
 import styles from './ResultDetailPage.module.css'
 import NotFoundPage from './NotFoundPage.tsx'
@@ -17,14 +18,19 @@ function ResultDetailPage() {
   const { catId } = useParams()
   const navigate = useNavigate()
   const category = findCategory(catId)
+  // the share of each pick stays closed in MVP mode
+  const locked = isLocked(useMvp())
   const query = useQuery({
     // under 'result' so a profile change refreshes it with the result
     queryKey: ['result', category?.id, 'questions'],
     queryFn: () => fetchQuestionStats(category!.id),
-    enabled: category != null,
-    retry: (count, err) => !(err instanceof HttpError && err.status === 404) && count < 2,
+    enabled: category != null && !locked,
+    retry: (count, err) => !(err instanceof HttpError && (err.status === 404 || err.status === 403)) && count < 2,
   })
   if (!category) return <NotFoundPage />
+  if (locked || (query.error instanceof HttpError && query.error.status === 403)) {
+    return <Navigate to={`/result/${category.id}`} replace />
+  }
   if (query.error instanceof HttpError && query.error.status === 404) {
     return <Navigate to={`/test/${category.id}`} replace />
   }

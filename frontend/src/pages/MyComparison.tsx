@@ -7,6 +7,7 @@ import RarityHexagon from '../components/RarityHexagon.tsx'
 import ui from '../components/ui.module.css'
 import { fromAnswerBits, shortName, type Category, type Choice, type Question } from '../data/categories.ts'
 import { withAnd, withTopic } from '../lib/korean.ts'
+import { isLocked, useMvp } from '../lib/mvp.ts'
 import { minorityShare } from '../lib/rarity.ts'
 import { matchLine, roomRetry, rowsOf } from '../lib/room.ts'
 import { showToast } from '../lib/toast.ts'
@@ -61,6 +62,8 @@ function QuestionList({ category, owner, ownerBits, myBits }: QuestionListProps)
 // The owner and the viewer, hexagons drawn over each other. The API compares only the
 // viewer, so nobody sees two other people compared.
 function MyComparison({ token, ownerName: owner }: Props) {
+  // the hexagon is drawn from everyone's picks, closed in MVP mode
+  const locked = isLocked(useMvp())
   const queryClient = useQueryClient()
   const [joining, setJoining] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -132,20 +135,22 @@ function MyComparison({ token, ownerName: owner }: Props) {
         )}
       </section>
 
-      <section className={`${ui.card} ${styles.chartCard} ${styles.pair}`} aria-label="카테고리별 소수 선택 비율">
-        <h2 className={ui.cardTitle}>카테고리별 소수 선택 비율</h2>
-        <div className={styles.legend}>
-          <span className={styles.legendOwner}>{owner}</span>
-          <span className={styles.legendOther}>나</span>
-        </div>
-        <RarityHexagon
-          axes={ownerRows.map((r) => ({ label: shortName(r.category), value: minorityShare(r.rarity) }))}
-          other={myRows.map((r) => minorityShare(r.rarity))}
-        />
-        <p className={styles.note}>
-          문항마다 더 적은 사람이 고른 쪽을 몇 개 골랐는지예요. 모양이 비슷해도 고른 답은 다를 수 있어요.
-        </p>
-      </section>
+      {!locked && (
+        <section className={`${ui.card} ${styles.chartCard} ${styles.pair}`} aria-label="카테고리별 소수 선택 비율">
+          <h2 className={ui.cardTitle}>카테고리별 소수 선택 비율</h2>
+          <div className={styles.legend}>
+            <span className={styles.legendOwner}>{owner}</span>
+            <span className={styles.legendOther}>나</span>
+          </div>
+          <RarityHexagon
+            axes={ownerRows.map((r) => ({ label: shortName(r.category), value: minorityShare(r.rarity) }))}
+            other={myRows.map((r) => minorityShare(r.rarity))}
+          />
+          <p className={styles.note}>
+            문항마다 더 적은 사람이 고른 쪽을 몇 개 골랐는지예요. 모양이 비슷해도 고른 답은 다를 수 있어요.
+          </p>
+        </section>
+      )}
 
       <div className={styles.extremes}>
         <div className={`${ui.card} ${styles.extreme}`}>

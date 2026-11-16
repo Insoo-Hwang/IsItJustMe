@@ -1,10 +1,11 @@
 // Texts of the privacy policy and the terms. Every line here has to match what the code
-// stores; change it together with the code (guest cookie, profile, answers, rooms, events).
+// stores; change it together with the code (guest cookie, profile, answers, rooms, events,
+// notify email).
 
 // Where visitors reach the operator. Empty until the operator sets one.
 export const CONTACT_EMAIL = ''
 
-export const EFFECTIVE_DATE = '2026년 11월 13일'
+export const EFFECTIVE_DATE = '2026년 11월 16일'
 
 export type LegalSection = {
   title: string
@@ -16,7 +17,7 @@ export const PRIVACY: LegalSection[] = [
   {
     title: '한눈에 보기',
     body: [
-      '나만 그래?는 회원가입 없이 쓰는 서비스예요. 이름, 연락처, 이메일처럼 나를 알아볼 수 있는 정보는 받지 않아요.',
+      '나만 그래?는 회원가입 없이 쓰는 서비스예요. 이름, 연락처처럼 나를 알아볼 수 있는 정보는 받지 않아요. 이메일은 결과 공개 알림을 직접 신청할 때만 받아요.',
       '결과를 계산하고 친구와 비교하는 데 필요한 만큼만, 아래 항목을 저장해요.',
     ],
   },
@@ -29,6 +30,7 @@ export const PRIVACY: LegalSection[] = [
         '테스트 답: 카테고리마다 고른 답과 끝낸 시각이에요.',
         '공유 · 친구 등록 때 입력한 이름: 공유 링크를 만들거나 친구 우주에 등록할 때 직접 적은 10자 이내의 이름이에요.',
         '이용 기록: 광고가 보이거나 눌린 일, 공유 버튼, 링크 열람, 취향 카드 저장 같은 행동과 그 시각이에요.',
+        '알림 이메일(선택): 전체 결과 공개 알림을 신청할 때 직접 적은 이메일 주소예요. 신청한 사람만 저장돼요.',
       ],
       '진행 중인 답과 결과 일부는 내 브라우저(localStorage)에도 저장돼요. 이 기록은 서버로 보내지 않아요.',
     ],
@@ -39,6 +41,7 @@ export const PRIVACY: LegalSection[] = [
       [
         '나와 같은 답을 고른 사람의 비율, 또래 비교, 종합 결과를 계산해요.',
         '공유 링크로 들어온 친구와 취향을 비교해 보여줘요.',
+        '알림 이메일로는 전체 결과가 공개됐다는 안내만 한 번 보내요.',
         '서비스를 고치고 광고 성과를 보는 통계를 만들어요. 광고주에게는 개인을 알아볼 수 없는 합계(노출 수, 클릭 수, 나이대 · 성별 비율 등)만 전해요.',
       ],
     ],
@@ -47,6 +50,7 @@ export const PRIVACY: LegalSection[] = [
     title: '보관 기간',
     body: [
       '쿠키는 180일이 지나면 브라우저에서 사라져요. 서버의 기록은 서비스를 운영하는 동안 보관하고, 삭제를 요청하면 지체 없이 지워요.',
+      '알림 이메일은 공개 알림을 보낸 뒤 지워요.',
       '여러 사람의 답을 합쳐 센 숫자(답 조합별 인원 같은 통계)는 개인을 알아볼 수 없어서, 내 기록을 지운 뒤에도 남을 수 있어요.',
     ],
   },

@@ -1,6 +1,7 @@
 package com.isitjustme.admin;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -18,6 +19,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.isitjustme.mvp.MvpMode;
+import com.isitjustme.mvp.NotifyEmailRepository;
+import com.isitjustme.mvp.NotifyEmailRepository.NotifyEmail;
 import com.isitjustme.site.MaintenanceMode;
 
 import lombok.RequiredArgsConstructor;
@@ -37,6 +41,10 @@ public class AdminController {
 	private final AdReportRepository adReportRepository;
 
 	private final MaintenanceMode maintenance;
+
+	private final MvpMode mvp;
+
+	private final NotifyEmailRepository emailRepository;
 
 	@GetMapping("/dashboard")
 	public AdminDashboard dashboard(@RequestParam(defaultValue = "14") @Min(1) @Max(90) int days) {
@@ -65,6 +73,38 @@ public class AdminController {
 		// who switched the site and when, for later
 		log.info("Maintenance {} by {}", state.enabled() ? "started" : "ended", http.getRemoteAddr());
 		return state;
+	}
+
+	@GetMapping("/mvp")
+	public MvpView mvp() {
+		return mvpView(mvp.state());
+	}
+
+	/** Turns MVP mode on or off: off shows every number at once, whatever the count. */
+	@PutMapping("/mvp")
+	public MvpView setMvp(@RequestBody MvpRequest request, HttpServletRequest http) {
+		MvpMode.State state = mvp.set(request.enabled());
+		log.info("MVP mode {} by {}", state.enabled() ? "on" : "off", http.getRemoteAddr());
+		return mvpView(state);
+	}
+
+	/** Addresses left to hear when the numbers open, to send that notice by hand. */
+	@GetMapping("/mvp/emails")
+	public List<NotifyEmail> mvpEmails() {
+		return emailRepository.findAll();
+	}
+
+	private MvpView mvpView(MvpMode.State state) {
+		return new MvpView(state.enabled(), state.locked(), state.goal(), state.completers(), emailRepository.count());
+	}
+
+	public record MvpRequest(boolean enabled) {
+	}
+
+	/**
+	 * @param emails addresses left to hear when the numbers open
+	 */
+	public record MvpView(boolean enabled, boolean locked, int goal, long completers, long emails) {
 	}
 
 	/**

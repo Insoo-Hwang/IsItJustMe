@@ -3,14 +3,16 @@ import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { HttpError } from '../api/categories.ts'
 import { fetchUniverse, type RoomDto } from '../api/rooms.ts'
+import { TasteProfile } from '../components/Mvp.tsx'
 import RarityHexagon from '../components/RarityHexagon.tsx'
 import ShareUniverseButton from '../components/ShareUniverseButton.tsx'
 import TasteUniverse from '../components/TasteUniverse.tsx'
 import tier from '../components/tier.module.css'
 import TopBar from '../components/TopBar.tsx'
 import ui from '../components/ui.module.css'
-import { CATEGORIES, shortName } from '../data/categories.ts'
+import { CATEGORIES, fromAnswerBits, shortName } from '../data/categories.ts'
 import { withAnd, withTopic } from '../lib/korean.ts'
+import { isLocked, useMvp } from '../lib/mvp.ts'
 import { minorityShare, tierOf } from '../lib/rarity.ts'
 import { roomQuery, roomRetry, rowsOf } from '../lib/room.ts'
 import { clearInvite, setInvite } from '../store/testStore.ts'
@@ -22,6 +24,7 @@ import styles from './RoomPage.module.css'
 // The owner's results before the friend has taken the tests.
 function OwnerPreview({ token, room }: { token: string; room: RoomDto }) {
   const navigate = useNavigate()
+  const locked = isLocked(useMvp())
   const name = room.ownerName
   const rows = rowsOf(room.owner.map((c) => ({ code: c.code, bits: c.answerBits })))
 
@@ -33,17 +36,26 @@ function OwnerPreview({ token, room }: { token: string; room: RoomDto }) {
 
   return (
     <>
-      <section className={`${ui.card} ${styles.chartCard}`} aria-label={`${name}의 결과 미리보기`}>
-        <h2 className={ui.cardTitle}>{name}의 카테고리별 소수 선택 비율</h2>
-        <RarityHexagon axes={rows.map((r) => ({ label: shortName(r.category), value: minorityShare(r.rarity) }))} />
-        <ul className={styles.chips}>
-          {rows.map(({ category, rarity }) => (
-            <li key={category.id} className={`${styles.chip} ${tier[rarity.tone]}`}>
-              {shortName(category)} <b>{rarity.tier}</b>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {locked ? (
+        <section className={`${ui.card} ${styles.chartCard}`} aria-label={`${name}의 취향 미리보기`}>
+          <TasteProfile
+            answers={Object.fromEntries(room.owner.map((c) => [c.code, fromAnswerBits(c.answerBits)]))}
+            title={`${name}의 취향 키워드`}
+          />
+        </section>
+      ) : (
+        <section className={`${ui.card} ${styles.chartCard}`} aria-label={`${name}의 결과 미리보기`}>
+          <h2 className={ui.cardTitle}>{name}의 카테고리별 소수 선택 비율</h2>
+          <RarityHexagon axes={rows.map((r) => ({ label: shortName(r.category), value: minorityShare(r.rarity) }))} />
+          <ul className={styles.chips}>
+            {rows.map(({ category, rarity }) => (
+              <li key={category.id} className={`${styles.chip} ${tier[rarity.tone]}`}>
+                {shortName(category)} <b>{rarity.tier}</b>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <div className={styles.actions}>
         <button type="button" className={`${ui.primary} ${ui.large}`} onClick={takeTests}>
           나도 테스트하고 {withAnd(name)} 비교하기
@@ -59,6 +71,7 @@ function OwnerPreview({ token, room }: { token: string; room: RoomDto }) {
 function InvitePage() {
   const { token = '' } = useParams()
   const navigate = useNavigate()
+  const locked = isLocked(useMvp())
   const room = useQuery(roomQuery(token))
   const universe = useQuery({ queryKey: ['universe', token], queryFn: () => fetchUniverse(token), retry: roomRetry })
 
@@ -102,7 +115,7 @@ function InvitePage() {
         right={{ icon: 'home', label: '홈으로', onClick: () => navigate('/main') }}
       />
 
-      <section className={`${styles.invite} ${tier[overall.tone]}`} aria-label={`${name}의 초대장`}>
+      <section className={`${styles.invite} ${tier[locked ? 'common' : overall.tone]}`} aria-label={`${name}의 초대장`}>
         <div className={styles.inviteBadge}>{isOwner ? '나의 취향 우주' : `${name}의 초대장`}</div>
         <h1 className={styles.inviteTitle}>
           {isOwner ? (
@@ -125,7 +138,7 @@ function InvitePage() {
             : `${name}의 ${CATEGORIES.length}가지 취향 결과가 도착했어요. 당신과는 얼마나 다를까요?`}
         </p>
         <div className={styles.inviteDone}>
-          테스트 {CATEGORIES.length}개 완료 · 종합 <b>{overall.tier}</b>
+          테스트 {CATEGORIES.length}개 완료{!locked && <> · 종합 <b>{overall.tier}</b></>}
         </div>
       </section>
 

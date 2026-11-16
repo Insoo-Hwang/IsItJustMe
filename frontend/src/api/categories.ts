@@ -41,8 +41,9 @@ export type SummaryDto = {
 
 export type ResultDto = {
   answerBits: number
-  overall: SummaryDto
-  peer: { profile: GuestProfile; summary: SummaryDto }
+  // null in MVP mode, while the numbers stay hidden
+  overall: SummaryDto | null
+  peer: { profile: GuestProfile; summary: SummaryDto } | null
   questions: QuestionDto[]
 }
 

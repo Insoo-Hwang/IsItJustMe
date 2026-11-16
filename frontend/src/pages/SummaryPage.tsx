@@ -1,9 +1,11 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
 import AdCard from '../components/AdCard.tsx'
 import Icon from '../components/Icon.tsx'
-import { fetchMyRoom, fetchUniverse } from '../api/rooms.ts'
+import { fetchResult } from '../api/categories.ts'
+import { fetchMyRoom, fetchUniverse, type MyRoomDto, type PlanetDto } from '../api/rooms.ts'
+import { LockedStats, MvpGauge, NotifyEmailForm, TasteProfile } from '../components/Mvp.tsx'
 import RarityHexagon from '../components/RarityHexagon.tsx'
 import ShareUniverseButton from '../components/ShareUniverseButton.tsx'
 import TasteCard from '../components/TasteCard.tsx'
@@ -11,7 +13,8 @@ import TasteUniverse from '../components/TasteUniverse.tsx'
 import tier from '../components/tier.module.css'
 import TopBar from '../components/TopBar.tsx'
 import ui from '../components/ui.module.css'
-import { shortName } from '../data/categories.ts'
+import { CATEGORIES, fromAnswerBits, shortName } from '../data/categories.ts'
+import { useMvp } from '../lib/mvp.ts'
 import { invitePath } from '../lib/room.ts'
 import { minorityShare, rankLineOf } from '../lib/rarity.ts'
 import { useSummary } from '../lib/summary.ts'
@@ -42,6 +45,9 @@ function SummaryPage() {
   }, [help])
   if (state.status === 'locked') return <Navigate to="/main" replace />
   if (state.status === 'missing') return <Navigate to={`/test/${state.categoryId}`} replace />
+  if (state.status === 'mvp') {
+    return <MvpSummary room={myRoom.data ?? null} planets={universe.data ?? null} />
+  }
 
   const top = <TopBar title="종합 결과" left={{ icon: 'home', label: '홈으로', onClick: () => navigate('/main') }} />
   if (state.status === 'error') {
@@ -282,6 +288,79 @@ function SummaryPage() {
         <button type="button" className={`${ui.dark} ${styles.teaserButton}`} onClick={() => navigate('/ending')}>
           마지막 비교 대상 만나기
           <Icon name="arrow_forward" size={20} />
+        </button>
+      </section>
+
+      <div className={styles.actions}>
+        <button type="button" className={`${ui.primary} ${ui.large}`} onClick={() => navigate('/main')}>
+          홈으로 가기
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// MVP mode: the taste profile and the push to bring friends, the numbers shown closed.
+function MvpSummary({ room, planets }: { room: MyRoomDto | null; planets: PlanetDto[] | null }) {
+  const navigate = useNavigate()
+  const mvp = useMvp()
+  // same keys as the result page; in MVP mode they hold only the answers
+  const results = useQueries({
+    queries: CATEGORIES.map((c) => ({ queryKey: ['result', c.id], queryFn: () => fetchResult(c.id) })),
+  })
+  const answers = Object.fromEntries(
+    CATEGORIES.map((c, i) => [c.id, results[i].data ? fromAnswerBits(results[i].data.answerBits) : undefined]),
+  )
+
+  return (
+    <div className={ui.page}>
+      <TopBar title="종합 결과" left={{ icon: 'home', label: '홈으로', onClick: () => navigate('/main') }} />
+
+      <TasteProfile answers={answers} title="나의 취향 프로필" />
+
+      {/* the count still needed and the universe friends join, with one invite button */}
+      {mvp && (
+        <MvpGauge mvp={mvp} allDone>
+          {room && planets ? (
+            <button
+              type="button"
+              className={styles.universeLink}
+              onClick={() => navigate(invitePath(room.shareToken))}
+              aria-label="내 취향 우주 크게 보기"
+            >
+              <TasteUniverse ownerName={room.ownerName} planets={planets} preview />
+              <span className={styles.universeMore}>
+                {planets.length > 0 ? `친구 ${planets.length}명이 놀러 왔어요` : '아직 놀러 온 친구가 없어요'}
+                <Icon name="chevron_right" size={18} />
+              </span>
+            </button>
+          ) : (
+            <div className={styles.universeEmpty} aria-hidden>
+              <TasteUniverse ownerName="나" planets={[]} preview />
+            </div>
+          )}
+        </MvpGauge>
+      )}
+
+      <LockedStats items={['종합 취향 등급', '소수파 순위', '나와 똑같은 사람', '평균 취향 일치율']} />
+
+
+      <NotifyEmailForm />
+
+      <AdCard placement="SUMMARY_BANNER" className={styles.ad} />
+
+      <section className={styles.teaser} aria-label="마지막 비교 대상">
+        <div className={styles.teaserMark} aria-hidden>
+          <Icon name="lock" size={26} />
+        </div>
+        <p className={styles.teaserText}>
+          아직 비교하지 못한 사람이 한 명 남았어.
+          <br />
+          전체 결과가 열리면 만날 수 있어.
+        </p>
+        <button type="button" className={`${ui.dark} ${styles.teaserButton}`} disabled>
+          마지막 비교 대상 만나기
+          <Icon name="lock" size={20} />
         </button>
       </section>
 

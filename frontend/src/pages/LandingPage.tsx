@@ -4,6 +4,7 @@ import Icon from '../components/Icon.tsx'
 import ui from '../components/ui.module.css'
 import { CATEGORIES, QUESTION_COUNT, totalTests } from '../data/categories.ts'
 import { withAnd } from '../lib/korean.ts'
+import { isLocked, mvpProgress, useMvp } from '../lib/mvp.ts'
 import { invitePath, useInviteRoom } from '../lib/room.ts'
 import { showToast } from '../lib/toast.ts'
 import { answeredCount, dropRetakes, firstUnanswered, useTestState } from '../store/testStore.ts'
@@ -52,6 +53,7 @@ function LandingPage() {
   const navigate = useNavigate()
   const { answers, results } = useTestState()
   const invited = useInviteRoom()
+  const mvp = useMvp()
 
   // a retake left without a clean exit (closed tab, reload) is dropped here
   useEffect(() => dropRetakes(), [results])
@@ -164,7 +166,11 @@ function LandingPage() {
                 {doneCount}/{CATEGORIES.length}
               </span>
             </div>
-            <p className={styles.finalSub}>이제 마지막 비교 상대를 확인할 차례예요.</p>
+            <p className={styles.finalSub}>
+              {mvp && isLocked(mvp)
+                ? `전체 결과 공개까지 ${mvpProgress(mvp).left.toLocaleString('ko-KR')}명 남았어요. 친구를 부르면 더 빨리 열려요.`
+                : '이제 마지막 비교 상대를 확인할 차례예요.'}
+            </p>
             <button type="button" className={`${ui.primary} ${ui.large} ${styles.finalButton}`} onClick={() => navigate('/summary')}>
               나의 최종 결과 확인하기
               <Icon name="arrow_forward" size={20} className={styles.finalArrow} />

@@ -38,6 +38,7 @@ import com.isitjustme.category.RarityCalculator.Summary;
 import com.isitjustme.guest.AgeGroup;
 import com.isitjustme.guest.Gender;
 import com.isitjustme.guest.GuestProfile;
+import com.isitjustme.mvp.MvpMode;
 
 @WebMvcTest(CategoryController.class)
 class CategoryControllerTests {
@@ -49,6 +50,38 @@ class CategoryControllerTests {
 
 	@MockitoBean
 	private CategoryService categoryService;
+
+	// unlocked unless a test locks it
+	@MockitoBean
+	private MvpMode mvp;
+
+	@Test
+	void hidesTheNumbersWhileMvpModeIsLocked() throws Exception {
+		given(mvp.locked()).willReturn(true);
+		GuestProfile profile = new GuestProfile(Gender.FEMALE, AgeGroup.TWENTIES);
+		given(categoryService.result("token", "food")).willReturn(new ResultView(717,
+				new Summary(100, 2, 12.1, 3.5, 1, 12, 3), new PeerView(profile, new Summary(20, 0, 5.3, 0, 0, 1, 0)),
+				List.of(QUESTION)));
+		given(categoryService.listCategories("token")).willReturn(List.of(new CategoryView("food", "음식 취향",
+				"restaurant", "d", "t", 1, List.of(), 12, List.of(QUESTION), null)));
+
+		mockMvc.perform(get("/api/v1/categories/food/result").cookie(new Cookie("guest_token", "token")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.answerBits").value(717))
+			.andExpect(jsonPath("$.overall").isEmpty())
+			.andExpect(jsonPath("$.peer").isEmpty())
+			.andExpect(jsonPath("$.questions[0].option0Rate").value(50));
+		mockMvc.perform(get("/api/v1/categories").cookie(new Cookie("guest_token", "token")))
+			.andExpect(jsonPath("$[0].participants").value(12))
+			.andExpect(jsonPath("$[0].questions[0].option0Rate").value(50));
+		mockMvc.perform(get("/api/v1/categories/result").cookie(new Cookie("guest_token", "token")))
+			.andExpect(status().isForbidden());
+		mockMvc.perform(get("/api/v1/categories/food/result/questions").cookie(new Cookie("guest_token", "token")))
+			.andExpect(status().isForbidden());
+
+		then(categoryService).should(never()).overallResult(any());
+		then(categoryService).should(never()).questionStats(any(), any());
+	}
 
 	@Test
 	void listsCategories() throws Exception {

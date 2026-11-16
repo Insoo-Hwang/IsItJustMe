@@ -3,16 +3,18 @@ import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router'
 import { fetchResult, HttpError, type ResultDto } from '../api/categories.ts'
 import AdCard from '../components/AdCard.tsx'
+import { AnswerReview, MvpGauge, TasteProfile } from '../components/Mvp.tsx'
 import Icon from '../components/Icon.tsx'
 import ResultHighlights from '../components/ResultHighlights.tsx'
 import tier from '../components/tier.module.css'
 import TopBar from '../components/TopBar.tsx'
 import ui from '../components/ui.module.css'
-import { findCategory, fromAnswerBits, toQuestion, type Category } from '../data/categories.ts'
+import { CATEGORIES, findCategory, fromAnswerBits, toQuestion, type Category } from '../data/categories.ts'
 import { withTopic } from '../lib/korean.ts'
+import { useMvp } from '../lib/mvp.ts'
 import { ageGroupLabel, genderLabel } from '../lib/profile.ts'
 import { exactRate, rarityOf, sameRatioLabel, type PickedChoice } from '../lib/rarity.ts'
-import { clearAnswers } from '../store/testStore.ts'
+import { clearAnswers, useTestState } from '../store/testStore.ts'
 import styles from './ResultPage.module.css'
 import NotFoundPage from './NotFoundPage.tsx'
 
@@ -48,7 +50,47 @@ function ResultPage() {
       </div>
     )
   }
+  if (query.data.overall == null || query.data.peer == null) {
+    return <LockedResultView category={category} data={query.data} />
+  }
   return <ResultView category={category} data={query.data} />
+}
+
+// MVP mode: the picks and the keyword they make, with the count still needed to open the numbers.
+function LockedResultView({ category, data }: { category: Category; data: ResultDto }) {
+  const navigate = useNavigate()
+  const mvp = useMvp()
+  const { results } = useTestState()
+  const allDone = CATEGORIES.every((c) => results[c.id])
+  const id = category.id
+  const questions = data.questions.map(toQuestion)
+  const answers = fromAnswerBits(data.answerBits)
+
+  const retry = () => {
+    clearAnswers(id)
+    navigate(`/test/${id}/q/1`)
+  }
+
+  return (
+    <div className={`${ui.page} ${styles.palette}`}>
+      <TopBar title={`${category.name} 결과`} left={{ icon: 'home', label: '홈으로', onClick: () => navigate('/main') }} />
+      <TasteProfile answers={{ [id]: answers }} title={`내 ${withTopic(category.name)}`} />
+      {mvp && <MvpGauge mvp={mvp} allDone={allDone} />}
+      <AnswerReview questions={questions} answers={answers} />
+      <AdCard placement="RESULT_BANNER" categoryId={id} className={styles.ad} />
+
+      <div className={styles.actions}>
+        <button type="button" className={`${ui.primary} ${ui.large}`} onClick={() => navigate('/main')}>
+          {allDone ? '홈으로 가기' : '다른 취향도 알아보기'}
+        </button>
+        {/* one button alone, so it takes the full width like the one above */}
+        <button type="button" className={styles.subAction} onClick={retry}>
+          <Icon name="replay" size={20} />
+          다시 테스트
+        </button>
+      </div>
+    </div>
+  )
 }
 
 // How many people the donut stands for, beside it: the count stands out in the card's color.
@@ -130,9 +172,9 @@ function ResultView({ category, data }: { category: Category; data: ResultDto })
   const questions = data.questions.map(toQuestion)
   const answers = fromAnswerBits(data.answerBits)
   const result = rarityOf(questions, answers)
-  const { overall } = data
-  const profile = data.peer.profile
-  const peer = data.peer.summary
+  const overall = data.overall!
+  const profile = data.peer!.profile
+  const peer = data.peer!.summary
   const peerRate = exactRate(peer)
   const overallRate = exactRate(overall)
   // the shares are of everyone but me
