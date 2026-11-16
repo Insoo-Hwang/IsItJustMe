@@ -34,7 +34,7 @@ class StoryCategoriesTests {
 		assertThat(food.description()).isEqualTo("탕수육부터 민초까지, 양보 못 할 한 입");
 		assertThat(food.minutes()).isEqualTo(1);
 		assertThat(food.recommend()).containsExactly("메뉴 하나 고르다 토론한 분", "민초 논쟁에 참전해 본 분", "친구의 음식 취향이 궁금한 분");
-		assertThat(food.questions().getFirst()).isEqualTo(new QuestionText("탕수육 소스, 어떻게 먹어?", "끝까지 찍먹", "처음부터 부먹"));
+		assertThat(food.questions().getFirst()).isEqualTo(new QuestionText("탕수육 소스, 어떻게 먹어?", "찍먹", "부먹"));
 		assertThat(story.categories().getLast().questions().getLast())
 			.isEqualTo(new QuestionText("사람을 사귈 때?", "먼저 다가간다", "천천히 가까워진다"));
 	}
@@ -49,7 +49,7 @@ class StoryCategoriesTests {
 
 	@Test
 	void rejectsQuestionsOutOfOrder() throws IOException {
-		String broken = story().replace("| 2 | 민트초코", "| 3 | 민트초코");
+		String broken = story().replace("| 2 | 나는 민초파?", "| 3 | 나는 민초파?");
 
 		assertThatThrownBy(() -> StoryCategories.parse(broken)).hasMessageContaining("문항 번호는 1부터 차례로");
 	}
@@ -64,7 +64,7 @@ class StoryCategoriesTests {
 	@Test
 	void rejectsEmptyCellWithItsLine() throws IOException {
 		String story = story();
-		String broken = story.replace("| 끝까지 찍먹 |", "|  |");
+		String broken = story.replace("| 찍먹 |", "|  |");
 		int line = (int) story.substring(0, story.indexOf("| 1 | 탕수육 소스")).lines().count() + 1;
 
 		assertThatThrownBy(() -> StoryCategories.parse(broken)).hasMessage("STORY.md:" + line + ": 빈 칸이 있어요");

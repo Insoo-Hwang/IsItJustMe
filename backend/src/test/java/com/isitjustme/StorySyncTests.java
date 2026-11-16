@@ -56,8 +56,8 @@ class StorySyncTests {
 
 		CategoryInfo food = statsCache.catalog().categories().getFirst();
 		assertThat(food.name()).isEqualTo("먹는 취향");
-		assertThat(food.questions().getFirst()).isEqualTo(new QuestionInfo("food-01", "탕수육 먹을 때는?", "끝까지 찍먹", "처음부터 부먹"));
-		assertThat(food.questions().get(1).prompt()).isEqualTo("민트초코 아이스크림이 눈앞에 있다면?");
+		assertThat(food.questions().getFirst()).isEqualTo(new QuestionInfo("food-01", "탕수육 먹을 때는?", "찍먹", "부먹"));
+		assertThat(food.questions().get(1).prompt()).isEqualTo("나는 민초파?");
 	}
 
 	@Test
